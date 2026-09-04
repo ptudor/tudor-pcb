@@ -17,6 +17,8 @@ iPhone and iPad so a fabrication package can be checked from Files.
 - Direct ZIP opening with size limits and CRC verification (nothing is extracted
   into a temporary directory)
 - Multi-contour boards, routed cutouts, and EasyEDA breakaway panel rails
+- Persistent fabrication history with source age, first/last inspection times,
+  board statistics, generator details, search, and secure quick reopen
 
 ### EasyEDA color silkscreen
 

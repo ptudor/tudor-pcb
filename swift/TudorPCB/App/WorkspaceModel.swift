@@ -32,6 +32,7 @@ final class WorkspaceModel {
     var visibleLayerIDs: Set<String> = []
     var maskStyle = BoardMaskStyle.green
     var showProofs = false
+    var historyEntries: [PackageHistoryEntry] = PackageHistoryStore.load()
     private var renderGeneration = 0
 
     func open(_ url: URL) {
@@ -54,12 +55,15 @@ final class WorkspaceModel {
                         document,
                         options: BoardRenderOptions(visibleLayerIDs: visible, solderMaskColor: maskStyle.color)
                     )
-                    return (document, textures, visible)
+                    let historyEntry = PackageHistoryEntry.capture(url: url, document: document)
+                    return (document, textures, visible, historyEntry)
                 }.value
                 guard generation == renderGeneration else { return }
                 document = result.0
                 textures = result.1
                 visibleLayerIDs = result.2
+                historyEntries = PackageHistoryStore.merging(result.3, into: historyEntries)
+                PackageHistoryStore.save(historyEntries)
                 isLoading = false
             } catch {
                 guard generation == renderGeneration else { return }
@@ -67,6 +71,24 @@ final class WorkspaceModel {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    func open(_ entry: PackageHistoryEntry) {
+        do {
+            open(try PackageHistoryStore.resolve(entry))
+        } catch {
+            errorMessage = "The original package could not be reopened. It may have moved or no longer be available."
+        }
+    }
+
+    func removeFromHistory(_ entry: PackageHistoryEntry) {
+        historyEntries.removeAll { $0.id == entry.id }
+        PackageHistoryStore.save(historyEntries)
+    }
+
+    func clearHistory() {
+        historyEntries.removeAll()
+        PackageHistoryStore.save(historyEntries)
     }
 
     func toggleLayer(_ layer: GerberLayer) {

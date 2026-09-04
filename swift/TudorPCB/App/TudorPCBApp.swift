@@ -24,9 +24,15 @@ private struct GerberCommands: Commands {
             }
             .keyboardShortcut("o")
         }
+        CommandGroup(after: .newItem) {
+            Button("Fabrication History…") {
+                NotificationCenter.default.post(name: .showPackageHistory, object: nil)
+            }
+        }
     }
 }
 
 extension Notification.Name {
     static let openFabricationPackage = Notification.Name("TudorPCB.openFabricationPackage")
+    static let showPackageHistory = Notification.Name("TudorPCB.showPackageHistory")
 }

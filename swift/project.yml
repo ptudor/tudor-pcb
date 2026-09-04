@@ -79,5 +79,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.tudorpcb.tests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Tudor PCB.app/Contents/MacOS/Tudor PCB"
+        BUNDLE_LOADER: "$(TEST_HOST)"
     dependencies:
       - target: TudorPCBMac

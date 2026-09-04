@@ -8,6 +8,7 @@ struct WorkspaceView: View {
     @State private var isImporting = false
     @State private var isImportingTopProof = false
     @State private var isImportingBottomProof = false
+    @State private var isShowingHistory = false
 
     var body: some View {
         NavigationSplitView {
@@ -23,6 +24,9 @@ struct WorkspaceView: View {
             .background(Color(red: 0.025, green: 0.032, blue: 0.04))
             .toolbar {
                 ToolbarItemGroup {
+                    Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
+                        isShowingHistory = true
+                    }
                     Button("Perspective", systemImage: "cube.transparent") { viewer.show(.perspective) }
                         .disabled(model.document == nil)
                     Button("Top", systemImage: "square.3.layers.3d.top.filled") { viewer.show(.top) }
@@ -73,6 +77,9 @@ struct WorkspaceView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openFabricationPackage)) { _ in
             isImporting = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .showPackageHistory)) { _ in
+            isShowingHistory = true
+        }
         .onOpenURL { model.open($0) }
         .task {
             guard model.document == nil,
@@ -96,15 +103,32 @@ struct WorkspaceView: View {
         .sheet(isPresented: $model.showProofs) {
             if let document = model.document { ProofGalleryView(document: document) }
         }
+        .sheet(isPresented: $isShowingHistory) {
+            PackageBrowserView(
+                entries: model.historyEntries,
+                onOpen: { model.open($0) },
+                onRemove: { model.removeFromHistory($0) },
+                onClear: { model.clearHistory() }
+            )
+        }
     }
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Label("FABRICATION REVIEW", systemImage: "cpu")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+            HStack {
+                Label("FABRICATION REVIEW", systemImage: "cpu")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
+                    isShowingHistory = true
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.plain)
+                .help("Browse fabrication history")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
 
             Divider()
 
@@ -128,6 +152,12 @@ struct WorkspaceView: View {
 
                     Button("Open Package…") { isImporting = true }
                         .buttonStyle(.borderedProminent)
+                    if !model.historyEntries.isEmpty {
+                        Button("Browse \(model.historyEntries.count) Recent Package\(model.historyEntries.count == 1 ? "" : "s")") {
+                            isShowingHistory = true
+                        }
+                        .buttonStyle(.borderless)
+                    }
                 }
                 .padding(16)
                 Spacer()
@@ -273,6 +303,13 @@ struct WorkspaceView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
+            if !model.historyEntries.isEmpty {
+                Button("Browse fabrication history") {
+                    isShowingHistory = true
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+            }
         }
         .padding(38)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -306,6 +343,226 @@ struct WorkspaceView: View {
                 .padding(.bottom, 14)
         }
         .allowsHitTesting(false)
+    }
+}
+
+private struct PackageBrowserView: View {
+    let entries: [PackageHistoryEntry]
+    let onOpen: (PackageHistoryEntry) -> Void
+    let onRemove: (PackageHistoryEntry) -> Void
+    let onClear: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selection: PackageHistoryEntry.ID?
+    @State private var searchText = ""
+    @State private var isConfirmingClear = false
+
+    private var filteredEntries: [PackageHistoryEntry] {
+        guard !searchText.isEmpty else { return entries }
+        return entries.filter { entry in
+            [entry.name, entry.sourcePath, entry.formatName, entry.generator ?? ""]
+                .contains { $0.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+
+    private var selectedEntry: PackageHistoryEntry? {
+        let id = selection ?? filteredEntries.first?.id
+        return entries.first { $0.id == id }
+    }
+
+    var body: some View {
+        NavigationSplitView {
+            Group {
+                if entries.isEmpty {
+                    ContentUnavailableView(
+                        "No Fabrication History",
+                        systemImage: "clock.arrow.circlepath",
+                        description: Text("Packages appear here after they have been inspected.")
+                    )
+                } else if filteredEntries.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                } else {
+                    List(filteredEntries, selection: $selection) { entry in
+                        NavigationLink(value: entry.id) {
+                            PackageHistoryRow(entry: entry)
+                        }
+                        .contextMenu {
+                            Button("Remove from History", role: .destructive) { onRemove(entry) }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Fabrication History")
+            .searchable(text: $searchText, prompt: "Package, format, or path")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+                ToolbarItem {
+                    Button("Clear History", role: .destructive) { isConfirmingClear = true }
+                        .disabled(entries.isEmpty)
+                }
+            }
+        } detail: {
+            if let entry = selectedEntry {
+                PackageHistoryDetail(entry: entry) {
+                    onOpen(entry)
+                    dismiss()
+                } onRemove: {
+                    onRemove(entry)
+                    selection = filteredEntries.first?.id
+                }
+            } else {
+                ContentUnavailableView("Select a Package", systemImage: "shippingbox")
+            }
+        }
+        .onAppear { selection = selection ?? filteredEntries.first?.id }
+        .confirmationDialog("Clear all fabrication history?", isPresented: $isConfirmingClear) {
+            Button("Clear History", role: .destructive) {
+                onClear()
+                selection = nil
+            }
+        } message: {
+            Text("This removes the recent-package list. It does not delete any fabrication files.")
+        }
+        #if os(macOS)
+        .frame(minWidth: 880, minHeight: 580)
+        #endif
+    }
+}
+
+private struct PackageHistoryRow: View {
+    let entry: PackageHistoryEntry
+
+    var body: some View {
+        HStack(spacing: 11) {
+            Image(systemName: entry.sourceKind.systemImage)
+                .font(.title3)
+                .frame(width: 28)
+                .foregroundStyle(entry.colorSilkscreenSides > 0 ? .purple : .mint)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(entry.name)
+                    .font(.headline)
+                    .lineLimit(1)
+                Text("\(entry.formatName) · \(entry.boardWidth, format: .number.precision(.fractionLength(1))) × \(entry.boardHeight, format: .number.precision(.fractionLength(1))) mm")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Modified \(entry.ageDescription)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            }
+            Spacer(minLength: 4)
+            if entry.openedCount > 1 {
+                Text("×\(entry.openedCount)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.vertical, 3)
+    }
+}
+
+private struct PackageHistoryDetail: View {
+    let entry: PackageHistoryEntry
+    let onOpen: () -> Void
+    let onRemove: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                HStack(alignment: .top, spacing: 16) {
+                    Image(systemName: entry.sourceKind.systemImage)
+                        .font(.system(size: 34))
+                        .foregroundStyle(entry.colorSilkscreenSides > 0 ? .purple : .mint)
+                        .frame(width: 54, height: 54)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(entry.name)
+                            .font(.title2.weight(.semibold))
+                        Label(
+                            entry.isAvailable ? "Source available" : "Source moved or unavailable",
+                            systemImage: entry.isAvailable ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                        )
+                        .font(.callout)
+                        .foregroundStyle(entry.isAvailable ? .green : .orange)
+                    }
+                }
+
+                Button("Open Package", systemImage: "arrow.up.forward.app", action: onOpen)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+
+                detailSection("PACKAGE") {
+                    LabeledContent("Format", value: entry.formatName)
+                    LabeledContent("Source", value: entry.sourceKind.displayName)
+                    LabeledContent("Board") {
+                        Text("\(entry.boardWidth, format: .number.precision(.fractionLength(2))) × \(entry.boardHeight, format: .number.precision(.fractionLength(2))) mm")
+                            .monospacedDigit()
+                    }
+                    LabeledContent("Layers", value: entry.layerCount.formatted())
+                    LabeledContent("Drills", value: entry.drillCount.formatted())
+                    LabeledContent("Objects", value: entry.primitiveCount.formatted())
+                    if entry.colorSilkscreenSides > 0 {
+                        LabeledContent("Color silkscreen", value: "\(entry.colorSilkscreenSides) side\(entry.colorSilkscreenSides == 1 ? "" : "s")")
+                    }
+                    if let byteCount = entry.byteCount {
+                        LabeledContent("Package size") {
+                            Text(byteCount.formatted(.byteCount(style: .file)))
+                        }
+                    }
+                    if entry.warningCount > 0 {
+                        LabeledContent("Review warnings", value: entry.warningCount.formatted())
+                    }
+                }
+
+                detailSection("AGE & ACTIVITY") {
+                    LabeledContent("Source age", value: entry.ageDescription)
+                    if let modifiedAt = entry.modifiedAt {
+                        LabeledContent("Modified", value: modifiedAt.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    if let createdAt = entry.createdAt {
+                        LabeledContent("Created", value: createdAt.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    LabeledContent("First inspected", value: entry.firstOpenedAt.formatted(date: .abbreviated, time: .shortened))
+                    LabeledContent("Last inspected", value: entry.lastOpenedAt.formatted(date: .abbreviated, time: .shortened))
+                    LabeledContent("Times opened", value: entry.openedCount.formatted())
+                }
+
+                if let generator = entry.generator {
+                    detailSection("GENERATOR") {
+                        Text(generator)
+                            .font(.callout.monospaced())
+                            .textSelection(.enabled)
+                    }
+                }
+
+                detailSection("LOCATION") {
+                    Text(entry.sourcePath)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+
+                Button("Remove from History", role: .destructive, action: onRemove)
+            }
+            .padding(28)
+            .frame(maxWidth: 680, alignment: .leading)
+        }
+        .navigationTitle(entry.name)
+    }
+
+    private func detailSection<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 9, content: content)
+                .padding(14)
+                .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 12))
+        }
     }
 }
 
