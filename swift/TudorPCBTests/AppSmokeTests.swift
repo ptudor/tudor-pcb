@@ -1,5 +1,5 @@
 import XCTest
-@testable import GerberMetal
+@testable import TudorPCB
 
 final class AppSmokeTests: XCTestCase {
     func testModuleLoads() {

@@ -1,4 +1,4 @@
-name: GerberMetal
+name: TudorPCB
 
 options:
   bundleIdPrefix: net.ptudor
@@ -25,40 +25,42 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     DEVELOPMENT_TEAM: "55QT38683G"
     CODE_SIGN_STYLE: Automatic
-    INFOPLIST_KEY_CFBundleDisplayName: "Gerber Metal"
+    INFOPLIST_KEY_CFBundleDisplayName: "Tudor PCB"
     INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
     INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
 
 targets:
-  GerberMetalMac:
+  TudorPCBMac:
     type: application
     platform: macOS
     sources:
-      - path: GerberMetal
+      - path: TudorPCB
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.gerbermetal
-        PRODUCT_NAME: "Gerber Metal"
-        PRODUCT_MODULE_NAME: GerberMetal
-        CODE_SIGN_ENTITLEMENTS: GerberMetal/GerberMetal-macOS.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.tudorpcb
+        PRODUCT_NAME: "Tudor PCB"
+        PRODUCT_MODULE_NAME: TudorPCB
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: TudorPCB/TudorPCB-macOS.entitlements
         ENABLE_APP_SANDBOX: YES
         ENABLE_HARDENED_RUNTIME: YES
     dependencies:
       - package: GerberKit
     scheme:
       testTargets:
-        - GerberMetalTests
+        - TudorPCBTests
 
-  GerberMetal:
+  TudorPCB:
     type: application
     platform: iOS
     sources:
-      - path: GerberMetal
+      - path: TudorPCB
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.gerbermetal
-        PRODUCT_NAME: "Gerber Metal"
-        PRODUCT_MODULE_NAME: GerberMetal
+        PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.tudorpcb
+        PRODUCT_NAME: "Tudor PCB"
+        PRODUCT_MODULE_NAME: TudorPCB
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
@@ -67,16 +69,15 @@ targets:
     dependencies:
       - package: GerberKit
 
-  GerberMetalTests:
+  TudorPCBTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: GerberMetalTests
+      - path: TudorPCBTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.gerbermetal.tests
+        PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.tudorpcb.tests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
     dependencies:
-      - target: GerberMetalMac
-
+      - target: TudorPCBMac

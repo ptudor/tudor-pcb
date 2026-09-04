@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct GerberMetalApp: App {
+struct TudorPCBApp: App {
     var body: some Scene {
         WindowGroup {
             WorkspaceView()
@@ -28,6 +28,5 @@ private struct GerberCommands: Commands {
 }
 
 extension Notification.Name {
-    static let openFabricationPackage = Notification.Name("GerberMetal.openFabricationPackage")
+    static let openFabricationPackage = Notification.Name("TudorPCB.openFabricationPackage")
 }
-

@@ -3,6 +3,6 @@ DerivedData/
 build/
 swift/build*/
 swift/GerberKit/.build/
-swift/GerberMetal.xcodeproj/
+swift/TudorPCB.xcodeproj/
 *.xcuserstate
 xcuserdata/

@@ -1,6 +1,6 @@
-# Gerber Metal
+# Tudor PCB
 
-Gerber Metal is a native SwiftUI and Metal viewer for PCB fabrication packages.
+Tudor PCB is a native SwiftUI and Metal viewer for PCB fabrication packages.
 It opens Gerber ZIP archives or extracted layer folders, presents the board as an
 interactive 3D object, and calls attention to fabrication details that deserve a
 human review.
@@ -22,7 +22,7 @@ iPhone and iPad so a fabrication package can be checked from Files.
 
 EasyEDA's `.FCTS` and `.FCBS` files are not ordinary Gerbers. Their SVG payloads
 are AES-GCM encrypted, and the AES material is wrapped to JLCPCB's RSA public
-key; only JLCPCB has the private key. Gerber Metal therefore does not claim to
+key; only JLCPCB has the private key. Tudor PCB therefore does not claim to
 decrypt them. It detects both factory payloads, renders the accompanying normal
 silkscreen as a geometrically accurate fallback, and clearly labels the exact
 color proof as unavailable.
@@ -37,7 +37,7 @@ mapped to the main routed board rather than stretched across panel rails.
 ```sh
 cd swift
 xcodegen generate
-xcodebuild -project GerberMetal.xcodeproj -scheme GerberMetalMac \
+xcodebuild -project TudorPCB.xcodeproj -scheme TudorPCBMac \
   -destination 'platform=macOS' build
 ```
 
