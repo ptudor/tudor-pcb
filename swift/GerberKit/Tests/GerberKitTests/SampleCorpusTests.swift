@@ -29,6 +29,10 @@ import Testing
         #expect(board.colorSilkscreens.count == 2)
         #expect(board.bounds.width > 10)
         #expect(board.bounds.height > 10)
+        if relativePath.contains("XLR-PAD") {
+            #expect(abs(board.bounds.width - 76.2) < 0.01)
+            #expect(abs(board.bounds.height - 76.2) < 0.01)
+        }
     }
 
     let legacy = appsRoot.appending(path: "eagle-tudor/pcb/_active/hm-10piggy/untitled folder")
@@ -38,4 +42,3 @@ import Testing
         #expect(board.colorSilkscreens.isEmpty)
     }
 }
-

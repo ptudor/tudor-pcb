@@ -76,7 +76,7 @@ public struct FabricationPackageLoader: Sendable {
             )
         }
 
-        let preferredBounds = layers.filter { $0.kind == .outline }.compactMap(\.bounds)
+        let preferredBounds = layers.filter { $0.kind == .outline }.compactMap(\.centerlineBounds)
         let allBounds = preferredBounds.isEmpty ? layers.compactMap(\.bounds) : preferredBounds
         var bounds = allBounds.reduce(nil) { partial, next in partial?.union(next) ?? next }
         for drill in drills where bounds == nil {
@@ -156,4 +156,3 @@ public struct FabricationPackageLoader: Sendable {
         )
     }
 }
-

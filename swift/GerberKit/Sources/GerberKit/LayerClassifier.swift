@@ -7,6 +7,11 @@ public enum LayerClassifier {
 
         if ext == "fcts" { return .colorfulSilkscreen(side: .top) }
         if ext == "fcbs" { return .colorfulSilkscreen(side: .bottom) }
+        if ext == "fcbo" { return .other }
+        if ext == "fcbm" { return .documentation }
+        if ["gdd", "gdl", "gbrjob"].contains(ext) || name.contains("document") || name.contains("drawing") {
+            return .documentation
+        }
         if ext == "drl" || ext == "xln" || name.contains("drill") {
             if name.contains("npth") || contents?.localizedCaseInsensitiveContains("TYPE=NON_PLATED") == true {
                 return .drill(plated: false)
@@ -46,9 +51,6 @@ public enum LayerClassifier {
         if ext == "gbp" || name.contains("bottompaste") || name.contains("b.paste") {
             return .paste(side: .bottom)
         }
-        if ["gdd", "gdl", "gbrjob"].contains(ext) || name.contains("document") || name.contains("drawing") {
-            return .documentation
-        }
         return .other
     }
 
@@ -63,4 +65,3 @@ public enum LayerClassifier {
         }
     }
 }
-

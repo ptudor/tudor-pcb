@@ -135,6 +135,25 @@ public struct GerberLayer: Sendable, Hashable, Codable, Identifiable {
             partial?.union(next) ?? next
         }
     }
+
+    /// Geometry bounds without aperture stroke expansion. Board houses route on
+    /// an outline's centerline, so this is the dimension users expect to review.
+    var centerlineBounds: Bounds2D? {
+        primitives.compactMap { primitive -> Bounds2D? in
+            switch primitive {
+            case let .line(start, end, _, _):
+                return Bounds2D.containing([start, end])
+            case let .arc(start, end, center, _, _, _):
+                let radius = hypot(start.x - center.x, start.y - center.y)
+                return Bounds2D(
+                    minimum: Point2D(x: center.x - radius, y: center.y - radius),
+                    maximum: Point2D(x: center.x + radius, y: center.y + radius)
+                ).union(Bounds2D.containing([start, end])!)
+            case .flash, .region:
+                return primitive.bounds
+            }
+        }.reduce(nil) { partial, next in partial?.union(next) ?? next }
+    }
 }
 
 public struct DrillHit: Sendable, Hashable, Codable {
@@ -148,4 +167,3 @@ public struct DrillHit: Sendable, Hashable, Codable {
         self.plated = plated
     }
 }
-
