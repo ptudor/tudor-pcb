@@ -226,7 +226,12 @@ final class BoardRenderer {
         face([
             SIMD3(halfWidth, yBottom, halfDepth), SIMD3(-halfWidth, yBottom, halfDepth),
             SIMD3(-halfWidth, yBottom, -halfDepth), SIMD3(halfWidth, yBottom, -halfDepth)
-        ], normal: SIMD3(0, -1, 0), material: 1, uv: standardUV)
+        ], normal: SIMD3(0, -1, 0), material: 1, uv: [
+            // Keep UVs in board coordinates. Orbiting underneath performs the
+            // physical flip; mirroring here as well makes bottom text backward.
+            SIMD2<Float>(1, 0), SIMD2<Float>(0, 0),
+            SIMD2<Float>(0, 1), SIMD2<Float>(1, 1)
+        ])
 
         let edgeUV = Array(repeating: SIMD2<Float>(0.5, 0.5), count: 4)
         for edgePath in BoardOutlineExtractor.edgePaths(in: document) where edgePath.count >= 2 {
