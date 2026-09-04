@@ -133,10 +133,20 @@ public struct BoardRasterizer: Sendable {
            let preview = preferredArtwork(for: side, in: document.sidePreviews),
            let source = CGImageSourceCreateWithData(preview.imageData as CFData, nil),
            let image = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+            let artworkBounds = BoardOutlineExtractor.contours(in: document)
+                .compactMap(Bounds2D.containing)
+                .max { $0.width * $0.height < $1.width * $1.height }
+                ?? bounds
+            let artworkCanvas = CGRect(
+                x: (artworkBounds.minimum.x - bounds.minimum.x) * scale,
+                y: (artworkBounds.minimum.y - bounds.minimum.y) * scale,
+                width: artworkBounds.width * scale,
+                height: artworkBounds.height * scale
+            )
             context.saveGState()
             context.setAlpha(0.98)
             context.interpolationQuality = .high
-            context.draw(image, in: canvas)
+            context.draw(image, in: artworkCanvas)
             context.restoreGState()
         }
 
