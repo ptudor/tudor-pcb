@@ -4,7 +4,12 @@ public enum LayerClassifier {
     public static func classify(fileName: String, contents: String? = nil) -> GerberLayerKind {
         let name = fileName.lowercased()
         let ext = URL(fileURLWithPath: name).pathExtension
+        let base = URL(fileURLWithPath: name).lastPathComponent
         let source = contents?.lowercased() ?? ""
+
+        if source.contains("output software:jlccam"), let kind = jlccamKind(for: base) {
+            return kind
+        }
 
         if ext == "fcts" { return .colorfulSilkscreen(side: .top) }
         if ext == "fcbs" { return .colorfulSilkscreen(side: .bottom) }
@@ -70,8 +75,10 @@ public enum LayerClassifier {
         return .other
     }
 
-    public static func isGerber(_ fileName: String) -> Bool {
-        let kind = classify(fileName: fileName)
+    public static func isGerber(_ fileName: String, contents: String? = nil) -> Bool {
+        let source = contents?.lowercased() ?? ""
+        if source.contains("%fs"), source.contains("%mo") { return true }
+        let kind = classify(fileName: fileName, contents: contents)
         switch kind {
         case .drill, .colorfulSilkscreen, .other:
             let ext = URL(fileURLWithPath: fileName).pathExtension.lowercased()
@@ -86,5 +93,21 @@ public enum LayerClassifier {
         let suffix = source[marker.upperBound...]
         let digits = suffix.prefix(while: \.isNumber)
         return Int(digits)
+    }
+
+    private static func jlccamKind(for base: String) -> GerberLayerKind? {
+        switch base {
+        case "tl": return .copper(side: .top, index: nil)
+        case "bl": return .copper(side: .bottom, index: nil)
+        case "to", "qrt": return .silkscreen(side: .top)
+        case "bo", "qrb": return .silkscreen(side: .bottom)
+        case "ts": return .solderMask(side: .top)
+        case "bs": return .solderMask(side: .bottom)
+        case "ko": return .outline
+        case "drl", "vcut", "sk", "color_mark": return .documentation
+        default:
+            guard base.first == "l", let index = Int(base.dropFirst()), index > 1 else { return nil }
+            return .copper(side: .none, index: index)
+        }
     }
 }

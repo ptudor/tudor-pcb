@@ -16,6 +16,7 @@ iPhone and iPad so a fabrication package can be checked from Files.
 - EasyEDA Pro, Eagle, KiCad/X2, and common Altium layer naming
 - Direct ZIP opening with size limits and CRC verification (nothing is extracted
   into a temporary directory)
+- JLCPCB production-review envelopes and safely nested fabrication ZIPs
 - Multi-contour boards, routed cutouts, and EasyEDA breakaway panel rails
 - Persistent fabrication history with source age, first/last inspection times,
   board statistics, generator details, search, and secure quick reopen
@@ -33,6 +34,16 @@ For exact colors, place `*_top.png` / `*_bottom.png` review images beside the
 Gerber ZIP (they are discovered automatically), or use **Color proof options**
 to attach the original board-sized top/bottom artwork. Board-sized artwork is
 mapped to the main routed board rather than stretched across panel rails.
+
+### JLCPCB production reviews
+
+Open the downloaded review ZIP or its extracted folder directly. Tudor PCB uses
+the engineer-produced Gerbers in `ok/`, recognizes JLCCam's extensionless layer
+names, ignores the `.ddw` and `.tgz` helper files, and records ZIPs in `YG/` as
+the enclosed original uploads. Generic nested ZIPs are searched up to three
+levels deep with archive-count and expanded-size limits. A unique best board is
+opened automatically; equally plausible boards are reported for explicit user
+choice instead of choosing one silently.
 
 ## Build
 

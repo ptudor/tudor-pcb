@@ -39,7 +39,7 @@ public struct GerberParser: Sendable {
     private static func generator(in source: String) -> String? {
         for line in source.split(whereSeparator: \.isNewline).prefix(24) {
             let text = String(line)
-            for marker in ["EasyEDA", "KiCad", "EAGLE", "Altium"] where text.localizedCaseInsensitiveContains(marker) {
+            for marker in ["EasyEDA", "KiCad", "EAGLE", "Altium", "jlccam", "JLCPCB"] where text.localizedCaseInsensitiveContains(marker) {
                 return text
                     .replacingOccurrences(of: "G04", with: "")
                     .replacingOccurrences(of: "*", with: "")

@@ -1,5 +1,11 @@
 import Foundation
 
+public enum FabricationPackageRole: String, Sendable, Hashable, Codable {
+    case direct
+    case nestedArchive
+    case jlcpcbProduction
+}
+
 public struct ColorSilkscreenInfo: Sendable, Hashable, Codable {
     public enum Payload: String, Sendable, Hashable, Codable {
         case encryptedJLC
@@ -40,6 +46,8 @@ public struct BoardDocument: Sendable, Equatable {
     public var colorSilkscreens: [ColorSilkscreenInfo]
     public var sidePreviews: [BoardSidePreview]
     public var warnings: [String]
+    public var packageRole: FabricationPackageRole
+    public var enclosedSourceArchives: [String]
 
     public init(
         name: String,
@@ -52,7 +60,9 @@ public struct BoardDocument: Sendable, Equatable {
         thicknessMillimeters: Double = 1.6,
         colorSilkscreens: [ColorSilkscreenInfo] = [],
         sidePreviews: [BoardSidePreview] = [],
-        warnings: [String] = []
+        warnings: [String] = [],
+        packageRole: FabricationPackageRole = .direct,
+        enclosedSourceArchives: [String] = []
     ) {
         self.name = name
         self.layers = layers
@@ -62,6 +72,8 @@ public struct BoardDocument: Sendable, Equatable {
         self.colorSilkscreens = colorSilkscreens
         self.sidePreviews = sidePreviews
         self.warnings = warnings
+        self.packageRole = packageRole
+        self.enclosedSourceArchives = enclosedSourceArchives
     }
 
     public var isEasyEDA: Bool {

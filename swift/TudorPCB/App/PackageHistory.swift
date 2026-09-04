@@ -43,6 +43,8 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
     var formatName: String
     var generator: String?
     var colorSilkscreenSides: Int
+    var packageRole: FabricationPackageRole?
+    var enclosedSourceCount: Int?
     var bookmarkData: Data?
 
     var ageDate: Date { modifiedAt ?? createdAt ?? firstOpenedAt }
@@ -65,7 +67,9 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
             : (url.pathExtension.lowercased() == "zip" ? .archive : .layer)
         let generator = document.layers.compactMap(\.sourceGenerator).first
         let formatName: String
-        if document.isEasyEDA {
+        if document.packageRole == .jlcpcbProduction {
+            formatName = "JLCPCB production"
+        } else if document.isEasyEDA {
             formatName = "EasyEDA Pro"
         } else if generator?.localizedCaseInsensitiveContains("EAGLE") == true {
             formatName = "Autodesk Eagle"
@@ -98,6 +102,8 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
             formatName: formatName,
             generator: generator,
             colorSilkscreenSides: Set(document.colorSilkscreens.map(\.side)).count,
+            packageRole: document.packageRole,
+            enclosedSourceCount: document.enclosedSourceArchives.count,
             bookmarkData: PackageHistoryStore.makeBookmark(for: url)
         )
     }

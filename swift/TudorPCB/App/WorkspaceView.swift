@@ -183,6 +183,20 @@ struct WorkspaceView: View {
             Text("\(document.layers.count) layers · \(document.drills.count) drills · \(document.primitiveCount.formatted()) objects")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+            if document.packageRole == .jlcpcbProduction {
+                Text("JLCPCB engineer production · OK")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.purple)
+                if !document.enclosedSourceArchives.isEmpty {
+                    Text("\(document.enclosedSourceArchives.count) original upload\(document.enclosedSourceArchives.count == 1 ? "" : "s") enclosed")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            } else if document.packageRole == .nestedArchive {
+                Text("Opened from an enclosed Gerber ZIP")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -198,6 +212,9 @@ struct WorkspaceView: View {
                 badDetail: "Missing"
             )
             statusRow(!document.drills.isEmpty, label: "Drill map", goodDetail: "Aligned", badDetail: "Missing")
+            if document.packageRole == .jlcpcbProduction {
+                statusRow(true, label: "Production set", goodDetail: "JLCPCB OK", badDetail: "")
+            }
             if !document.colorSilkscreens.isEmpty {
                 statusRow(
                     document.sidePreviews.contains { $0.fileName.contains("attached-artwork") || $0.fileName.contains("side") },
@@ -504,6 +521,17 @@ private struct PackageHistoryDetail: View {
                     LabeledContent("Objects", value: entry.primitiveCount.formatted())
                     if entry.colorSilkscreenSides > 0 {
                         LabeledContent("Color silkscreen", value: "\(entry.colorSilkscreenSides) side\(entry.colorSilkscreenSides == 1 ? "" : "s")")
+                    }
+                    if entry.packageRole == .jlcpcbProduction {
+                        LabeledContent("Review set", value: "JLCPCB engineer output (OK)")
+                    } else if entry.packageRole == .nestedArchive {
+                        LabeledContent("Container", value: "Nested ZIP")
+                    }
+                    if let count = entry.enclosedSourceCount, count > 0 {
+                        LabeledContent(
+                            entry.packageRole == .jlcpcbProduction ? "Original uploads" : "Enclosed archives",
+                            value: "\(count) enclosed"
+                        )
                     }
                     if let byteCount = entry.byteCount {
                         LabeledContent("Package size") {

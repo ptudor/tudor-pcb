@@ -427,23 +427,42 @@ public struct BoardRasterizer: Sendable {
     private func drawDrills(_ drills: [DrillHit], in context: CGContext, bounds: Bounds2D, scale: Double) {
         for drill in drills {
             let center = pixel(drill.center, bounds: bounds, scale: scale)
+            let end = drill.end.map { pixel($0, bounds: bounds, scale: scale) }
             let diameter = max(1, drill.diameter * scale)
             if drill.plated == true {
                 context.setFillColor(red: 0.73, green: 0.48, blue: 0.14, alpha: 1)
-                context.fillEllipse(in: CGRect(
-                    x: center.x - diameter * 0.72,
-                    y: center.y - diameter * 0.72,
-                    width: diameter * 1.44,
-                    height: diameter * 1.44
-                ))
+                if let end {
+                    context.setStrokeColor(red: 0.73, green: 0.48, blue: 0.14, alpha: 1)
+                    context.setLineCap(.round)
+                    context.setLineWidth(diameter * 1.44)
+                    context.move(to: center)
+                    context.addLine(to: end)
+                    context.strokePath()
+                } else {
+                    context.fillEllipse(in: CGRect(
+                        x: center.x - diameter * 0.72,
+                        y: center.y - diameter * 0.72,
+                        width: diameter * 1.44,
+                        height: diameter * 1.44
+                    ))
+                }
             }
             context.setFillColor(red: 0.012, green: 0.014, blue: 0.016, alpha: 1)
-            context.fillEllipse(in: CGRect(
-                x: center.x - diameter / 2,
-                y: center.y - diameter / 2,
-                width: diameter,
-                height: diameter
-            ))
+            if let end {
+                context.setStrokeColor(red: 0.012, green: 0.014, blue: 0.016, alpha: 1)
+                context.setLineCap(.round)
+                context.setLineWidth(diameter)
+                context.move(to: center)
+                context.addLine(to: end)
+                context.strokePath()
+            } else {
+                context.fillEllipse(in: CGRect(
+                    x: center.x - diameter / 2,
+                    y: center.y - diameter / 2,
+                    width: diameter,
+                    height: diameter
+                ))
+            }
         }
     }
 

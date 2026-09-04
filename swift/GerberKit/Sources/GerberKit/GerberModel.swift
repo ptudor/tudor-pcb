@@ -158,11 +158,13 @@ public struct GerberLayer: Sendable, Hashable, Codable, Identifiable {
 
 public struct DrillHit: Sendable, Hashable, Codable {
     public var center: Point2D
+    public var end: Point2D?
     public var diameter: Double
     public var plated: Bool?
 
-    public init(center: Point2D, diameter: Double, plated: Bool?) {
+    public init(center: Point2D, end: Point2D? = nil, diameter: Double, plated: Bool?) {
         self.center = center
+        self.end = end
         self.diameter = diameter
         self.plated = plated
     }
