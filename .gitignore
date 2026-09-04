@@ -1,0 +1,9 @@
+.DS_Store
+DerivedData/
+build/
+swift/build/
+swift/GerberKit/.build/
+swift/GerberMetal.xcodeproj/
+*.xcuserstate
+xcuserdata/
+
