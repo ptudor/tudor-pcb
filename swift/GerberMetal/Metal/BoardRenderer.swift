@@ -229,26 +229,31 @@ final class BoardRenderer {
         ], normal: SIMD3(0, -1, 0), material: 1, uv: standardUV)
 
         let edgeUV = Array(repeating: SIMD2<Float>(0.5, 0.5), count: 4)
-        face([
-            SIMD3(-halfWidth, yBottom, halfDepth), SIMD3(halfWidth, yBottom, halfDepth),
-            SIMD3(halfWidth, yTop, halfDepth), SIMD3(-halfWidth, yTop, halfDepth)
-        ], normal: SIMD3(0, 0, 1), material: 2, uv: edgeUV)
-        face([
-            SIMD3(halfWidth, yBottom, -halfDepth), SIMD3(-halfWidth, yBottom, -halfDepth),
-            SIMD3(-halfWidth, yTop, -halfDepth), SIMD3(halfWidth, yTop, -halfDepth)
-        ], normal: SIMD3(0, 0, -1), material: 2, uv: edgeUV)
-        face([
-            SIMD3(-halfWidth, yBottom, -halfDepth), SIMD3(-halfWidth, yBottom, halfDepth),
-            SIMD3(-halfWidth, yTop, halfDepth), SIMD3(-halfWidth, yTop, -halfDepth)
-        ], normal: SIMD3(-1, 0, 0), material: 2, uv: edgeUV)
-        face([
-            SIMD3(halfWidth, yBottom, halfDepth), SIMD3(halfWidth, yBottom, -halfDepth),
-            SIMD3(halfWidth, yTop, -halfDepth), SIMD3(halfWidth, yTop, halfDepth)
-        ], normal: SIMD3(1, 0, 0), material: 2, uv: edgeUV)
+        for edgePath in BoardOutlineExtractor.edgePaths(in: document) where edgePath.count >= 2 {
+            for index in 0..<(edgePath.count - 1) {
+                let p0 = worldPoint(edgePath[index])
+                let p1 = worldPoint(edgePath[index + 1])
+                let delta = p1 - p0
+                guard simd_length(delta) > 0.000_001 else { continue }
+                let normal = normalize(SIMD3<Float>(delta.z, 0, -delta.x))
+                face([
+                    SIMD3(p0.x, yBottom, p0.z), SIMD3(p1.x, yBottom, p1.z),
+                    SIMD3(p1.x, yTop, p1.z), SIMD3(p0.x, yTop, p0.z)
+                ], normal: normal, material: 2, uv: edgeUV)
+            }
+        }
 
         vertexBuffer = device.makeBuffer(bytes: vertices, length: vertices.count * MemoryLayout<BoardVertex>.stride)
         indexBuffer = device.makeBuffer(bytes: indices, length: indices.count * MemoryLayout<UInt16>.stride)
         indexCount = indices.count
+
+        func worldPoint(_ point: Point2D) -> SIMD3<Float> {
+            SIMD3<Float>(
+                Float(point.x - document.bounds.minimum.x) / longest - halfWidth,
+                0,
+                halfDepth - Float(point.y - document.bounds.minimum.y) / longest
+            )
+        }
     }
 
     private func perspective(fovY: Float, aspect: Float, near: Float, far: Float) -> simd_float4x4 {
@@ -275,4 +280,3 @@ final class BoardRenderer {
         ))
     }
 }
-

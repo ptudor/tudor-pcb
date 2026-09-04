@@ -80,8 +80,13 @@ public struct BoardRasterizer: Sendable {
         let width = max(8, Int(ceil(bounds.width * scale)))
         let height = max(8, Int(ceil(bounds.height * scale)))
         let canvas = CGRect(x: 0, y: 0, width: width, height: height)
-        let outline = primaryOutline(in: document)
-        let mask = try makeBoardMask(width: width, height: height, bounds: bounds, scale: scale, outline: outline)
+        let mask = try makeBoardMask(
+            width: width,
+            height: height,
+            document: document,
+            bounds: bounds,
+            scale: scale
+        )
         let top = try renderSide(
             .top,
             document: document,
@@ -191,26 +196,115 @@ public struct BoardRasterizer: Sendable {
     private func makeBoardMask(
         width: Int,
         height: Int,
+        document: BoardDocument,
         bounds: Bounds2D,
-        scale: Double,
-        outline: [Point2D]?
+        scale: Double
     ) throws -> CGImage {
         guard let context = makeContext(width: width, height: height) else {
             throw BoardRasterizerError.contextCreation
         }
-        context.setFillColor(gray: 1, alpha: 1)
-        if let outline, outline.count >= 3 {
-            let path = CGMutablePath()
-            path.move(to: pixel(outline[0], bounds: bounds, scale: scale))
-            for point in outline.dropFirst() { path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
-            path.closeSubpath()
-            context.addPath(path)
-            context.fillPath(using: .evenOdd)
-        } else {
+        let outlineLayers = document.layers.filter { $0.kind == .outline }
+        if outlineLayers.isEmpty {
+            context.setFillColor(gray: 1, alpha: 1)
             context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        } else {
+            // Treat the outline drawing as a barrier, then flood from the canvas
+            // edge. This handles EasyEDA panel rails, whose routed perimeter is
+            // intentionally emitted as unordered, open segments around tabs.
+            for layer in outlineLayers {
+                for primitive in layer.primitives where primitive.polarity == .dark {
+                    draw(primitive, in: context, bounds: bounds, scale: scale)
+                }
+            }
+            floodOutlineInterior(context: context, width: width, height: height)
+
+            // An enclosed contour nested inside a larger contour is a routed
+            // cutout rather than another island of substrate.
+            let contours = BoardOutlineExtractor.contours(in: document)
+            for contour in contours where contourIsNested(contour, among: contours) {
+                let path = CGMutablePath()
+                path.move(to: pixel(contour[0], bounds: bounds, scale: scale))
+                for point in contour.dropFirst() { path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
+                path.closeSubpath()
+                context.saveGState()
+                context.setBlendMode(.clear)
+                context.addPath(path)
+                context.fillPath()
+                context.restoreGState()
+            }
         }
         guard let image = context.makeImage() else { throw BoardRasterizerError.imageCreation }
         return image
+    }
+
+    private func floodOutlineInterior(context: CGContext, width: Int, height: Int) {
+        guard let data = context.data else { return }
+        let bytes = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
+        var outside = [Bool](repeating: false, count: width * height)
+        var queue: [Int] = []
+        queue.reserveCapacity(width * 2 + height * 2)
+
+        func isBarrier(_ index: Int) -> Bool { bytes[index * 4 + 3] > 24 }
+        func enqueue(_ x: Int, _ y: Int) {
+            guard x >= 0, x < width, y >= 0, y < height else { return }
+            let index = y * width + x
+            guard !outside[index], !isBarrier(index) else { return }
+            outside[index] = true
+            queue.append(index)
+        }
+
+        for x in 0..<width { enqueue(x, 0); enqueue(x, height - 1) }
+        for y in 0..<height { enqueue(0, y); enqueue(width - 1, y) }
+        var cursor = 0
+        while cursor < queue.count {
+            let index = queue[cursor]
+            cursor += 1
+            let x = index % width
+            let y = index / width
+            enqueue(x - 1, y)
+            enqueue(x + 1, y)
+            enqueue(x, y - 1)
+            enqueue(x, y + 1)
+        }
+
+        for index in 0..<(width * height) {
+            let value: UInt8 = outside[index] ? 0 : 255
+            bytes[index * 4] = value
+            bytes[index * 4 + 1] = value
+            bytes[index * 4 + 2] = value
+            bytes[index * 4 + 3] = value
+        }
+    }
+
+    private func contourIsNested(_ contour: [Point2D], among contours: [[Point2D]]) -> Bool {
+        guard let point = contour.first else { return false }
+        let ownArea = abs(polygonArea(contour))
+        return contours.contains { candidate in
+            abs(polygonArea(candidate)) > ownArea && pointInPolygon(point, candidate)
+        }
+    }
+
+    private func pointInPolygon(_ point: Point2D, _ polygon: [Point2D]) -> Bool {
+        guard polygon.count >= 3 else { return false }
+        var inside = false
+        var previous = polygon.last!
+        for current in polygon {
+            if (current.y > point.y) != (previous.y > point.y) {
+                let crossing = (previous.x - current.x) * (point.y - current.y)
+                    / (previous.y - current.y) + current.x
+                if point.x < crossing { inside.toggle() }
+            }
+            previous = current
+        }
+        return inside
+    }
+
+    private func polygonArea(_ points: [Point2D]) -> Double {
+        guard points.count >= 3 else { return 0 }
+        return points.indices.reduce(0.0) { area, index in
+            let next = points[(index + 1) % points.count]
+            return area + points[index].x * next.y - next.x * points[index].y
+        } / 2
     }
 
     private func draw(_ primitive: GerberPrimitive, in context: CGContext, bounds: Bounds2D, scale: Double) {
@@ -343,66 +437,6 @@ public struct BoardRasterizer: Sendable {
         }
     }
 
-    private func primaryOutline(in document: BoardDocument) -> [Point2D]? {
-        let layers = document.layers.filter { $0.kind == .outline }
-        var closedContours: [[Point2D]] = []
-        for layer in layers {
-            var current: [Point2D] = []
-            func finish() {
-                guard current.count >= 3,
-                      let first = current.first,
-                      let last = current.last,
-                      distance(first, last) < 0.08 else {
-                    current.removeAll(keepingCapacity: true)
-                    return
-                }
-                closedContours.append(current)
-                current.removeAll(keepingCapacity: true)
-            }
-
-            for primitive in layer.primitives where primitive.polarity == .dark {
-                let segment: [Point2D]
-                switch primitive {
-                case let .line(start, end, _, _): segment = [start, end]
-                case let .arc(start, end, center, clockwise, _, _):
-                    segment = [start] + flattenArc(start: start, end: end, center: center, clockwise: clockwise)
-                case let .region(contours, _):
-                    closedContours += contours
-                    continue
-                case .flash:
-                    continue
-                }
-                if current.isEmpty {
-                    current = segment
-                } else if let last = current.last, let first = segment.first, distance(last, first) < 0.08 {
-                    current.append(contentsOf: segment.dropFirst())
-                    if let chainFirst = current.first, let chainLast = current.last,
-                       distance(chainFirst, chainLast) < 0.08 { finish() }
-                } else {
-                    finish()
-                    current = segment
-                }
-            }
-            finish()
-        }
-        return closedContours.max { abs(polygonArea($0)) < abs(polygonArea($1)) }
-    }
-
-    private func flattenArc(start: Point2D, end: Point2D, center: Point2D, clockwise: Bool) -> [Point2D] {
-        let radius = hypot(start.x - center.x, start.y - center.y)
-        guard radius > 0.000_001 else { return [end] }
-        let startAngle = atan2(start.y - center.y, start.x - center.x)
-        var sweep = atan2(end.y - center.y, end.x - center.x) - startAngle
-        if clockwise, sweep >= 0 { sweep -= 2 * .pi }
-        if !clockwise, sweep <= 0 { sweep += 2 * .pi }
-        if start == end { sweep = clockwise ? -2 * .pi : 2 * .pi }
-        let count = max(8, Int(ceil(abs(sweep) * radius / 0.1)))
-        return (1...count).map { index in
-            let angle = startAngle + sweep * Double(index) / Double(count)
-            return Point2D(x: center.x + cos(angle) * radius, y: center.y + sin(angle) * radius)
-        }
-    }
-
     private func preferredArtwork(for side: GerberSide, in previews: [BoardSidePreview]) -> BoardSidePreview? {
         previews.first {
             guard $0.side == side else { return false }
@@ -413,20 +447,6 @@ public struct BoardRasterizer: Sendable {
 
     private func pixel(_ point: Point2D, bounds: Bounds2D, scale: Double) -> CGPoint {
         CGPoint(x: (point.x - bounds.minimum.x) * scale, y: (point.y - bounds.minimum.y) * scale)
-    }
-
-    private func distance(_ lhs: Point2D, _ rhs: Point2D) -> Double {
-        hypot(lhs.x - rhs.x, lhs.y - rhs.y)
-    }
-
-    private func polygonArea(_ points: [Point2D]) -> Double {
-        guard points.count >= 3 else { return 0 }
-        var area = 0.0
-        for index in points.indices {
-            let next = points[(index + 1) % points.count]
-            area += points[index].x * next.y - next.x * points[index].y
-        }
-        return area / 2
     }
 
     private func makeContext(width: Int, height: Int) -> CGContext? {
@@ -445,4 +465,3 @@ public struct BoardRasterizer: Sendable {
         context.setFillColor(red: color.red, green: color.green, blue: color.blue, alpha: color.alpha)
     }
 }
-

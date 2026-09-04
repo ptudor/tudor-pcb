@@ -33,6 +33,10 @@ import Testing
             #expect(abs(board.bounds.width - 76.2) < 0.01)
             #expect(abs(board.bounds.height - 76.2) < 0.01)
         }
+        if relativePath.contains("Holly-LTC-CORE") {
+            #expect(BoardOutlineExtractor.contours(in: board).count >= 1)
+            #expect(BoardOutlineExtractor.edgePaths(in: board).count >= 30)
+        }
     }
 
     let legacy = appsRoot.appending(path: "eagle-tudor/pcb/_active/hm-10piggy/untitled folder")
