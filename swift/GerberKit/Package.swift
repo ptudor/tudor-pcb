@@ -11,8 +11,10 @@ let package = Package(
         .library(name: "GerberKit", targets: ["GerberKit"])
     ],
     targets: [
-        .target(name: "GerberKit"),
+        .target(
+            name: "GerberKit",
+            linkerSettings: [.linkedLibrary("z")]
+        ),
         .testTarget(name: "GerberKitTests", dependencies: ["GerberKit"])
     ]
 )
-
