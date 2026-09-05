@@ -156,3 +156,93 @@ extension AppSmokeTests {
         XCTAssertNotNil(renderer.indexBuffer)
     }
 }
+
+private enum ControlledOpenError: Error { case failed }
+private actor ControlledPackageLoader {
+    private var requests: [String: CheckedContinuation<BoardDocument, any Error>] = [:]
+    func load(_ url: URL) async throws -> BoardDocument {
+        try await withCheckedThrowingContinuation { requests[url.lastPathComponent] = $0 }
+    }
+    func has(_ name: String) -> Bool { requests[name] != nil }
+    func finish(_ name: String, document: BoardDocument?) {
+        let request = requests.removeValue(forKey: name)
+        if let document { request?.resume(returning: document) }
+        else { request?.resume(throwing: ControlledOpenError.failed) }
+    }
+}
+
+extension AppSmokeTests {
+    @MainActor
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        for _ in 0..<1000 {
+            if condition() { return }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTFail("Timed out waiting for model transition")
+    }
+
+    private func waitForRequest(_ name: String, loader: ControlledPackageLoader) async throws {
+        for _ in 0..<1000 {
+            if await loader.has(name) { return }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTFail("Timed out waiting for \(name)")
+    }
+
+    @MainActor
+    func testPendingOpenOwnsDocumentDespiteOldLayerAndFinishActions() async throws {
+        let loader = ControlledPackageLoader()
+        let model = WorkspaceModel(loadPackage: { try await loader.load($0) }, saveHistory: { _ in })
+        model.historyEntries = []
+        let aLayer = GerberLayer(fileName: "a.gtl", kind: .copper(side: .top, index: nil), primitives: [])
+        let bLayer = GerberLayer(fileName: "b.gbl", kind: .copper(side: .bottom, index: nil), primitives: [])
+        let a = BoardDocument(name: "A", layers: [aLayer])
+        let b = BoardDocument(name: "B", layers: [bLayer], bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 20, y: 5)))
+        model.open(URL(fileURLWithPath: "/private/tmp/A.gtl"))
+        try await waitForRequest("A.gtl", loader: loader)
+        await loader.finish("A.gtl", document: a)
+        try await waitUntil { !model.isLoading }
+        model.open(URL(fileURLWithPath: "/private/tmp/B.gtl"))
+        try await waitForRequest("B.gtl", loader: loader)
+        XCTAssertEqual(model.pendingFileName, "B.gtl")
+        model.toggleLayer(aLayer)
+        model.selectMask(.red)
+        XCTAssertEqual(model.maskStyle, .green) // Affected controls are disabled during replacement.
+        XCTAssertEqual(model.visibleLayerIDs, [aLayer.id])
+        await loader.finish("B.gtl", document: b)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.document, b)
+        XCTAssertEqual(model.visibleLayerIDs, [bLayer.id])
+        XCTAssertEqual(model.textures?.pixelWidth, 2048)
+        XCTAssertEqual(model.textures?.pixelHeight, 512)
+        XCTAssertEqual(Set(model.historyEntries.map(\.name)), ["A", "B"])
+        XCTAssertEqual(model.historyEntries.first?.name, "B")
+    }
+
+    @MainActor
+    func testLastOpenWinsOutOfOrderAndFailureRetainsOldBoard() async throws {
+        let loader = ControlledPackageLoader()
+        let model = WorkspaceModel(loadPackage: { try await loader.load($0) }, saveHistory: { _ in })
+        model.historyEntries = []
+        model.document = BoardDocument(name: "A")
+        model.open(URL(fileURLWithPath: "/private/tmp/B.gtl"))
+        try await waitForRequest("B.gtl", loader: loader)
+        model.open(URL(fileURLWithPath: "/private/tmp/C.gtl"))
+        try await waitForRequest("C.gtl", loader: loader)
+        await loader.finish("C.gtl", document: BoardDocument(name: "C"))
+        try await waitUntil { !model.isLoading }
+        await loader.finish("B.gtl", document: BoardDocument(name: "B"))
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(model.document?.name, "C")
+        XCTAssertEqual(model.historyEntries.map(\.name), ["C"])
+        let previousTextures = try XCTUnwrap(model.textures)
+        model.open(URL(fileURLWithPath: "/private/tmp/B.gtl"))
+        try await waitForRequest("B.gtl", loader: loader)
+        await loader.finish("B.gtl", document: nil)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.document?.name, "C")
+        XCTAssertTrue(model.textures?.top === previousTextures.top)
+        XCTAssertNotNil(model.errorMessage)
+        XCTAssertEqual(model.historyEntries.map(\.name), ["C"])
+    }
+}

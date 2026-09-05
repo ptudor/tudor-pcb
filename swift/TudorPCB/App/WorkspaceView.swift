@@ -18,7 +18,12 @@ struct WorkspaceView: View {
             ZStack {
                 MetalBoardView(document: model.document, textures: model.textures, controller: viewer)
                 if model.document == nil { welcomeOverlay }
-                if model.isLoading { loadingOverlay }
+                if model.isLoading {
+                    VStack {
+                        loadingOverlay
+                        if let pending = model.pendingFileName { Text("Opening \(pending)").foregroundStyle(.white) }
+                    }
+                }
                 if model.document != nil { interactionHint }
             }
             .background(Color(red: 0.025, green: 0.032, blue: 0.04))
@@ -49,7 +54,7 @@ struct WorkspaceView: View {
                             }
                         }
                     }
-                    .disabled(model.document == nil || model.document?.colorSilkscreens.isEmpty == false)
+                    .disabled(model.isOpening || model.document == nil || model.document?.colorSilkscreens.isEmpty == false)
                 }
             }
         }
@@ -279,6 +284,7 @@ struct WorkspaceView: View {
                 }
                 .buttonStyle(.plain)
                 .help(layer.fileName)
+                .disabled(model.isOpening)
             }
         }
     }
