@@ -264,28 +264,27 @@ private struct ParserMachine {
         guard raw.count == texts.count, raw.allSatisfy({ ($0 * format.unitScale).isFinite }) else {
             invalidDefinition(command, "Malformed, nonfinite, or out-of-range modifier."); return
         }
-        // Field-specific unit conversion is corrected separately in RA6X-005.
-        let modifiers = raw.map { $0 * format.unitScale }
+        func dimension(_ index: Int) -> Double { raw[index] * format.unitScale }
         switch shapeName {
         case "C":
             guard (1...3).contains(raw.count), raw.allSatisfy({ $0 >= 0 }) else {
                 invalidDefinition(command, "Circle requires a nonnegative diameter and legal hole dimensions."); return
             }
-            apertures[code] = .circle(diameter: modifiers[0])
+            apertures[code] = .circle(diameter: dimension(0))
         case "R", "O":
             guard (2...4).contains(raw.count), raw.allSatisfy({ $0 >= 0 }), raw[0] > 0, raw[1] > 0 else {
                 invalidDefinition(command, "Rectangle/obround requires positive width and height."); return
             }
             apertures[code] = shapeName == "R"
-                ? .rectangle(width: modifiers[0], height: modifiers[1])
-                : .obround(width: modifiers[0], height: modifiers[1])
+                ? .rectangle(width: dimension(0), height: dimension(1))
+                : .obround(width: dimension(0), height: dimension(1))
         case "P":
             guard (2...5).contains(raw.count), raw[0] > 0,
                   let vertices = Int(texts[1]), (3...12).contains(vertices),
-                  raw.dropFirst(3).allSatisfy({ $0 >= 0 }), modifiers[1] < Double(Int.max) else {
+                  raw.dropFirst(3).allSatisfy({ $0 >= 0 }) else {
                 invalidDefinition(command, "Polygon requires a positive diameter, 3...12 integer vertices, and finite rotation."); return
             }
-            apertures[code] = .polygon(diameter: modifiers[0], vertices: Int(modifiers[1]), rotationDegrees: modifiers.count > 2 ? modifiers[2] : 0)
+            apertures[code] = .polygon(diameter: dimension(0), vertices: vertices, rotationDegrees: raw.count > 2 ? raw[2] : 0)
         default:
             guard let macro = macros[shapeName] else { invalidDefinition(command, "Undefined aperture macro \(shapeName)."); return }
             do {
