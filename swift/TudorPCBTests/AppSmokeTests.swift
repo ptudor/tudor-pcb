@@ -1,5 +1,6 @@
 import XCTest
 import GerberKit
+import MetalKit
 @testable import TudorPCB
 
 final class AppSmokeTests: XCTestCase {
@@ -65,5 +66,22 @@ extension AppSmokeTests {
         }
         XCTAssertTrue(model.errorMessage?.contains("delayed.png") == true)
         XCTAssertEqual(model.document, original)
+    }
+}
+
+
+extension AppSmokeTests {
+    @MainActor
+    func testMeshPreservesPhysicalThicknessAcrossBoardSizes() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let renderer = try BoardRenderer(device: device, colorPixelFormat: .bgra8Unorm_srgb, depthPixelFormat: .depth32Float)
+        let textures = try BoardRasterizer().render(BoardDocument(name: "texture"), options: .init(maximumTextureDimension: 256))
+        for size in [50.0, 100.0, 200.0] {
+            let board = BoardDocument(name: "board-\(size)", bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: size, y: size / 2)), thicknessMillimeters: 1.6)
+            renderer.update(document: board, textures: textures)
+            let buffer = try XCTUnwrap(renderer.vertexBuffer)
+            let vertices = buffer.contents().assumingMemoryBound(to: BoardRenderer.BoardVertex.self)
+            XCTAssertEqual(Double(vertices[0].position.y - vertices[4].position.y) * size, 1.6, accuracy: 0.00001)
+        }
     }
 }

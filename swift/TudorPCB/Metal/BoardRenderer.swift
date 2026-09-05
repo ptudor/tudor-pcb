@@ -25,7 +25,7 @@ final class BoardRenderer {
         case bufferAllocation
     }
 
-    private struct BoardVertex {
+    struct BoardVertex {
         var position: SIMD3<Float>
         var normal: SIMD3<Float>
         var uv: SIMD2<Float>
@@ -44,7 +44,7 @@ final class BoardRenderer {
     private let pipeline: MTLRenderPipelineState
     private let depthState: MTLDepthStencilState
     private let sampler: MTLSamplerState
-    private var vertexBuffer: MTLBuffer?
+    private(set) var vertexBuffer: MTLBuffer?
     private var indexBuffer: MTLBuffer?
     private var indexCount = 0
     private var topTexture: MTLTexture?
@@ -204,10 +204,11 @@ final class BoardRenderer {
     }
 
     private func buildMesh(for document: BoardDocument) throws {
+        try document.validateForRendering()
         let longest = Float(max(document.bounds.width, document.bounds.height, 0.001))
         let halfWidth = Float(document.bounds.width) / longest / 2
         let halfDepth = Float(document.bounds.height) / longest / 2
-        let halfHeight = max(Float(document.thicknessMillimeters) / longest / 2, 0.008)
+        let halfHeight = Float(document.thicknessMillimeters) / longest / 2
         let yTop = halfHeight
         let yBottom = -halfHeight
 

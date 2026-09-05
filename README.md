@@ -63,3 +63,10 @@ swift test
 
 The generated Xcode project is intentionally ignored. Edit `swift/project.yml`,
 then regenerate it with XcodeGen.
+
+For zero-width routed outline strokes, raster mask inference uses a 0.7-pixel
+barrier solely to infer board fill. Copper strokes keep their physical width;
+zero-size copper is invisible. The 3D mesh uses the specified board thickness
+without display exaggeration. Rendering rejects nonfinite/reversed bounds,
+nonpositive thickness, and dimensions outside the supported 0.000001–1000000 mm
+range with a recoverable geometry error.

@@ -73,9 +73,9 @@ public struct BoardRasterizer: Sendable {
     public init() { }
 
     public func render(_ document: BoardDocument, options: BoardRenderOptions = .init()) throws -> BoardTextureSet {
-        try GeometryLimits.validate(document)
+        try document.validateForRendering()
         let bounds = document.bounds
-        let longestSide = max(bounds.width, bounds.height, 0.001)
+        let longestSide = max(bounds.width, bounds.height)
         let dimension = min(max(options.maximumTextureDimension, 256), 4_096)
         let scale = Double(dimension) / longestSide
         let width = max(8, Int(ceil(bounds.width * scale)))
@@ -223,7 +223,7 @@ public struct BoardRasterizer: Sendable {
             // intentionally emitted as unordered, open segments around tabs.
             for layer in outlineLayers {
                 for primitive in layer.primitives where primitive.polarity == .dark {
-                    draw(primitive, in: context, bounds: bounds, scale: scale)
+                    draw(primitive, in: context, bounds: bounds, scale: scale, outlineBarrier: true)
                 }
             }
             floodOutlineInterior(context: context, width: width, height: height)
@@ -317,7 +317,7 @@ public struct BoardRasterizer: Sendable {
         } / 2
     }
 
-    private func draw(_ primitive: GerberPrimitive, in context: CGContext, bounds: Bounds2D, scale: Double) {
+    private func draw(_ primitive: GerberPrimitive, in context: CGContext, bounds: Bounds2D, scale: Double, outlineBarrier: Bool = false) {
         context.saveGState()
         context.setBlendMode(primitive.polarity == .dark ? .normal : .clear)
         context.setFillColor(gray: 1, alpha: 1)
@@ -327,12 +327,18 @@ public struct BoardRasterizer: Sendable {
 
         switch primitive {
         case let .line(start, end, width, _):
-            context.setLineWidth(max(0.7, width * scale))
+            // The raster flood-fill barrier is an explicit outline-only inference;
+            // physical copper strokes use their actual width (zero draws nothing).
+            guard outlineBarrier || width > 0 else { context.restoreGState(); return }
+            context.setLineWidth(outlineBarrier ? max(0.7, width * scale) : width * scale)
             context.move(to: pixel(start, bounds: bounds, scale: scale))
             context.addLine(to: pixel(end, bounds: bounds, scale: scale))
             context.strokePath()
         case let .arc(start, end, center, clockwise, width, _):
-            context.setLineWidth(max(0.7, width * scale))
+            // The raster flood-fill barrier is an explicit outline-only inference;
+            // physical copper strokes use their actual width (zero draws nothing).
+            guard outlineBarrier || width > 0 else { context.restoreGState(); return }
+            context.setLineWidth(outlineBarrier ? max(0.7, width * scale) : width * scale)
             let path = CGMutablePath()
             path.move(to: pixel(start, bounds: bounds, scale: scale))
             let centerPixel = pixel(center, bounds: bounds, scale: scale)

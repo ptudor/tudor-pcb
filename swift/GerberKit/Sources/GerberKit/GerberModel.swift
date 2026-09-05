@@ -68,8 +68,8 @@ public enum ApertureShape: Sendable, Hashable, Codable {
         case let .rectangle(width, height), let .obround(width, height): return (width, height)
         case let .polygon(diameter, _, _): return (diameter, diameter)
         case let .custom(points):
-            guard let bounds = Bounds2D.containing(points) else { return (0.2, 0.2) }
-            return (max(bounds.width, 0.001), max(bounds.height, 0.001))
+            guard let bounds = Bounds2D.containing(points) else { return (0, 0) }
+            return (bounds.width, bounds.height)
         }
     }
 }
@@ -100,6 +100,10 @@ public enum GerberPrimitive: Sendable, Hashable, Codable {
             )
             return circle.union(Bounds2D.containing([start, end]) ?? circle).expanded(by: width / 2)
         case let .flash(center, shape, _):
+            if case let .custom(points) = shape {
+                guard let local = Bounds2D.containing(points) else { return nil }
+                return Bounds2D(minimum: local.minimum + center, maximum: local.maximum + center)
+            }
             let size = shape.dimensions
             return Bounds2D(
                 minimum: Point2D(x: center.x - size.width / 2, y: center.y - size.height / 2),

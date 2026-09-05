@@ -70,3 +70,27 @@ public struct Bounds2D: Sendable, Hashable, Codable {
     }
 }
 
+
+
+public enum BoardGeometryError: Error, LocalizedError, Sendable {
+    case invalidBounds
+    case invalidThickness
+    public var errorDescription: String? {
+        switch self {
+        case .invalidBounds: "Board bounds must be finite and ordered, with each dimension between 0.000001 and 1000000 mm."
+        case .invalidThickness: "Board thickness must be finite, positive, and at most 1000000 mm."
+        }
+    }
+}
+
+extension BoardDocument {
+    public func validateForRendering() throws {
+        let b = bounds
+        guard [b.minimum.x, b.minimum.y, b.maximum.x, b.maximum.y].allSatisfy({ $0.isFinite && abs($0) <= GeometryLimits.coordinateMagnitude }),
+              (0.000_001...GeometryLimits.coordinateMagnitude).contains(b.width),
+              (0.000_001...GeometryLimits.coordinateMagnitude).contains(b.height) else { throw BoardGeometryError.invalidBounds }
+        guard thicknessMillimeters.isFinite, thicknessMillimeters > 0,
+              thicknessMillimeters <= GeometryLimits.coordinateMagnitude else { throw BoardGeometryError.invalidThickness }
+        try GeometryLimits.validate(self)
+    }
+}
