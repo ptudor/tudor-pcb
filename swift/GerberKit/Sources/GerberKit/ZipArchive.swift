@@ -37,9 +37,16 @@ public struct ZipArchiveReader: Sendable {
     private static let maximumEntrySize = 192 * 1_024 * 1_024
     private static let maximumArchiveSize = 768 * 1_024 * 1_024
 
-    public init() { }
+    private let limits: ImportLimits
+    public init(limits: ImportLimits = .init()) { self.limits = limits }
 
     public func read(_ archive: Data) throws -> [ZipEntry] {
+        var budget = ImportBudget(limits: limits)
+        try budget.input(archive.count, path: "ZIP", isArchive: true)
+        return try read(archive, budget: &budget, path: "ZIP")
+    }
+
+    func read(_ archive: Data, budget: inout ImportBudget, path: String) throws -> [ZipEntry] {
         guard let eocd = endOfCentralDirectory(in: archive) else {
             throw ZipArchiveError.invalidArchive
         }
@@ -76,6 +83,7 @@ public struct ZipArchiveReader: Sendable {
                 ?? "unnamed-entry"
             cursor = recordEnd
 
+            try budget.file(path: path + "/" + name)
             if name.hasSuffix("/") { continue }
             guard flags & 0x0001 == 0 else { throw ZipArchiveError.encryptedEntry(name) }
             guard uncompressedSize <= Self.maximumEntrySize,
@@ -91,6 +99,19 @@ public struct ZipArchiveReader: Sendable {
             let dataOffset = localOffset + 30 + localNameLength + localExtraLength
             guard dataOffset >= 0, dataOffset + compressedSize <= archive.count else {
                 throw ZipArchiveError.invalidArchive
+            }
+            // Stored entries must agree before copying any payload.
+            guard method != 0 || compressedSize == uncompressedSize else {
+                throw ZipArchiveError.invalidArchive
+            }
+            try budget.checkFileSize(uncompressedSize, path: path + "/" + name)
+            try budget.checkFileSize(compressedSize, path: path + "/" + name)
+            try budget.charge("compressed bytes", compressedSize, maximum: budget.limits.compressedBytes, path: path)
+            try budget.charge("expanded bytes", uncompressedSize, maximum: budget.limits.expandedBytes, path: path)
+            try budget.charge("allocations", compressedSize, maximum: budget.limits.allocationBytes, path: path)
+            // Deflate scratch plus the retained Data result can coexist.
+            for _ in 0..<2 {
+                try budget.charge("allocations", uncompressedSize, maximum: budget.limits.allocationBytes, path: path)
             }
             let compressed = archive.subdata(in: dataOffset..<(dataOffset + compressedSize))
             let payload: Data
@@ -149,7 +170,7 @@ public struct ZipArchiveReader: Sendable {
                 return inflate(&stream, Z_FINISH)
             }
         }
-        guard result == Z_STREAM_END else { throw ZipArchiveError.decompressionFailed(name, result) }
+        guard result == Z_STREAM_END, stream.total_in == compressed.count else { throw ZipArchiveError.decompressionFailed(name, result) }
         return Data(output.prefix(Int(stream.total_out)))
     }
 }

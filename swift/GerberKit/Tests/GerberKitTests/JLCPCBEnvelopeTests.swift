@@ -79,7 +79,7 @@ private func jlcLayer(_ name: String, body: String) -> Data {
     """.utf8)
 }
 
-private func storedZIP(_ files: [(name: String, data: Data)]) -> Data {
+func storedZIP(_ files: [(name: String, data: Data)]) -> Data {
     var archive = Data()
     var directory = Data()
 

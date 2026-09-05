@@ -4,6 +4,13 @@ public struct ExcellonParser: Sendable {
     public init() { }
 
     public func parse(data: Data, fileName: String) throws -> [DrillHit] {
+        var budget = ImportBudget(limits: .init())
+        try budget.input(data.count, path: fileName)
+        try budget.decodedText(data.count, path: fileName)
+        return try parse(data: data, fileName: fileName, budget: &budget)
+    }
+
+    func parse(data: Data, fileName: String, budget: inout ImportBudget) throws -> [DrillHit] {
         guard let source = String(data: data, encoding: .utf8)
             ?? String(data: data, encoding: .ascii) else {
             throw GerberParseError.textEncoding
@@ -22,6 +29,7 @@ public struct ExcellonParser: Sendable {
         var result: [DrillHit] = []
 
         for sourceLine in source.split(whereSeparator: \.isNewline) {
+            try Task.checkCancellation()
             let line = sourceLine.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             guard !line.isEmpty, !line.hasPrefix(";") else { continue }
 
@@ -69,6 +77,9 @@ public struct ExcellonParser: Sendable {
             }.map { $0 * unitScale } ?? current.y
             current = Point2D(x: x, y: y)
             let diameter = selectedTool.flatMap { tools[$0] } ?? 0.3
+            try budget.charge("geometry objects", 1, maximum: budget.limits.geometryObjects, path: fileName)
+            try budget.charge("geometry points", 1, maximum: budget.limits.geometryPoints, path: fileName)
+            try budget.charge("allocations", 128, maximum: budget.limits.allocationBytes, path: fileName)
             result.append(DrillHit(center: current, diameter: diameter, plated: plated))
         }
 

@@ -18,13 +18,27 @@ public struct GerberParser: Sendable {
     public init() { }
 
     public func parse(data: Data, fileName: String) throws -> GerberLayer {
+        var budget = ImportBudget(limits: .init())
+        try budget.input(data.count, path: fileName)
+        try budget.decodedText(data.count, path: fileName)
+        return try parse(data: data, fileName: fileName, budget: &budget)
+    }
+
+    func parse(data: Data, fileName: String, budget: inout ImportBudget) throws -> GerberLayer {
         guard let source = String(data: data, encoding: .utf8)
             ?? String(data: data, encoding: .ascii) else {
             throw GerberParseError.textEncoding
         }
 
         var machine = ParserMachine(fileName: fileName, source: source)
+        machine.maximumObjects = min(budget.remaining("geometry objects", maximum: budget.limits.geometryObjects), budget.remaining("allocations", maximum: budget.limits.allocationBytes) / 256)
+        machine.maximumPoints = min(budget.remaining("geometry points", maximum: budget.limits.geometryPoints), budget.remaining("allocations", maximum: budget.limits.allocationBytes) / 32)
         machine.consume(source)
+        if let failure = machine.failure { throw failure }
+        try budget.charge("geometry objects", machine.primitives.count, maximum: budget.limits.geometryObjects, path: fileName)
+        try budget.charge("geometry points", machine.pointCount, maximum: budget.limits.geometryPoints, path: fileName)
+        try budget.charge("allocations", machine.primitives.count * 128, maximum: budget.limits.allocationBytes, path: fileName)
+        try budget.charge("allocations", machine.pointCount * 16, maximum: budget.limits.allocationBytes, path: fileName)
         guard !machine.primitives.isEmpty else {
             throw GerberParseError.missingGeometry(fileName)
         }
@@ -105,6 +119,10 @@ private struct ParserMachine {
     var stepRepeat = StepRepeat()
     var primitives: [GerberPrimitive] = []
     var regionContours: [[Point2D]]?
+    var failure: (any Error)?
+    var maximumObjects = 1_000_000
+    var maximumPoints = 4_000_000
+    var pointCount = 0
 
     init(fileName: String, source: String) {
         self.fileName = fileName
@@ -120,6 +138,8 @@ private struct ParserMachine {
         }
 
         for character in source {
+            if failure != nil { return }
+            if Task.isCancelled { failure = CancellationError(); return }
             if character == "%" {
                 if isExtended {
                     consumeExtended(cleaned(buffer))
@@ -360,8 +380,26 @@ private struct ParserMachine {
     }
 
     mutating func append(_ primitive: GerberPrimitive) {
+        let (copies, overflow) = stepRepeat.xCount.multipliedReportingOverflow(by: stepRepeat.yCount)
+        guard !overflow, copies <= maximumObjects - primitives.count else {
+            failure = ImportLimitError(resource: "geometry objects", path: fileName); return
+        }
+        let points: Int
+        switch primitive {
+        case .line: points = 2
+        case .arc: points = 3
+        case let .flash(_, shape, _):
+            if case let .custom(vertices) = shape { points = vertices.count } else { points = 1 }
+        case let .region(contours, _): points = contours.reduce(0) { $0 + $1.count }
+        }
+        let (addedPoints, pointOverflow) = copies.multipliedReportingOverflow(by: points)
+        guard !pointOverflow, addedPoints <= maximumPoints - pointCount else {
+            failure = ImportLimitError(resource: "geometry points", path: fileName); return
+        }
+        pointCount += addedPoints
         for x in 0..<stepRepeat.xCount {
             for y in 0..<stepRepeat.yCount {
+                if Task.isCancelled { failure = CancellationError(); return }
                 primitives.append(Self.translate(
                     primitive,
                     by: Point2D(x: Double(x) * stepRepeat.xStep, y: Double(y) * stepRepeat.yStep)

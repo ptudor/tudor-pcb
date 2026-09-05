@@ -18,46 +18,63 @@ public enum FabricationPackageError: Error, LocalizedError, Sendable {
 }
 
 public struct FabricationPackageLoader: Sendable {
-    private static let maximumNestedDepth = 3
-    private static let maximumNestedArchives = 12
-    private static let maximumNestedExpandedBytes = 768 * 1_024 * 1_024
-
-    public init() { }
+    private let limits: ImportLimits
+    public init(limits: ImportLimits = .init()) { self.limits = limits }
 
     public func load(from url: URL) throws -> BoardDocument {
+        var budget = ImportBudget(limits: limits)
         let values = try url.resourceValues(forKeys: [.isDirectoryKey])
         let files: [ZipEntry]
         if values.isDirectory == true {
-            files = try filesInDirectory(url)
+            files = try filesInDirectory(url, budget: &budget)
         } else if url.pathExtension.lowercased() == "zip" {
-            files = try ZipArchiveReader().read(Data(contentsOf: url, options: .mappedIfSafe))
-                + sidecarImages(beside: url)
+            let data = try readFile(url, budget: &budget, isArchive: true)
+            files = try ZipArchiveReader().read(data, budget: &budget, path: url.lastPathComponent)
+                + sidecarImages(beside: url, budget: &budget)
         } else {
-            files = [ZipEntry(name: url.lastPathComponent, data: try Data(contentsOf: url, options: .mappedIfSafe))]
+            try budget.file(path: url.path)
+            files = [ZipEntry(name: url.lastPathComponent, data: try readFile(url, budget: &budget))]
         }
-        return try load(files: files, name: url.deletingPathExtension().lastPathComponent)
+        return try loadContainer(files: files, name: url.deletingPathExtension().lastPathComponent, depth: 0, budget: &budget)
     }
 
     public func load(files: [ZipEntry], name: String) throws -> BoardDocument {
-        var budget = NestedArchiveBudget()
+        var budget = ImportBudget(limits: limits)
+        for file in files {
+            try budget.file(path: file.name)
+            try budget.input(file.data.count, path: file.name, isArchive: file.name.lowercased().hasSuffix(".zip"))
+        }
         return try loadContainer(files: files, name: name, depth: 0, budget: &budget)
+    }
+
+    private func readFile(_ url: URL, budget: inout ImportBudget, isArchive: Bool = false) throws -> Data {
+        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        try budget.input(size, path: url.path, isArchive: isArchive)
+        // Read only the preflighted length plus one byte, so a growing file cannot
+        // bypass the budget between stat and read.
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        guard size < Int.max else { throw ImportLimitError(resource: "input bytes", path: url.path) }
+        let data = try handle.read(upToCount: size + 1) ?? Data()
+        guard data.count <= size else { throw ImportLimitError(resource: "file changed during read", path: url.path) }
+        return data
     }
 
     private func loadContainer(
         files: [ZipEntry],
         name: String,
         depth: Int,
-        budget: inout NestedArchiveBudget
+        budget: inout ImportBudget
     ) throws -> BoardDocument {
         if let envelope = jlcpcbProductionEnvelope(in: files) {
-            var document = try loadFlat(files: envelope.productionFiles, name: name)
+            var document = try loadFlat(files: envelope.productionFiles, name: name, budget: &budget)
             document.packageRole = .jlcpcbProduction
             document.enclosedSourceArchives = envelope.originalArchives
             return document
         }
 
         do {
-            var document = try loadFlat(files: files, name: name)
+            var document = try loadFlat(files: files, name: name, budget: &budget)
             if document.layers.contains(where: {
                 $0.sourceGenerator?.localizedCaseInsensitiveContains("jlccam") == true
             }) {
@@ -65,7 +82,7 @@ public struct FabricationPackageLoader: Sendable {
             }
             return document
         } catch FabricationPackageError.noSupportedLayers {
-            guard depth < Self.maximumNestedDepth else {
+            guard depth < limits.archiveDepth else {
                 throw FabricationPackageError.nestedArchiveLimit
             }
         }
@@ -77,22 +94,23 @@ public struct FabricationPackageLoader: Sendable {
 
         var candidates: [(name: String, document: BoardDocument, score: Int)] = []
         for archive in nested {
-            budget.archiveCount += 1
-            guard budget.archiveCount <= Self.maximumNestedArchives else {
-                throw FabricationPackageError.nestedArchiveLimit
-            }
-            guard let entries = try? ZipArchiveReader().read(archive.data) else { continue }
-            budget.expandedBytes += entries.reduce(0) { $0 + $1.data.count }
-            guard budget.expandedBytes <= Self.maximumNestedExpandedBytes else {
-                throw FabricationPackageError.nestedArchiveLimit
-            }
+            try budget.charge("nested archives", 1, maximum: limits.archives, path: archive.name)
+            let entries: [ZipEntry]
+            do {
+                entries = try ZipArchiveReader().read(archive.data, budget: &budget, path: archive.name)
+            } catch let error as ImportLimitError { throw error }
+              catch is CancellationError { throw CancellationError() }
+              catch { continue }
             let archiveName = URL(fileURLWithPath: archive.name).deletingPathExtension().lastPathComponent
-            guard var document = try? loadContainer(
+            var document: BoardDocument
+            do { document = try loadContainer(
                 files: entries,
                 name: archiveName,
                 depth: depth + 1,
                 budget: &budget
-            ) else { continue }
+            ) } catch let error as ImportLimitError { throw error }
+                catch is CancellationError { throw CancellationError() }
+                catch { continue }
             if document.packageRole == .direct {
                 document.packageRole = .nestedArchive
             }
@@ -113,7 +131,7 @@ public struct FabricationPackageLoader: Sendable {
         return selection.document
     }
 
-    private func loadFlat(files: [ZipEntry], name: String) throws -> BoardDocument {
+    private func loadFlat(files: [ZipEntry], name: String, budget: inout ImportBudget) throws -> BoardDocument {
         let gerberParser = GerberParser()
         let drillParser = ExcellonParser()
         var layers: [GerberLayer] = []
@@ -125,12 +143,19 @@ public struct FabricationPackageLoader: Sendable {
         for file in files.sorted(by: { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) {
             let contents = String(decoding: file.data.prefix(8_192), as: UTF8.self)
             let kind = LayerClassifier.classify(fileName: file.name, contents: contents)
+            let isDrill: Bool
+            if case .drill = kind { isDrill = true } else { isDrill = false }
+            if isDrill || LayerClassifier.isGerber(file.name, contents: contents) {
+                try budget.decodedText(file.data.count, path: file.name)
+            }
             if isJLCCamDrill(file.name, contents: contents) {
                 do {
-                    let drillLayer = try gerberParser.parse(data: file.data, fileName: file.name)
+                    let drillLayer = try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget)
                     layers.append(drillLayer)
                     drills += drillHits(from: drillLayer)
-                } catch {
+                } catch let error as ImportLimitError { throw error }
+                  catch is CancellationError { throw CancellationError() }
+                  catch {
                     warnings.append("\(file.name): \(error.localizedDescription)")
                 }
                 continue
@@ -145,8 +170,10 @@ public struct FabricationPackageLoader: Sendable {
                 ))
             case .drill:
                 do {
-                    drills += try drillParser.parse(data: file.data, fileName: file.name)
-                } catch {
+                    drills += try drillParser.parse(data: file.data, fileName: file.name, budget: &budget)
+                } catch let error as ImportLimitError { throw error }
+                  catch is CancellationError { throw CancellationError() }
+                  catch {
                     warnings.append("\(file.name): \(error.localizedDescription)")
                 }
             default:
@@ -155,10 +182,12 @@ public struct FabricationPackageLoader: Sendable {
                     previews.append(BoardSidePreview(side: side, fileName: file.name, imageData: file.data))
                 } else if LayerClassifier.isGerber(file.name, contents: contents) {
                     do {
-                        layers.append(try gerberParser.parse(data: file.data, fileName: file.name))
+                        layers.append(try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget))
                     } catch GerberParseError.missingGeometry where kind == .documentation || kind == .other {
                         // Empty documentation and auxiliary Gerbers are common and harmless.
-                    } catch {
+                    } catch let error as ImportLimitError { throw error }
+                      catch is CancellationError { throw CancellationError() }
+                      catch {
                         warnings.append("\(file.name): \(error.localizedDescription)")
                     }
                 }
@@ -197,46 +226,51 @@ public struct FabricationPackageLoader: Sendable {
         )
     }
 
-    private func filesInDirectory(_ directory: URL) throws -> [ZipEntry] {
-        let keys: [URLResourceKey] = [.isRegularFileKey, .fileSizeKey]
+    private func filesInDirectory(_ directory: URL, budget: inout ImportBudget) throws -> [ZipEntry] {
+        let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .fileSizeKey]
         guard let enumerator = FileManager.default.enumerator(
-            at: directory,
-            includingPropertiesForKeys: keys,
+            at: directory, includingPropertiesForKeys: keys,
             options: [.skipsHiddenFiles, .skipsPackageDescendants]
         ) else { return [] }
         var files: [ZipEntry] = []
         for case let fileURL as URL in enumerator {
+            try Task.checkCancellation()
+            guard enumerator.level <= limits.directoryDepth else {
+                throw ImportLimitError(resource: "directory depth", path: fileURL.path)
+            }
             let values = try fileURL.resourceValues(forKeys: Set(keys))
-            guard values.isRegularFile == true, (values.fileSize ?? 0) <= 192 * 1_024 * 1_024 else { continue }
+            guard values.isRegularFile == true, !isKnownIrrelevant(fileURL) else { continue }
+            try budget.file(path: fileURL.path)
             files.append(ZipEntry(
-                name: fileURL.path.replacingOccurrences(of: directory.path + "/", with: ""),
-                data: try Data(contentsOf: fileURL, options: .mappedIfSafe)
+                name: String(fileURL.path.dropFirst(directory.path.count + 1)),
+                data: try readFile(fileURL, budget: &budget, isArchive: fileURL.pathExtension.lowercased() == "zip")
             ))
         }
         return files
     }
 
-    private func sidecarImages(beside archive: URL) -> [ZipEntry] {
+    private func isKnownIrrelevant(_ url: URL) -> Bool {
+        ["pdf", "md", "html", "htm", "json", "yaml", "yml", "step", "stp", "iges", "stl", "ddw", "tgz", "gz", "7z"]
+            .contains(url.pathExtension.lowercased())
+    }
+
+    private func sidecarImages(beside archive: URL, budget: inout ImportBudget) throws -> [ZipEntry] {
         let parent = archive.deletingLastPathComponent()
         let stem = archive.deletingPathExtension().lastPathComponent
             .replacingOccurrences(of: "_Gerbers", with: "", options: .caseInsensitive)
             .replacingOccurrences(of: "-Gerbers", with: "", options: .caseInsensitive)
         guard let candidates = try? FileManager.default.contentsOfDirectory(
-            at: parent,
-            includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey],
-            options: [.skipsHiddenFiles]
+            at: parent, includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey], options: [.skipsHiddenFiles]
         ) else { return [] }
-
-        return candidates.compactMap { candidate in
+        var result: [ZipEntry] = []
+        for candidate in candidates {
             let name = candidate.lastPathComponent
-            guard name.localizedCaseInsensitiveContains(stem),
-                  previewSide(for: name) != nil,
-                  isImage(name),
-                  let values = try? candidate.resourceValues(forKeys: [.fileSizeKey]),
-                  (values.fileSize ?? 0) <= 48 * 1_024 * 1_024,
-                  let data = try? Data(contentsOf: candidate, options: .mappedIfSafe) else { return nil }
-            return ZipEntry(name: name, data: data)
+            guard name.localizedCaseInsensitiveContains(stem), previewSide(for: name) != nil, isImage(name),
+                  try candidate.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else { continue }
+            try budget.file(path: candidate.path)
+            result.append(ZipEntry(name: name, data: try readFile(candidate, budget: &budget)))
         }
+        return result
     }
 
     private func previewSide(for fileName: String) -> GerberSide? {
@@ -315,11 +349,6 @@ public struct FabricationPackageLoader: Sendable {
         if document.layers.contains(where: { $0.kind == .copper(side: .bottom, index: nil) }) { score += 200 }
         return score
     }
-}
-
-private struct NestedArchiveBudget {
-    var archiveCount = 0
-    var expandedBytes = 0
 }
 
 private struct JLCPCBEnvelope {
