@@ -99,7 +99,8 @@ public struct FabricationPackageLoader: Sendable {
             do {
                 entries = try ZipArchiveReader().read(archive.data, budget: &budget, path: archive.name)
             } catch let error as ImportLimitError { throw error }
-              catch is CancellationError { throw CancellationError() }
+              catch let error as GeometryLimitError { throw error }
+                  catch is CancellationError { throw CancellationError() }
               catch { continue }
             let archiveName = URL(fileURLWithPath: archive.name).deletingPathExtension().lastPathComponent
             var document: BoardDocument
@@ -109,7 +110,8 @@ public struct FabricationPackageLoader: Sendable {
                 depth: depth + 1,
                 budget: &budget
             ) } catch let error as ImportLimitError { throw error }
-                catch is CancellationError { throw CancellationError() }
+                catch let error as GeometryLimitError { throw error }
+                  catch is CancellationError { throw CancellationError() }
                 catch { continue }
             if document.packageRole == .direct {
                 document.packageRole = .nestedArchive
@@ -154,6 +156,7 @@ public struct FabricationPackageLoader: Sendable {
                     layers.append(drillLayer)
                     drills += drillHits(from: drillLayer)
                 } catch let error as ImportLimitError { throw error }
+                  catch let error as GeometryLimitError { throw error }
                   catch is CancellationError { throw CancellationError() }
                   catch {
                     warnings.append("\(file.name): \(error.localizedDescription)")
@@ -172,6 +175,7 @@ public struct FabricationPackageLoader: Sendable {
                 do {
                     drills += try drillParser.parse(data: file.data, fileName: file.name, budget: &budget)
                 } catch let error as ImportLimitError { throw error }
+                  catch let error as GeometryLimitError { throw error }
                   catch is CancellationError { throw CancellationError() }
                   catch {
                     warnings.append("\(file.name): \(error.localizedDescription)")
@@ -186,7 +190,8 @@ public struct FabricationPackageLoader: Sendable {
                     } catch GerberParseError.missingGeometry where kind == .documentation || kind == .other {
                         // Empty documentation and auxiliary Gerbers are common and harmless.
                     } catch let error as ImportLimitError { throw error }
-                      catch is CancellationError { throw CancellationError() }
+                      catch let error as GeometryLimitError { throw error }
+                  catch is CancellationError { throw CancellationError() }
                       catch {
                         warnings.append("\(file.name): \(error.localizedDescription)")
                     }

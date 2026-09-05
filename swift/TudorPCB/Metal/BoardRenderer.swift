@@ -97,11 +97,14 @@ final class BoardRenderer {
         self.sampler = sampler
     }
 
+    private(set) var geometryError: (any Error)?
+
     func update(document: BoardDocument?, textures: BoardTextureSet?) {
         guard let document, let textures else { return }
         let textureIdentity = ObjectIdentifier(textures.top)
         if lastDocumentName != document.name {
-            buildMesh(for: document)
+            do { try buildMesh(for: document); geometryError = nil }
+            catch { geometryError = error; return }
             lastDocumentName = document.name
             apply(.perspective)
         }
@@ -200,7 +203,7 @@ final class BoardRenderer {
         commandBuffer.commit()
     }
 
-    private func buildMesh(for document: BoardDocument) {
+    private func buildMesh(for document: BoardDocument) throws {
         let longest = Float(max(document.bounds.width, document.bounds.height, 0.001))
         let halfWidth = Float(document.bounds.width) / longest / 2
         let halfDepth = Float(document.bounds.height) / longest / 2
@@ -234,7 +237,7 @@ final class BoardRenderer {
         ])
 
         let edgeUV = Array(repeating: SIMD2<Float>(0.5, 0.5), count: 4)
-        for edgePath in BoardOutlineExtractor.edgePaths(in: document) where edgePath.count >= 2 {
+        for edgePath in try BoardOutlineExtractor.edgePaths(in: document) where edgePath.count >= 2 {
             for index in 0..<(edgePath.count - 1) {
                 let p0 = worldPoint(edgePath[index])
                 let p1 = worldPoint(edgePath[index + 1])

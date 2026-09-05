@@ -48,8 +48,8 @@ final class OptionalProductionCorpusTests: XCTestCase {
     func testLTCCore() throws {
         let board = try load("hollytimecode/pcb/holly-ltc-core/release/2026/09/03/Holly-LTC-CORE_Gerbers.zip")
         checkProduction(board)
-        XCTAssertGreaterThanOrEqual(BoardOutlineExtractor.contours(in: board).count, 1)
-        XCTAssertGreaterThanOrEqual(BoardOutlineExtractor.edgePaths(in: board).count, 30)
+        XCTAssertGreaterThanOrEqual(try BoardOutlineExtractor.contours(in: board).count, 1)
+        XCTAssertGreaterThanOrEqual(try BoardOutlineExtractor.edgePaths(in: board).count, 30)
     }
 
     func testLTCDisplay() throws {

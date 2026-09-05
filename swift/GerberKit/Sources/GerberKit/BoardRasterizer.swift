@@ -73,6 +73,7 @@ public struct BoardRasterizer: Sendable {
     public init() { }
 
     public func render(_ document: BoardDocument, options: BoardRenderOptions = .init()) throws -> BoardTextureSet {
+        try GeometryLimits.validate(document)
         let bounds = document.bounds
         let longestSide = max(bounds.width, bounds.height, 0.001)
         let dimension = min(max(options.maximumTextureDimension, 256), 4_096)
@@ -133,7 +134,7 @@ public struct BoardRasterizer: Sendable {
            let preview = preferredArtwork(for: side, in: document.sidePreviews),
            let source = CGImageSourceCreateWithData(preview.imageData as CFData, nil),
            let image = CGImageSourceCreateImageAtIndex(source, 0, nil) {
-            let artworkBounds = BoardOutlineExtractor.contours(in: document)
+            let artworkBounds = try BoardOutlineExtractor.contours(in: document)
                 .compactMap(Bounds2D.containing)
                 .max { $0.width * $0.height < $1.width * $1.height }
                 ?? bounds
@@ -230,7 +231,7 @@ public struct BoardRasterizer: Sendable {
 
             // An enclosed contour nested inside a larger contour is a routed
             // cutout rather than another island of substrate.
-            let contours = BoardOutlineExtractor.contours(in: document)
+            let contours = try BoardOutlineExtractor.contours(in: document)
             for contour in contours where contourIsNested(contour, among: contours) {
                 let path = CGMutablePath()
                 path.move(to: pixel(contour[0], bounds: bounds, scale: scale))

@@ -126,6 +126,7 @@ private struct ParserMachine {
     var maximumObjects = 1_000_000
     var maximumPoints = 4_000_000
     var pointCount = 0
+    var pendingRegionPoints = 0
 
     init(fileName: String, source: String) {
         self.fileName = fileName
@@ -236,6 +237,10 @@ private struct ParserMachine {
                       values.count == 6 + count * 2 else {
                     invalidDefinition(primitive, "Outline macro requires 3...5000 vertices and complete coordinates/rotation."); return
                 }
+                guard count + 1 <= maximumPoints - pointCount else {
+                    failure = GeometryLimitError(resource: "macro contour points", context: fileName); return
+                }
+                pointCount += count + 1
                 var local: [Point2D] = []
                 for index in 0...count {
                     guard let x = Self.decimal(values[3 + index * 2]),
@@ -309,15 +314,20 @@ private struct ParserMachine {
     }
 
     mutating func parseStepRepeat(_ command: String) {
-        if command == "SR" {
-            stepRepeat = StepRepeat()
-            return
-        }
+        if command == "SR" { stepRepeat = StepRepeat(); return }
         let fields = Self.fields(in: String(command.dropFirst(2)))
-        stepRepeat.xCount = max(1, fields.firstValue(for: "X").flatMap(Int.init) ?? 1)
-        stepRepeat.yCount = max(1, fields.firstValue(for: "Y").flatMap(Int.init) ?? 1)
-        stepRepeat.xStep = Double(fields.firstValue(for: "I") ?? "0").map { $0 * format.unitScale } ?? 0
-        stepRepeat.yStep = Double(fields.firstValue(for: "J") ?? "0").map { $0 * format.unitScale } ?? 0
+        guard let x = Int(fields.firstValue(for: "X") ?? "1"),
+              let y = Int(fields.firstValue(for: "Y") ?? "1"), x > 0, y > 0,
+              x <= GeometryLimits.repeats, y <= GeometryLimits.repeats,
+              x <= GeometryLimits.repeats / y,
+              let i = Self.decimal(fields.firstValue(for: "I") ?? "0"),
+              let j = Self.decimal(fields.firstValue(for: "J") ?? "0") else {
+            failure = GeometryLimitError(resource: "step-repeat count/spacing", context: fileName + ": " + command); return
+        }
+        let offset = Point2D(x: Double(x - 1) * i * format.unitScale, y: Double(y - 1) * j * format.unitScale)
+        do { try GeometryLimits.point(offset, context: command) }
+        catch { failure = error; return }
+        stepRepeat = StepRepeat(xCount: x, yCount: y, xStep: i * format.unitScale, yStep: j * format.unitScale)
     }
 
     mutating func consumeStandard(_ rawCommand: String) {
@@ -332,6 +342,7 @@ private struct ParserMachine {
             case 3: interpolation = .counterclockwise
             case 36:
                 regionContours = []
+                pendingRegionPoints = 0
             case 37:
                 finishRegion()
             case 90: absoluteCoordinates = true
@@ -358,6 +369,9 @@ private struct ParserMachine {
             target = Point2D(x: currentPoint.x + (decodedX ?? 0), y: currentPoint.y + (decodedY ?? 0))
         }
 
+        do { try GeometryLimits.point(target, context: fileName + ": " + command) }
+        catch { failure = error; return }
+
         let operation = (dCode != nil && dCode! <= 3) ? dCode! : lastOperation
         let iOffset = fields.firstValue(for: "I").flatMap(format.decode) ?? 0
         let jOffset = fields.firstValue(for: "J").flatMap(format.decode) ?? 0
@@ -366,7 +380,10 @@ private struct ParserMachine {
         case 1:
             draw(to: target, iOffset: iOffset, jOffset: jOffset)
         case 2:
-            if regionContours != nil { regionContours?.append([target]) }
+            if regionContours != nil {
+                guard reserveRegionPoints(1) else { return }
+                regionContours?.append([target])
+            }
         case 3:
             let shape = currentAperture.flatMap { apertures[$0] } ?? .circle(diameter: 0.2)
             append(.flash(center: target, shape: shape, polarity: polarity))
@@ -384,18 +401,25 @@ private struct ParserMachine {
             .map { max($0.dimensions.width, $0.dimensions.height) } ?? 0.2
 
         if regionContours != nil {
-            if regionContours?.isEmpty == true { regionContours?.append([currentPoint]) }
+            if regionContours?.isEmpty == true {
+                guard reserveRegionPoints(1) else { return }
+                regionContours?.append([currentPoint])
+            }
             guard let contourIndex = regionContours?.indices.last else { return }
             if interpolation == .linear {
+                guard reserveRegionPoints(1) else { return }
                 regionContours?[contourIndex].append(target)
             } else {
                 let center = Point2D(x: currentPoint.x + iOffset, y: currentPoint.y + jOffset)
-                let points = Self.flattenArc(
+                let points: [Point2D]
+                do { points = try GeometryLimits.flattenArc(
                     start: currentPoint,
                     end: target,
                     center: center,
-                    clockwise: interpolation == .clockwise
-                )
+                    clockwise: interpolation == .clockwise,
+                    spacing: 0.15, minimum: 4, context: fileName
+                ) } catch { failure = error; return }
+                guard reserveRegionPoints(points.count) else { return }
                 regionContours?[contourIndex].append(contentsOf: points)
             }
             return
@@ -416,6 +440,14 @@ private struct ParserMachine {
         }
     }
 
+    mutating func reserveRegionPoints(_ count: Int) -> Bool {
+        guard count <= maximumPoints - pointCount - pendingRegionPoints else {
+            failure = GeometryLimitError(resource: "contour points", context: fileName); return false
+        }
+        pendingRegionPoints += count
+        return true
+    }
+
     mutating func finishRegion() {
         guard let contours = regionContours, !contours.isEmpty else {
             regionContours = nil
@@ -431,13 +463,8 @@ private struct ParserMachine {
             failure = ImportLimitError(resource: "geometry objects", path: fileName); return
         }
         let points: Int
-        switch primitive {
-        case .line: points = 2
-        case .arc: points = 3
-        case let .flash(_, shape, _):
-            if case let .custom(vertices) = shape { points = vertices.count } else { points = 1 }
-        case let .region(contours, _): points = contours.reduce(0) { $0 + $1.count }
-        }
+        do { points = try GeometryLimits.cost(primitive, context: fileName) }
+        catch { failure = error; return }
         let (addedPoints, pointOverflow) = copies.multipliedReportingOverflow(by: points)
         guard !pointOverflow, addedPoints <= maximumPoints - pointCount else {
             failure = ImportLimitError(resource: "geometry points", path: fileName); return
@@ -446,10 +473,13 @@ private struct ParserMachine {
         for x in 0..<stepRepeat.xCount {
             for y in 0..<stepRepeat.yCount {
                 if Task.isCancelled { failure = CancellationError(); return }
-                primitives.append(Self.translate(
+                let translated = Self.translate(
                     primitive,
                     by: Point2D(x: Double(x) * stepRepeat.xStep, y: Double(y) * stepRepeat.yStep)
-                ))
+                )
+                do { _ = try GeometryLimits.cost(translated, context: fileName) }
+                catch { failure = error; return }
+                primitives.append(translated)
             }
         }
     }
@@ -472,26 +502,6 @@ private struct ParserMachine {
             }
         }
         return result
-    }
-
-    static func flattenArc(
-        start: Point2D,
-        end: Point2D,
-        center: Point2D,
-        clockwise: Bool
-    ) -> [Point2D] {
-        let radius = hypot(start.x - center.x, start.y - center.y)
-        guard radius > 0.000_001 else { return [end] }
-        let startAngle = atan2(start.y - center.y, start.x - center.x)
-        var sweep = atan2(end.y - center.y, end.x - center.x) - startAngle
-        if clockwise, sweep >= 0 { sweep -= 2 * .pi }
-        if !clockwise, sweep <= 0 { sweep += 2 * .pi }
-        if start == end { sweep = clockwise ? -2 * .pi : 2 * .pi }
-        let segmentCount = max(4, Int(ceil(abs(sweep) * radius / 0.15)))
-        return (1...segmentCount).map { step in
-            let angle = startAngle + sweep * Double(step) / Double(segmentCount)
-            return Point2D(x: center.x + cos(angle) * radius, y: center.y + sin(angle) * radius)
-        }
     }
 
     static func translate(_ primitive: GerberPrimitive, by offset: Point2D) -> GerberPrimitive {
