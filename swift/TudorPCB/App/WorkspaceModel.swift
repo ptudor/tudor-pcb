@@ -43,6 +43,8 @@ final class WorkspaceModel {
     var showProofs = false
     var historyEntries: [PackageHistoryEntry] = PackageHistoryStore.load()
     private var renderGeneration = 0
+    private var loadTask: Task<Void, Never>?
+    private var renderTask: Task<Void, Never>?
     private var proofTask: Task<BoardSidePreview, any Error>?
     private var proofGeneration = 0
     private var documentGeneration = 0
@@ -50,44 +52,51 @@ final class WorkspaceModel {
     private let loadPackage: @Sendable (URL) async throws -> BoardDocument
     private let renderBoard: @Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet
     private let saveHistory: ([PackageHistoryEntry]) -> Void
+    private let startAccess: (URL) -> Bool
+    private let stopAccess: (URL) -> Void
 
     init(
         readProof: @escaping @Sendable (URL, GerberSide) async throws -> BoardSidePreview = {
             try await ProofImageDecoder.read($0, side: $1)
         },
-        loadPackage: @escaping @Sendable (URL) async throws -> BoardDocument = { url in
-            try await Task.detached(priority: .userInitiated) { try FabricationPackageLoader().load(from: url) }.value
-        },
-        renderBoard: @escaping @Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet = { document, options in
-            try await Task.detached(priority: .userInitiated) { try BoardRasterizer().render(document, options: options) }.value
-        },
+        loadPackage: (@Sendable (URL) async throws -> BoardDocument)? = nil,
+        renderBoard: (@Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet)? = nil,
+        startAccess: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
+        stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() },
         saveHistory: @escaping ([PackageHistoryEntry]) -> Void = { PackageHistoryStore.save($0) }
     ) {
         self.readProof = readProof
-        self.loadPackage = loadPackage
-        self.renderBoard = renderBoard
+        let worker = FabricationWorkSession()
+        self.loadPackage = loadPackage ?? { try await worker.load($0) }
+        self.renderBoard = renderBoard ?? { try await worker.render($0, options: $1) }
+        self.startAccess = startAccess
+        self.stopAccess = stopAccess
         self.saveHistory = saveHistory
     }
 
     func open(_ url: URL) {
+        loadTask?.cancel()
+        renderTask?.cancel()
         documentGeneration += 1
         let generation = documentGeneration
         // A replacement owns document identity; rendering options cannot cancel it.
         renderGeneration += 1
         proofTask?.cancel()
         proofGeneration += 1
-        let hasAccess = url.startAccessingSecurityScopedResource()
+        let hasAccess = startAccess(url)
         phase = .opening(url.lastPathComponent)
         errorMessage = nil
         let maskStyle = self.maskStyle
-        Task {
-            defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
+        loadTask = Task {
+            defer { if hasAccess { stopAccess(url) } }
             do {
+                try Task.checkCancellation()
                 let next = try await loadPackage(url)
                 guard generation == documentGeneration else { return }
                 let visible = Set(next.layers.map(\.id))
                 let rendered = try await renderBoard(next, BoardRenderOptions(visibleLayerIDs: visible, solderMaskColor: maskStyle.color))
                 guard generation == documentGeneration else { return }
+                try Task.checkCancellation()
                 let historyEntry = PackageHistoryEntry.capture(url: url, document: next)
                 document = next
                 textures = rendered
@@ -95,7 +104,9 @@ final class WorkspaceModel {
                 historyEntries = PackageHistoryStore.merging(historyEntry, into: historyEntries)
                 saveHistory(historyEntries)
                 phase = .idle
-            } catch {
+                loadTask = nil
+            } catch is CancellationError { }
+              catch {
                 guard generation == documentGeneration else { return }
                 phase = .idle
                 errorMessage = error.localizedDescription
@@ -167,18 +178,24 @@ final class WorkspaceModel {
 
     func rerender() {
         guard let document, !isOpening else { return }
+        renderTask?.cancel()
         renderGeneration += 1
         let generation = renderGeneration
         let visible = visibleLayerIDs
         let maskColor = maskStyle.color
         phase = .rendering
-        Task {
+        renderTask = Task {
             do {
+                try await Task.sleep(for: .milliseconds(35))
+                try Task.checkCancellation()
                 let rendered = try await renderBoard(document, BoardRenderOptions(visibleLayerIDs: visible, solderMaskColor: maskColor))
                 guard generation == renderGeneration else { return }
+                try Task.checkCancellation()
                 textures = rendered
                 phase = .idle
-            } catch {
+                renderTask = nil
+            } catch is CancellationError { }
+              catch {
                 guard generation == renderGeneration else { return }
                 phase = .idle
                 errorMessage = error.localizedDescription

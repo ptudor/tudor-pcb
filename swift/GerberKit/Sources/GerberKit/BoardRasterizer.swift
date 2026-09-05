@@ -73,6 +73,12 @@ public struct BoardRasterizer: Sendable {
     public init() { }
 
     public func render(_ document: BoardDocument, options: BoardRenderOptions = .init()) throws -> BoardTextureSet {
+        var cache = RasterCache()
+        return try render(document, options: options, cache: &cache)
+    }
+
+    fileprivate func render(_ document: BoardDocument, options: BoardRenderOptions, cache: inout RasterCache) throws -> BoardTextureSet {
+        try Task.checkCancellation()
         try document.validateForRendering()
         let bounds = document.bounds
         let longestSide = max(bounds.width, bounds.height)
@@ -81,31 +87,24 @@ public struct BoardRasterizer: Sendable {
         let width = max(8, Int(ceil(bounds.width * scale)))
         let height = max(8, Int(ceil(bounds.height * scale)))
         let canvas = CGRect(x: 0, y: 0, width: width, height: height)
-        let mask = try makeBoardMask(
-            width: width,
-            height: height,
-            document: document,
-            bounds: bounds,
-            scale: scale
-        )
-        let top = try renderSide(
-            .top,
-            document: document,
-            options: options,
-            bounds: bounds,
-            scale: scale,
-            canvas: canvas,
-            boardMask: mask
-        )
-        let bottom = try renderSide(
-            .bottom,
-            document: document,
-            options: options,
-            bounds: bounds,
-            scale: scale,
-            canvas: canvas,
-            boardMask: mask
-        )
+        let maskKey = RasterCache.MaskKey(document: document, width: width, height: height)
+        let mask: CGImage
+        if cache.maskKey == maskKey, let existing = cache.mask { mask = existing }
+        else { mask = try makeBoardMask(width: width, height: height, document: document, bounds: bounds, scale: scale) }
+        try Task.checkCancellation()
+        let topKey = RasterCache.SideKey(document: document, side: .top, options: options, mask: maskKey)
+        let bottomKey = RasterCache.SideKey(document: document, side: .bottom, options: options, mask: maskKey)
+        let top: CGImage
+        if cache.topKey == topKey, let existing = cache.top { top = existing }
+        else { top = try renderSide(.top, document: document, options: options, bounds: bounds, scale: scale, canvas: canvas, boardMask: mask) }
+        try Task.checkCancellation()
+        let bottom: CGImage
+        if cache.bottomKey == bottomKey, let existing = cache.bottom { bottom = existing }
+        else { bottom = try renderSide(.bottom, document: document, options: options, bounds: bounds, scale: scale, canvas: canvas, boardMask: mask) }
+        try Task.checkCancellation()
+        cache.maskKey = maskKey; cache.mask = mask
+        cache.topKey = topKey; cache.top = top
+        cache.bottomKey = bottomKey; cache.bottom = bottom
         return BoardTextureSet(top: top, bottom: bottom, boardMask: mask, pixelWidth: width, pixelHeight: height)
     }
 
@@ -176,7 +175,7 @@ public struct BoardRasterizer: Sendable {
             try composite(layer: layer, color: silkColor, context: context, bounds: bounds, scale: scale, canvas: canvas)
         }
 
-        drawDrills(document.drills, in: context, bounds: bounds, scale: scale)
+        try drawDrills(document.drills, in: context, bounds: bounds, scale: scale)
         guard let image = context.makeImage() else { throw BoardRasterizerError.imageCreation }
         return image
     }
@@ -193,7 +192,8 @@ public struct BoardRasterizer: Sendable {
             throw BoardRasterizerError.contextCreation
         }
         for primitive in layer.primitives {
-            draw(primitive, in: maskContext, bounds: bounds, scale: scale)
+            try Task.checkCancellation()
+            try draw(primitive, in: maskContext, bounds: bounds, scale: scale)
         }
         guard let mask = maskContext.makeImage() else { throw BoardRasterizerError.imageCreation }
         context.saveGState()
@@ -223,10 +223,11 @@ public struct BoardRasterizer: Sendable {
             // intentionally emitted as unordered, open segments around tabs.
             for layer in outlineLayers {
                 for primitive in layer.primitives where primitive.polarity == .dark {
-                    draw(primitive, in: context, bounds: bounds, scale: scale, outlineBarrier: true)
+                    try Task.checkCancellation()
+                    try draw(primitive, in: context, bounds: bounds, scale: scale, outlineBarrier: true)
                 }
             }
-            floodOutlineInterior(context: context, width: width, height: height)
+            try floodOutlineInterior(context: context, width: width, height: height)
 
             // An enclosed contour nested inside a larger contour is a routed
             // cutout rather than another island of substrate.
@@ -234,7 +235,7 @@ public struct BoardRasterizer: Sendable {
             for contour in contours where contourIsNested(contour, among: contours) {
                 let path = CGMutablePath()
                 path.move(to: pixel(contour[0], bounds: bounds, scale: scale))
-                for point in contour.dropFirst() { path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
+                for point in contour.dropFirst() { try Task.checkCancellation(); path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
                 path.closeSubpath()
                 context.saveGState()
                 context.setBlendMode(.clear)
@@ -247,7 +248,7 @@ public struct BoardRasterizer: Sendable {
         return image
     }
 
-    private func floodOutlineInterior(context: CGContext, width: Int, height: Int) {
+    private func floodOutlineInterior(context: CGContext, width: Int, height: Int) throws {
         guard let data = context.data else { return }
         let bytes = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
         var outside = [Bool](repeating: false, count: width * height)
@@ -267,6 +268,7 @@ public struct BoardRasterizer: Sendable {
         for y in 0..<height { enqueue(0, y); enqueue(width - 1, y) }
         var cursor = 0
         while cursor < queue.count {
+            if cursor % 1024 == 0 { try Task.checkCancellation() }
             let index = queue[cursor]
             cursor += 1
             let x = index % width
@@ -278,6 +280,7 @@ public struct BoardRasterizer: Sendable {
         }
 
         for index in 0..<(width * height) {
+            if index % 1024 == 0 { try Task.checkCancellation() }
             let value: UInt8 = outside[index] ? 0 : 255
             bytes[index * 4] = value
             bytes[index * 4 + 1] = value
@@ -317,7 +320,7 @@ public struct BoardRasterizer: Sendable {
         } / 2
     }
 
-    private func draw(_ primitive: GerberPrimitive, in context: CGContext, bounds: Bounds2D, scale: Double, outlineBarrier: Bool = false) {
+    private func draw(_ primitive: GerberPrimitive, in context: CGContext, bounds: Bounds2D, scale: Double, outlineBarrier: Bool = false) throws {
         context.saveGState()
         context.setBlendMode(primitive.polarity == .dark ? .normal : .clear)
         context.setFillColor(gray: 1, alpha: 1)
@@ -355,12 +358,12 @@ public struct BoardRasterizer: Sendable {
             context.addPath(path)
             context.strokePath()
         case let .flash(center, shape, _):
-            drawFlash(shape, center: center, in: context, bounds: bounds, scale: scale)
+            try drawFlash(shape, center: center, in: context, bounds: bounds, scale: scale)
         case let .region(contours, _):
             let path = CGMutablePath()
             for contour in contours where contour.count >= 3 {
                 path.move(to: pixel(contour[0], bounds: bounds, scale: scale))
-                for point in contour.dropFirst() { path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
+                for point in contour.dropFirst() { try Task.checkCancellation(); path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
                 path.closeSubpath()
             }
             context.addPath(path)
@@ -375,7 +378,7 @@ public struct BoardRasterizer: Sendable {
         in context: CGContext,
         bounds: Bounds2D,
         scale: Double
-    ) {
+    ) throws {
         let centerPixel = pixel(center, bounds: bounds, scale: scale)
         switch shape {
         case let .circle(diameter):
@@ -407,6 +410,7 @@ public struct BoardRasterizer: Sendable {
             let count = max(vertices, 3)
             let path = CGMutablePath()
             for index in 0..<count {
+                if index % 256 == 0 { try Task.checkCancellation() }
                 let angle = (Double(index) / Double(count) * 2 * .pi) + rotationDegrees * .pi / 180
                 let point = CGPoint(
                     x: centerPixel.x + cos(angle) * diameter * scale / 2,
@@ -422,6 +426,7 @@ public struct BoardRasterizer: Sendable {
             let path = CGMutablePath()
             path.move(to: CGPoint(x: centerPixel.x + first.x * scale, y: centerPixel.y + first.y * scale))
             for point in points.dropFirst() {
+                try Task.checkCancellation()
                 path.addLine(to: CGPoint(x: centerPixel.x + point.x * scale, y: centerPixel.y + point.y * scale))
             }
             path.closeSubpath()
@@ -430,8 +435,9 @@ public struct BoardRasterizer: Sendable {
         }
     }
 
-    private func drawDrills(_ drills: [DrillHit], in context: CGContext, bounds: Bounds2D, scale: Double) {
+    private func drawDrills(_ drills: [DrillHit], in context: CGContext, bounds: Bounds2D, scale: Double) throws {
         for drill in drills {
+            try Task.checkCancellation()
             let center = pixel(drill.center, bounds: bounds, scale: scale)
             let end = drill.end.map { pixel($0, bounds: bounds, scale: scale) }
             let diameter = max(1, drill.diameter * scale)
@@ -499,4 +505,58 @@ public struct BoardRasterizer: Sendable {
     private func setFill(_ color: RGBAColor, in context: CGContext) {
         context.setFillColor(red: color.red, green: color.green, blue: color.blue, alpha: color.alpha)
     }
+}
+
+
+/// A workspace owns one session, serializing CPU-heavy import/render operations.
+/// Cached masks and unchanged face images survive option changes safely.
+public actor FabricationWorkSession {
+    private var cache = RasterCache()
+    public init() { }
+    public func load(_ url: URL) throws -> BoardDocument {
+        try Task.checkCancellation()
+        return try FabricationPackageLoader().load(from: url)
+    }
+    public func render(_ document: BoardDocument, options: BoardRenderOptions = .init()) throws -> BoardTextureSet {
+        try Task.checkCancellation()
+        return try BoardRasterizer().render(document, options: options, cache: &cache)
+    }
+}
+
+fileprivate struct RasterCache {
+    struct MaskKey: Equatable {
+        let bounds: Bounds2D
+        let outlines: [[GerberPrimitive]]
+        let drills: [DrillHit]
+        let width: Int
+        let height: Int
+        init(document: BoardDocument, width: Int, height: Int) {
+            bounds = document.bounds
+            outlines = document.layers.filter { $0.kind == .outline }.map(\.primitives)
+            drills = document.drills
+            self.width = width; self.height = height
+        }
+    }
+    struct SideKey: Equatable {
+        let mask: MaskKey
+        let layers: [GerberLayer]
+        let previews: [BoardSidePreview]
+        let hasColor: Bool
+        let color: RGBAColor
+        let artwork: Bool
+        init(document: BoardDocument, side: GerberSide, options: BoardRenderOptions, mask: MaskKey) {
+            self.mask = mask
+            layers = document.layers.filter { $0.kind.side == side && (options.visibleLayerIDs?.contains($0.id) ?? true) }
+            previews = document.sidePreviews.filter { $0.side == side }
+            hasColor = document.colorSilkscreens.contains { $0.side == side }
+            color = options.solderMaskColor
+            artwork = options.useColorArtwork
+        }
+    }
+    var maskKey: MaskKey?
+    var topKey: SideKey?
+    var bottomKey: SideKey?
+    var mask: CGImage?
+    var top: CGImage?
+    var bottom: CGImage?
 }

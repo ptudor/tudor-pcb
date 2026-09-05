@@ -296,3 +296,62 @@ extension AppSmokeTests {
         }
     }
 }
+
+private actor RenderWorkCounter {
+    var active = 0
+    var peak = 0
+    var completed = 0
+    func render(_ document: BoardDocument, _ options: BoardRenderOptions) async throws -> BoardTextureSet {
+        active += 1
+        peak = max(peak, active)
+        defer { active -= 1 }
+        try await Task.sleep(for: .milliseconds(10))
+        var options = options
+        options.maximumTextureDimension = 256
+        let result = try BoardRasterizer().render(document, options: options)
+        completed += 1
+        return result
+    }
+    func counts() -> (Int, Int) { (peak, completed) }
+}
+
+extension AppSmokeTests {
+    @MainActor
+    func testRapidOptionsCoalesceAndFinalPixelsMatchControls() async throws {
+        let work = RenderWorkCounter()
+        let model = WorkspaceModel(renderBoard: { try await work.render($0, $1) }, saveHistory: { _ in })
+        let layer = GerberLayer(fileName: "top.gtl", kind: .copper(side: .top, index: nil), primitives: [.flash(center: Point2D(x: 5, y: 5), shape: .circle(diameter: 2), polarity: .dark)])
+        let board = BoardDocument(name: "options", layers: [layer])
+        model.document = board
+        model.visibleLayerIDs = [layer.id]
+        for i in 0..<100 {
+            model.selectMask(i.isMultiple(of: 2) ? .red : .blue)
+            model.toggleLayer(layer)
+        }
+        try await waitUntil { !model.isLoading }
+        let counts = await work.counts()
+        XCTAssertEqual(counts.0, 1)
+        XCTAssertEqual(counts.1, 1)
+        let expected = try BoardRasterizer().render(board, options: .init(visibleLayerIDs: model.visibleLayerIDs, maximumTextureDimension: 256, solderMaskColor: model.maskStyle.color))
+        XCTAssertEqual(model.textures?.top.dataProvider?.data, expected.top.dataProvider?.data)
+    }
+
+    @MainActor
+    func testSupersededOpensCancelAndBalanceSecurityScopes() async throws {
+        var starts = 0
+        var stops = 0
+        let model = WorkspaceModel(loadPackage: { url in
+            try await Task.sleep(for: .milliseconds(30))
+            try Task.checkCancellation()
+            return BoardDocument(name: url.lastPathComponent)
+        }, startAccess: { _ in starts += 1; return true }, stopAccess: { _ in stops += 1 }, saveHistory: { _ in })
+        model.historyEntries = []
+        for i in 0..<20 { model.open(URL(fileURLWithPath: "/private/tmp/package-\(i).zip")) }
+        try await waitUntil { !model.isLoading && stops == starts }
+        XCTAssertEqual(starts, 20)
+        XCTAssertEqual(stops, 20)
+        XCTAssertEqual(model.document?.name, "package-19.zip")
+        XCTAssertEqual(model.historyEntries.count, 1)
+        XCTAssertNil(model.errorMessage)
+    }
+}
