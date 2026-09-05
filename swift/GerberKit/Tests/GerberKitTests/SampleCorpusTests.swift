@@ -1,48 +1,64 @@
 import Foundation
 import Testing
+import XCTest
 @testable import GerberKit
 
-@Test func loadsAvailableProductionCorpus() throws {
-    let packageRoot = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-    let appsRoot = packageRoot
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
+@Test func requiredSyntheticBoardLoadsWithoutExternalRepositories() throws {
+    let root = try #require(Bundle.module.url(forResource: "Fixtures", withExtension: nil))
+    let board = try FabricationPackageLoader().load(from: root.appending(path: "required-board"))
+    #expect(board.layers.count == 2)
+    #expect(board.drills == [DrillHit(center: Point2D(x: 5, y: 2), diameter: 1, plated: true)])
+    #expect(board.bounds == Bounds2D(minimum: .zero, maximum: Point2D(x: 10, y: 5)))
+    #expect(board.warnings.isEmpty)
+}
 
-    let archives = [
-        "easyeda-tudor/pcb/music-xlr-pad-line-mic/release/2026/09/02/XLR-PAD_Gerbers.zip",
-        "hollytimecode/pcb/holly-ltc-core/release/2026/09/03/Holly-LTC-CORE_Gerbers.zip",
-        "hollytimecode/pcb/holly-ltc-display/release/2026/09/03/Holly-LTC-DISPLAY_Gerbers.zip"
-    ]
-
-    for relativePath in archives {
-        let url = appsRoot.appending(path: relativePath)
-        guard FileManager.default.fileExists(atPath: url.path) else { continue }
-        let entries = try ZipArchiveReader().read(Data(contentsOf: url, options: .mappedIfSafe))
-        let board = try FabricationPackageLoader().load(files: entries, name: url.lastPathComponent)
-        #expect(board.isEasyEDA)
-        #expect(board.layers.count >= 8)
-        #expect(board.drills.count > 0)
-        #expect(board.colorSilkscreens.count == 2)
-        #expect(board.bounds.width > 10)
-        #expect(board.bounds.height > 10)
-        if relativePath.contains("XLR-PAD") {
-            #expect(abs(board.bounds.width - 76.2) < 0.01)
-            #expect(abs(board.bounds.height - 76.2) < 0.01)
+// One XCTest per optional input makes missing coverage an actual reported skip.
+final class OptionalProductionCorpusTests: XCTestCase {
+    private var appsRoot: URL {
+        if let override = ProcessInfo.processInfo.environment["GERBERKIT_CORPUS_ROOT"] {
+            return URL(fileURLWithPath: override)
         }
-        if relativePath.contains("Holly-LTC-CORE") {
-            #expect(BoardOutlineExtractor.contours(in: board).count >= 1)
-            #expect(BoardOutlineExtractor.edgePaths(in: board).count >= 30)
-        }
+        return URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     }
 
-    let legacy = appsRoot.appending(path: "eagle-tudor/pcb/_active/hm-10piggy/untitled folder")
-    if FileManager.default.fileExists(atPath: legacy.path) {
-        let board = try FabricationPackageLoader().load(from: legacy)
-        #expect(board.layers.count >= 6)
-        #expect(board.colorSilkscreens.isEmpty)
+    private func load(_ path: String) throws -> BoardDocument {
+        let url = appsRoot.appending(path: path)
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: url.path), "Optional external corpus unavailable: \(path)")
+        return try FabricationPackageLoader().load(from: url)
+    }
+
+    private func checkProduction(_ board: BoardDocument) {
+        XCTAssertTrue(board.isEasyEDA)
+        XCTAssertGreaterThanOrEqual(board.layers.count, 8)
+        XCTAssertFalse(board.drills.isEmpty)
+        XCTAssertEqual(board.colorSilkscreens.count, 2)
+        XCTAssertGreaterThan(board.bounds.width, 10)
+        XCTAssertGreaterThan(board.bounds.height, 10)
+    }
+
+    func testXLRPad() throws {
+        let board = try load("easyeda-tudor/pcb/music-xlr-pad-line-mic/release/2026/09/02/XLR-PAD_Gerbers.zip")
+        checkProduction(board)
+        XCTAssertEqual(board.bounds.width, 76.2, accuracy: 0.01)
+        XCTAssertEqual(board.bounds.height, 76.2, accuracy: 0.01)
+    }
+
+    func testLTCCore() throws {
+        let board = try load("hollytimecode/pcb/holly-ltc-core/release/2026/09/03/Holly-LTC-CORE_Gerbers.zip")
+        checkProduction(board)
+        XCTAssertGreaterThanOrEqual(BoardOutlineExtractor.contours(in: board).count, 1)
+        XCTAssertGreaterThanOrEqual(BoardOutlineExtractor.edgePaths(in: board).count, 30)
+    }
+
+    func testLTCDisplay() throws {
+        checkProduction(try load("hollytimecode/pcb/holly-ltc-display/release/2026/09/03/Holly-LTC-DISPLAY_Gerbers.zip"))
+    }
+
+    func testLegacyEagle() throws {
+        let board = try load("eagle-tudor/pcb/_active/hm-10piggy/untitled folder")
+        XCTAssertGreaterThanOrEqual(board.layers.count, 6)
+        XCTAssertTrue(board.colorSilkscreens.isEmpty)
     }
 }

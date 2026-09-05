@@ -15,6 +15,6 @@ let package = Package(
             name: "GerberKit",
             linkerSettings: [.linkedLibrary("z")]
         ),
-        .testTarget(name: "GerberKitTests", dependencies: ["GerberKit"])
+        .testTarget(name: "GerberKitTests", dependencies: ["GerberKit"], resources: [.copy("Fixtures")])
     ]
 )
