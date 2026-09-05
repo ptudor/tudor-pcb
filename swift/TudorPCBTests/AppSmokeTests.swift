@@ -246,3 +246,53 @@ extension AppSmokeTests {
         XCTAssertEqual(model.historyEntries.map(\.name), ["C"])
     }
 }
+
+
+extension AppSmokeTests {
+    @MainActor
+    func testSameNamedGeometryRevisionsRebuildButFinishChangesReuseMesh() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let renderer = try BoardRenderer(device: device, colorPixelFormat: .bgra8Unorm_srgb, depthPixelFormat: .depth32Float)
+        let textures = try BoardRasterizer().render(BoardDocument(name: "texture"), options: .init(maximumTextureDimension: 256))
+        let a = BoardDocument(name: "same", bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 10, y: 10)))
+        renderer.update(document: a, textures: textures)
+        let old = try XCTUnwrap(renderer.vertexBuffer)
+        let route = GerberLayer(fileName: "outline.gko", kind: .outline, primitives: [
+            .line(start: Point2D(x: 5, y: 1), end: Point2D(x: 7, y: 1), width: 0.1, polarity: .dark),
+            .line(start: Point2D(x: 7, y: 1), end: Point2D(x: 7, y: 3), width: 0.1, polarity: .dark),
+            .line(start: Point2D(x: 7, y: 3), end: Point2D(x: 5, y: 3), width: 0.1, polarity: .dark),
+            .line(start: Point2D(x: 5, y: 3), end: Point2D(x: 5, y: 1), width: 0.1, polarity: .dark)
+        ])
+        var b = BoardDocument(name: "same", layers: [route], bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 20, y: 5)), thicknessMillimeters: 0.8)
+        renderer.update(document: b, textures: textures)
+        let revised = try XCTUnwrap(renderer.vertexBuffer)
+        XCTAssertFalse(old === revised)
+        XCTAssertEqual(renderer.indexCount, 36)
+        let positions = revised.contents().assumingMemoryBound(to: BoardRenderer.BoardVertex.self)
+        XCTAssertEqual(positions[0].position.z, 0.125, accuracy: 0.00001)
+        XCTAssertEqual(positions[0].position.y, 0.02, accuracy: 0.00001)
+        let finish = try BoardRasterizer().render(b, options: .init(maximumTextureDimension: 256, solderMaskColor: .redMask))
+        renderer.update(document: b, textures: finish)
+        XCTAssertTrue(renderer.vertexBuffer === revised)
+        // Reopening a changed file in place creates the same name with new geometry.
+        b.thicknessMillimeters = 2
+        renderer.update(document: b, textures: finish)
+        XCTAssertFalse(renderer.vertexBuffer === revised)
+        let changed = try XCTUnwrap(renderer.vertexBuffer).contents().assumingMemoryBound(to: BoardRenderer.BoardVertex.self)
+        XCTAssertEqual(changed[0].position.y, 0.05, accuracy: 0.00001)
+        let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".gko")
+        defer { try? FileManager.default.removeItem(at: url) }
+        var prior: MTLBuffer?
+        for (width, height) in [(100000, 100000), (200000, 50000)] {
+            let source = "%FSLAX24Y24*%%MOMM*%%ADD10C,0.1*%D10*X0Y0D02*X\(width)Y0D01*X\(width)Y\(height)D01*X0Y\(height)D01*X0Y0D01*M02*"
+            try Data(source.utf8).write(to: url)
+            let reopened = try FabricationPackageLoader().load(from: url)
+            renderer.update(document: reopened, textures: textures)
+            let current = try XCTUnwrap(renderer.vertexBuffer)
+            if let prior { XCTAssertFalse(current === prior) }
+            prior = current
+            let v = current.contents().assumingMemoryBound(to: BoardRenderer.BoardVertex.self)
+            XCTAssertEqual(v[0].position.z, Float(height) / Float(width) / 2, accuracy: 0.00001)
+        }
+    }
+}

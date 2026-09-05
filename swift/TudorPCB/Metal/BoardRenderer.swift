@@ -67,7 +67,19 @@ final class BoardRenderer {
     private var elevation: Float = 0.72
     private var distance: Float = 1.72
     private var targetDistance: Float = 1.72
-    private var lastDocumentName: String?
+    private struct MeshIdentity: Equatable {
+        let bounds: Bounds2D
+        let thickness: Double
+        let outlines: [[GerberPrimitive]]
+        let drills: [DrillHit]
+        init(_ document: BoardDocument) {
+            bounds = document.bounds
+            thickness = document.thicknessMillimeters
+            outlines = document.layers.filter { $0.kind == .outline }.map(\.primitives)
+            drills = document.drills
+        }
+    }
+    private var lastMeshIdentity: MeshIdentity?
     private var lastTextureIdentity: ObjectIdentifier?
 
     init(device: MTLDevice, colorPixelFormat: MTLPixelFormat, depthPixelFormat: MTLPixelFormat,
@@ -116,10 +128,12 @@ final class BoardRenderer {
     func update(document: BoardDocument?, textures: BoardTextureSet?) {
         guard let document, let textures else { return }
         let textureIdentity = ObjectIdentifier(textures.top)
-        if lastDocumentName != document.name {
+        let meshIdentity = MeshIdentity(document)
+        if lastMeshIdentity != meshIdentity {
             do { try buildMesh(for: document); geometryError = nil }
             catch { geometryError = error; return }
-            lastDocumentName = document.name
+            lastMeshIdentity = meshIdentity
+            // Geometry changes reset the camera; texture/layer/finish updates retain it.
             apply(.perspective)
         }
         if lastTextureIdentity != textureIdentity {
