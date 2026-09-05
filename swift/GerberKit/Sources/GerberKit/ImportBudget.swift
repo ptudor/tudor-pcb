@@ -14,6 +14,10 @@ public struct ImportLimits: Sendable {
     public var allocationBytes = 2 * 1_024 * 1_024 * 1_024
     public var geometryObjects = 1_000_000
     public var geometryPoints = 4_000_000
+    public var imageFileBytes = 48 * 1_024 * 1_024
+    public var imageDimension = 16_384
+    public var imagePixels = 64_000_000
+    public var imageFrames = 1
     public var archiveDepth = 3
     public var archives = 12
     public init() { }

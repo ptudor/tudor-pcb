@@ -25,3 +25,45 @@ final class AppSmokeTests: XCTestCase {
         XCTAssertEqual(twice[0].openedCount, 2)
     }
 }
+
+
+private actor DelayedProofReader {
+    private var continuation: CheckedContinuation<BoardSidePreview, any Error>?
+    var entered = false
+    func read() async throws -> BoardSidePreview {
+        try await withCheckedThrowingContinuation {
+            entered = true
+            continuation = $0
+        }
+    }
+    func fail() {
+        continuation?.resume(throwing: ProofImageError.invalid("delayed.png"))
+        continuation = nil
+    }
+}
+
+extension AppSmokeTests {
+    @MainActor
+    func testDelayedProofReadKeepsMainActorResponsiveAndRetainsPreviousDocumentOnFailure() async throws {
+        let reader = DelayedProofReader()
+        let model = WorkspaceModel(readProof: { _, _ in try await reader.read() })
+        let original = BoardDocument(name: "original")
+        model.document = original
+        model.attachColorProof(URL(fileURLWithPath: "/delayed.png"), side: .top)
+        for _ in 0..<1000 {
+            if await reader.entered { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let entered = await reader.entered
+        XCTAssertTrue(entered)
+        // This main-actor continuation executes while the provider is suspended.
+        XCTAssertEqual(model.document, original)
+        await reader.fail()
+        for _ in 0..<1000 {
+            if model.errorMessage != nil { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(model.errorMessage?.contains("delayed.png") == true)
+        XCTAssertEqual(model.document, original)
+    }
+}

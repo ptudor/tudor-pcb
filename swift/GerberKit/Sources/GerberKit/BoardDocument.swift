@@ -28,12 +28,20 @@ public struct ColorSilkscreenInfo: Sendable, Hashable, Codable {
 public struct BoardSidePreview: Sendable, Equatable {
     public var side: GerberSide
     public var fileName: String
-    public var imageData: Data
+    public var imageData: Data { didSet { validatedImage = nil } }
+    public var validatedImage: ProofImage?
 
-    public init(side: GerberSide, fileName: String, imageData: Data) {
+    public init(side: GerberSide, fileName: String, imageData: Data, validatedImage: ProofImage? = nil) {
         self.side = side
         self.fileName = fileName
         self.imageData = imageData
+        self.validatedImage = validatedImage
+    }
+}
+
+extension BoardSidePreview {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.side == rhs.side && lhs.fileName == rhs.fileName && lhs.imageData == rhs.imageData
     }
 }
 

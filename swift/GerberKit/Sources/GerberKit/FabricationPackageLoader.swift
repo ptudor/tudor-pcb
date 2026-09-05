@@ -182,8 +182,9 @@ public struct FabricationPackageLoader: Sendable {
                 }
             default:
                 if let side = previewSide(for: file.name), isImage(file.name) {
+                    let decoded = try ProofImageDecoder.decode(file.data, name: file.name, budget: &budget)
                     previews.removeAll { $0.side == side }
-                    previews.append(BoardSidePreview(side: side, fileName: file.name, imageData: file.data))
+                    previews.append(BoardSidePreview(side: side, fileName: file.name, imageData: file.data, validatedImage: decoded))
                 } else if LayerClassifier.isGerber(file.name, contents: contents) {
                     do {
                         layers.append(try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget))

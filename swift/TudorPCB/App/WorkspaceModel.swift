@@ -34,8 +34,19 @@ final class WorkspaceModel {
     var showProofs = false
     var historyEntries: [PackageHistoryEntry] = PackageHistoryStore.load()
     private var renderGeneration = 0
+    private var proofTask: Task<BoardSidePreview, any Error>?
+    private var proofGeneration = 0
+    private var documentGeneration = 0
+    private let readProof: @Sendable (URL, GerberSide) async throws -> BoardSidePreview
+
+    init(readProof: @escaping @Sendable (URL, GerberSide) async throws -> BoardSidePreview = {
+        try await ProofImageDecoder.read($0, side: $1)
+    }) { self.readProof = readProof }
 
     func open(_ url: URL) {
+        documentGeneration += 1
+        proofTask?.cancel()
+        proofGeneration += 1
         let hasAccess = url.startAccessingSecurityScopedResource()
         isLoading = true
         errorMessage = nil
@@ -106,21 +117,30 @@ final class WorkspaceModel {
     }
 
     func attachColorProof(_ url: URL, side: GerberSide) {
-        guard var document else { return }
-        let hasAccess = url.startAccessingSecurityScopedResource()
-        defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
-        do {
-            let data = try Data(contentsOf: url, options: .mappedIfSafe)
-            document.sidePreviews.removeAll { $0.side == side && $0.fileName.contains("attached-artwork") }
-            document.sidePreviews.append(BoardSidePreview(
-                side: side,
-                fileName: "attached-artwork-\(side.rawValue)-side.\(url.pathExtension)",
-                imageData: data
-            ))
-            self.document = document
-            rerender()
-        } catch {
-            errorMessage = error.localizedDescription
+        guard document != nil else { return }
+        proofTask?.cancel()
+        proofGeneration += 1
+        let generation = proofGeneration
+        let documentIdentity = documentGeneration
+        let readProof = self.readProof
+        let task = Task { try await readProof(url, side) }
+        proofTask = task
+        Task {
+            do {
+                var preview = try await task.value
+                guard generation == proofGeneration, documentIdentity == documentGeneration, var document else { return }
+                preview.fileName = "attached-artwork-\(side.rawValue)-side.\(url.pathExtension)"
+                document.sidePreviews.removeAll { $0.side == side && $0.fileName.contains("attached-artwork") }
+                document.sidePreviews.append(preview)
+                self.document = document
+                proofTask = nil
+                rerender()
+            } catch is CancellationError { }
+              catch {
+                guard generation == proofGeneration, documentIdentity == documentGeneration else { return }
+                proofTask = nil
+                errorMessage = error.localizedDescription
+            }
         }
     }
 

@@ -626,10 +626,31 @@ private struct ProofGalleryView: View {
 
     @ViewBuilder
     private func proofImage(_ preview: BoardSidePreview) -> some View {
-        #if os(macOS)
-        if let image = NSImage(data: preview.imageData) { Image(nsImage: image).resizable() }
-        #else
-        if let image = UIImage(data: preview.imageData) { Image(uiImage: image).resizable() }
-        #endif
+        BoundedProofImageView(preview: preview)
+    }
+}
+
+
+private struct BoundedProofImageView: View {
+    let preview: BoardSidePreview
+    @State private var image: ProofImage?
+    @State private var failure: String?
+
+    var body: some View {
+        Group {
+            if let image { Image(decorative: image.cgImage, scale: 1).resizable() }
+            else if let failure { Text(failure).foregroundStyle(.secondary) }
+            else { ProgressView("Loading proof") }
+        }
+        .task(id: preview) {
+            if let cached = preview.validatedImage { image = cached; return }
+            let data = preview.imageData
+            let name = preview.fileName
+            let task = Task.detached { try ProofImageDecoder.decode(data, name: name) }
+            do {
+                image = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            } catch is CancellationError { }
+              catch { failure = error.localizedDescription }
+        }
     }
 }

@@ -131,9 +131,8 @@ public struct BoardRasterizer: Sendable {
         context.fill(canvas)
 
         if options.useColorArtwork,
-           let preview = preferredArtwork(for: side, in: document.sidePreviews),
-           let source = CGImageSourceCreateWithData(preview.imageData as CFData, nil),
-           let image = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+           let preview = preferredArtwork(for: side, in: document.sidePreviews) {
+            let image = try (preview.validatedImage ?? ProofImageDecoder.decode(preview.imageData, name: preview.fileName)).cgImage
             let artworkBounds = try BoardOutlineExtractor.contours(in: document)
                 .compactMap(Bounds2D.containing)
                 .max { $0.width * $0.height < $1.width * $1.height }
