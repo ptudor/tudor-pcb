@@ -4,12 +4,13 @@ public enum GerberParseError: Error, LocalizedError, Sendable {
     case textEncoding
     case missingGeometry(String)
     case invalidDefinition(fileName: String, command: String, reason: String)
+    case invalidCommand(fileName: String, command: String, reason: String)
 
     public var errorDescription: String? {
         switch self {
         case .textEncoding:
             "The layer is not an ASCII or UTF-8 Gerber file."
-        case let .invalidDefinition(fileName, command, reason):
+        case let .invalidDefinition(fileName, command, reason), let .invalidCommand(fileName, command, reason):
             "\(fileName): \(command): \(reason)"
         case let .missingGeometry(fileName):
             "No drawable Gerber geometry was found in \(fileName)."
@@ -127,6 +128,12 @@ private struct ParserMachine {
     var maximumPoints = 4_000_000
     var pointCount = 0
     var pendingRegionPoints = 0
+    var terminated = false
+    var repeatOpen = false
+    var singleQuadrant = false
+    var hasFormat = false
+    var hasUnits = false
+    var commandContext = ""
 
     init(fileName: String, source: String) {
         self.fileName = fileName
@@ -151,7 +158,7 @@ private struct ParserMachine {
                     isExtended = false
                 } else {
                     let pending = cleaned(buffer)
-                    if !pending.isEmpty { consumeStandard(pending) }
+                    if !pending.isEmpty { invalidCommand(pending, "Missing command delimiter before extended block."); return }
                     buffer.removeAll(keepingCapacity: true)
                     isExtended = true
                 }
@@ -164,44 +171,55 @@ private struct ParserMachine {
             }
         }
 
+        guard failure == nil else { return }
         let trailing = cleaned(buffer)
-        if !trailing.isEmpty {
-            if isExtended { consumeExtended(trailing) } else { consumeStandard(trailing) }
-        }
+        guard !isExtended, trailing.isEmpty else { invalidCommand(trailing, "Unterminated command or extended block."); return }
+        guard regionContours == nil, !repeatOpen else { invalidCommand("EOF", "Unterminated region or repeat block."); return }
+        guard terminated else { invalidCommand("EOF", "Missing M02 end-of-file command."); return }
+    }
+
+    mutating func invalidCommand(_ command: String, _ reason: String) {
+        failure = GerberParseError.invalidCommand(fileName: fileName, command: command, reason: reason)
     }
 
     mutating func consumeExtended(_ block: String) {
-        let commands = block.split(separator: "*", omittingEmptySubsequences: true).map(String.init)
-        guard let first = commands.first?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
-
-        if first.hasPrefix("FS") {
-            parseFormat(first)
-        } else if first == "MOMM" {
-            format.unitScale = 1
-        } else if first == "MOIN" {
-            format.unitScale = 25.4
-        } else if first.hasPrefix("AM") {
-            parseMacro(commands)
-        } else if first.hasPrefix("ADD") {
-            parseAperture(first)
-        } else if first == "LPD" {
-            polarity = .dark
-        } else if first == "LPC" {
-            polarity = .clear
-        } else if first.hasPrefix("SR") {
-            parseStepRepeat(first)
+        guard !terminated else { invalidCommand(block, "Data after end-of-file."); return }
+        guard block.hasSuffix("*") else { invalidCommand(block, "Missing extended-command delimiter."); return }
+        let commands = block.split(separator: "*", omittingEmptySubsequences: true)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard let first = commands.first else { invalidCommand(block, "Empty extended block."); return }
+        if first.hasPrefix("AM") { parseMacro(commands); return }
+        for command in commands {
+            if failure != nil { return }
+            commandContext = command
+            if command.hasPrefix("FS") { parseFormat(command) }
+            else if command == "MOMM" { format.unitScale = 1; hasUnits = true }
+            else if command == "MOIN" { format.unitScale = 25.4; hasUnits = true }
+            else if command.hasPrefix("ADD") { parseAperture(command) }
+            else if command == "LPD" { polarity = .dark }
+            else if command == "LPC" { polarity = .clear }
+            else if command.hasPrefix("SR") { parseStepRepeat(command) }
+            else if ["TF", "TA", "TO", "TD", "IN", "LN"].contains(where: command.hasPrefix) { continue }
+            else if ["LMN", "IPPOS", "ASAXBY", "MIA0B0", "OFA0B0", "SFA1B1", "IR0"].contains(command) { continue }
+            else if command.hasPrefix("LR"), Self.decimal(String(command.dropFirst(2))) == 0 { continue }
+            else if command.hasPrefix("LS"), Self.decimal(String(command.dropFirst(2))) == 1 { continue }
+            else { invalidCommand(command, "Unsupported or malformed geometry command; layer rejected.") }
         }
     }
 
     mutating func parseFormat(_ command: String) {
-        format.leadingZerosOmitted = !command.contains("T")
-        absoluteCoordinates = !command.contains("I")
-        guard let xIndex = command.firstIndex(of: "X") else { return }
-        let suffix = command[command.index(after: xIndex)...]
-        let digits = suffix.prefix(while: \.isNumber)
-        guard digits.count >= 2 else { return }
-        format.integerDigits = Int(String(digits.prefix(1))) ?? format.integerDigits
-        format.decimalDigits = Int(String(digits.dropFirst().prefix(1))) ?? format.decimalDigits
+        guard command.range(of: #"^FS[LT][AI]X[0-6][0-6]Y[0-6][0-6]$"#, options: .regularExpression) != nil else {
+            invalidCommand(command, "Unsupported or malformed coordinate format."); return
+        }
+        let chars = Array(command)
+        guard chars[5] == chars[8], chars[6] == chars[9], chars[5] != "0" || chars[6] != "0" else {
+            invalidCommand(command, "X/Y precision must match and contain digits."); return
+        }
+        format.leadingZerosOmitted = chars[2] == "L"
+        absoluteCoordinates = chars[3] == "A"
+        format.integerDigits = Int(String(chars[5]))!
+        format.decimalDigits = Int(String(chars[6]))!
+        hasFormat = true
     }
 
     mutating func invalidDefinition(_ command: String, _ reason: String) {
@@ -314,7 +332,11 @@ private struct ParserMachine {
     }
 
     mutating func parseStepRepeat(_ command: String) {
-        if command == "SR" { stepRepeat = StepRepeat(); return }
+        if command == "SR" {
+            guard repeatOpen else { invalidCommand(command, "Repeat close without an open block."); return }
+            stepRepeat = StepRepeat(); repeatOpen = false; return
+        }
+        guard !repeatOpen else { invalidCommand(command, "Nested step-repeat is not supported; layer rejected."); return }
         let fields = Self.fields(in: String(command.dropFirst(2)))
         guard let x = Int(fields.firstValue(for: "X") ?? "1"),
               let y = Int(fields.firstValue(for: "Y") ?? "1"), x > 0, y > 0,
@@ -327,13 +349,30 @@ private struct ParserMachine {
         let offset = Point2D(x: Double(x - 1) * i * format.unitScale, y: Double(y - 1) * j * format.unitScale)
         do { try GeometryLimits.point(offset, context: command) }
         catch { failure = error; return }
+        repeatOpen = true
         stepRepeat = StepRepeat(xCount: x, yCount: y, xStep: i * format.unitScale, yStep: j * format.unitScale)
     }
 
     mutating func consumeStandard(_ rawCommand: String) {
         let command = rawCommand.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !command.hasPrefix("G04"), command != "M02", command != "M00" else { return }
+        commandContext = command
+        guard !terminated else { invalidCommand(command, "Data after end-of-file."); return }
+        if command.hasPrefix("G04") || command.hasPrefix("G4 ") { return }
+        if command == "M02" || command == "M00" {
+            guard regionContours == nil, !repeatOpen else { invalidCommand(command, "Unterminated region or repeat block."); return }
+            terminated = true; return
+        }
+        if command == "M01" { return } // Supported deprecated no-op.
+        guard command.range(of: #"^(?:[GD][0-9]+|[XYIJ][+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+))+$"#, options: .regularExpression) != nil else {
+            invalidCommand(command, "Malformed coordinate or unsupported standard command."); return
+        }
         let fields = Self.fields(in: command)
+        for key: Character in ["X", "Y", "I", "J", "D"] {
+            guard fields.values(for: key).count <= 1 else { invalidCommand(command, "Repeated field \(key)."); return }
+        }
+        for field in fields where field.key == "G" || field.key == "D" {
+            guard Int(field.value) != nil else { invalidCommand(command, "Out-of-range command number."); return }
+        }
 
         for gText in fields.values(for: "G") {
             switch Int(gText) {
@@ -341,24 +380,38 @@ private struct ParserMachine {
             case 2: interpolation = .clockwise
             case 3: interpolation = .counterclockwise
             case 36:
+                guard regionContours == nil else { invalidCommand(command, "Nested region."); return }
                 regionContours = []
                 pendingRegionPoints = 0
             case 37:
+                guard regionContours != nil else { invalidCommand(command, "Region end without start."); return }
                 finishRegion()
+            case 54, 55: break
+            case 70: format.unitScale = 25.4; hasUnits = true
+            case 71: format.unitScale = 1; hasUnits = true
+            case 74: singleQuadrant = true
+            case 75: singleQuadrant = false
             case 90: absoluteCoordinates = true
             case 91: absoluteCoordinates = false
-            default: break
+            default: invalidCommand(command, "Unsupported G command."); return
             }
         }
+        guard failure == nil else { return }
 
         let dCode = fields.values(for: "D").last.flatMap(Int.init)
+        if let dCode, !(1...3).contains(dCode), dCode < 10 { invalidCommand(command, "Invalid D operation."); return }
         if let dCode, dCode >= 10 {
+            guard apertures[dCode] != nil else { invalidCommand(command, "Undefined aperture D\(dCode)."); return }
             currentAperture = dCode
             if fields.firstValue(for: "X") == nil, fields.firstValue(for: "Y") == nil { return }
         }
 
         let hasCoordinate = fields.firstValue(for: "X") != nil || fields.firstValue(for: "Y") != nil
         guard hasCoordinate else { return }
+        guard hasFormat, hasUnits else { invalidCommand(command, "Declare coordinate format and units before operations."); return }
+        for field in fields where [Character("X"), "Y", "I", "J"].contains(field.key) {
+            guard format.decode(field.value) != nil else { invalidCommand(command, "Malformed coordinate."); return }
+        }
 
         let decodedX = fields.firstValue(for: "X").flatMap(format.decode)
         let decodedY = fields.firstValue(for: "Y").flatMap(format.decode)
@@ -385,7 +438,8 @@ private struct ParserMachine {
                 regionContours?.append([target])
             }
         case 3:
-            let shape = currentAperture.flatMap { apertures[$0] } ?? .circle(diameter: 0.2)
+            guard regionContours == nil else { invalidCommand(command, "Flash inside region."); return }
+            guard let shape = currentAperture.flatMap({ apertures[$0] }) else { invalidCommand(command, "Flash without a selected aperture."); return }
             append(.flash(center: target, shape: shape, polarity: polarity))
         default:
             break
@@ -396,9 +450,10 @@ private struct ParserMachine {
     }
 
     mutating func draw(to target: Point2D, iOffset: Double, jOffset: Double) {
-        let width = currentAperture
-            .flatMap { apertures[$0] }
-            .map { max($0.dimensions.width, $0.dimensions.height) } ?? 0.2
+        if interpolation != .linear, singleQuadrant { invalidCommand(commandContext, "Unsupported G74 arc; layer rejected."); return }
+        let shape = currentAperture.flatMap { apertures[$0] }
+        if regionContours == nil, shape == nil { invalidCommand(commandContext, "Draw without a selected aperture."); return }
+        let width = shape.map { max($0.dimensions.width, $0.dimensions.height) } ?? 0
 
         if regionContours != nil {
             if regionContours?.isEmpty == true {
@@ -449,11 +504,10 @@ private struct ParserMachine {
     }
 
     mutating func finishRegion() {
-        guard let contours = regionContours, !contours.isEmpty else {
-            regionContours = nil
-            return
+        guard let contours = regionContours, !contours.isEmpty, contours.allSatisfy({ $0.count >= 3 }) else {
+            invalidCommand(commandContext, "Region has an empty or incomplete contour."); return
         }
-        append(.region(contours: contours.filter { $0.count >= 3 }, polarity: polarity))
+        append(.region(contours: contours, polarity: polarity))
         regionContours = nil
     }
 

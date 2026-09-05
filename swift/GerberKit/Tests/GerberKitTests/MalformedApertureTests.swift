@@ -21,7 +21,7 @@ func malformedAperturesThrowWithCommandContext(definition: String) throws {
 
 @Test func legalZeroCircleAndLiteralMacroRemainAccepted() throws {
     for definition in ["%ADD10C,0*%", "%AMtriangle*4,1,3,0,0,1,0,0,1,0,0,0*%%ADD10triangle*%"] {
-        let layer = try GerberParser().parse(data: Data((definition + "D10*X0Y0D03*M02*").utf8), fileName: "valid.gtl")
+        let layer = try GerberParser().parse(data: Data(("%FSLAX24Y24*%%MOMM*%" + definition + "D10*X0Y0D03*M02*").utf8), fileName: "valid.gtl")
         #expect(layer.primitives.count == 1)
     }
 }
