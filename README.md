@@ -70,3 +70,13 @@ zero-size copper is invisible. The 3D mesh uses the specified board thickness
 without display exaggeration. Rendering rejects nonfinite/reversed bounds,
 nonpositive thickness, and dimensions outside the supported 0.000001–1000000 mm
 range with a recoverable geometry error.
+
+Aperture macros retain their definitions until ADD instantiation. Supported macro
+primitives are circles (1), vector lines (2/20), outlines (4), polygons (5),
+thermals (7), and rectangles (21/22), with checked parameter expressions and
+ordered local dark/clear composition. Unsupported instantiated primitives reject
+the layer with a diagnostic. Aperture holes remain transparent to previous layer
+geometry. Codable retains all existing shape cases and adds `compound`; old
+payloads still decode, while older readers must reject the new case rather than
+substituting geometry. Reference semantics: [Ucamco Gerber specification, sections
+4.4–4.5](https://www.ucamco.com/files/downloads/file_en/456/gerber-layer-format-specification-revision-2024-05_en.pdf).

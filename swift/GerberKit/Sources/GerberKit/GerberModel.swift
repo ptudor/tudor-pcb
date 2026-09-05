@@ -55,23 +55,39 @@ public enum GerberPolarity: String, Sendable, Hashable, Codable {
     case clear
 }
 
-public enum ApertureShape: Sendable, Hashable, Codable {
+public indirect enum ApertureShape: Sendable, Hashable, Codable {
     case circle(diameter: Double)
     case rectangle(width: Double, height: Double)
     case obround(width: Double, height: Double)
     case polygon(diameter: Double, vertices: Int, rotationDegrees: Double)
     case custom(points: [Point2D])
+    case compound(primitives: [GerberPrimitive])
 
     public var dimensions: (width: Double, height: Double) {
         switch self {
         case let .circle(diameter): return (diameter, diameter)
         case let .rectangle(width, height), let .obround(width, height): return (width, height)
         case let .polygon(diameter, _, _): return (diameter, diameter)
+        case .compound:
+            guard let bounds = localBounds else { return (0, 0) }
+            return (bounds.width, bounds.height)
         case let .custom(points):
             guard let bounds = Bounds2D.containing(points) else { return (0, 0) }
             return (bounds.width, bounds.height)
         }
     }
+
+    var localBounds: Bounds2D? {
+        switch self {
+        case let .custom(points): return Bounds2D.containing(points)
+        case let .compound(primitives):
+            return primitives.filter { $0.polarity == .dark }.compactMap(\.bounds).reduce(nil) { $0?.union($1) ?? $1 }
+        default:
+            let size = dimensions
+            return Bounds2D(minimum: Point2D(x: -size.width / 2, y: -size.height / 2), maximum: Point2D(x: size.width / 2, y: size.height / 2))
+        }
+    }
+
 }
 
 public enum GerberPrimitive: Sendable, Hashable, Codable {
@@ -100,15 +116,8 @@ public enum GerberPrimitive: Sendable, Hashable, Codable {
             )
             return circle.union(Bounds2D.containing([start, end]) ?? circle).expanded(by: width / 2)
         case let .flash(center, shape, _):
-            if case let .custom(points) = shape {
-                guard let local = Bounds2D.containing(points) else { return nil }
-                return Bounds2D(minimum: local.minimum + center, maximum: local.maximum + center)
-            }
-            let size = shape.dimensions
-            return Bounds2D(
-                minimum: Point2D(x: center.x - size.width / 2, y: center.y - size.height / 2),
-                maximum: Point2D(x: center.x + size.width / 2, y: center.y + size.height / 2)
-            )
+            guard let local = shape.localBounds else { return nil }
+            return Bounds2D(minimum: local.minimum + center, maximum: local.maximum + center)
         case let .region(contours, _):
             return Bounds2D.containing(contours.flatMap { $0 })
         }

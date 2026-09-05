@@ -21,7 +21,20 @@ import Foundation
                 print("BOUNDS \(bounds.minimum.x) \(bounds.minimum.y) \(bounds.maximum.x) \(bounds.maximum.y)")
                 return
             }
+            if CommandLine.arguments.contains("--package") {
+                let document = try FabricationPackageLoader().load(from: URL(fileURLWithPath: CommandLine.arguments[2]))
+                print("PACKAGE \(document.layers.count) layers \(document.drills.count) drills \(document.warnings)")
+                return
+            }
             let layer = try GerberParser().parse(data: source, fileName: "subprocess.gtl")
+            if CommandLine.arguments.contains("--render-pixel") {
+                let image = try BoardRasterizer().render(BoardDocument(name: "pixel", layers: [layer], bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 10, y: 10))), options: .init(maximumTextureDimension: 256)).top
+                let x = Int(CommandLine.arguments[2])!, y = Int(CommandLine.arguments[3])!
+                let data = image.dataProvider!.data! as Data
+                let index = y * image.bytesPerRow + x * 4
+                print("PIXEL \(Array(data[index..<(index + 4)]))")
+                return
+            }
             print("ACCEPTED \(layer.primitives.count)")
         } catch {
             print("REJECTED \(error.localizedDescription)")

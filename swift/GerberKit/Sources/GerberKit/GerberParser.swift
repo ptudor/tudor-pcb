@@ -113,7 +113,7 @@ private struct ParserMachine {
     let source: String
     var format = CoordinateFormat()
     var apertures: [Int: ApertureShape] = [:]
-    var macros: [String: ApertureShape] = [:]
+    var macros: [String: ApertureMacro] = [:]
     var currentAperture: Int?
     var currentPoint = Point2D.zero
     var interpolation = Interpolation.linear
@@ -237,55 +237,16 @@ private struct ParserMachine {
     mutating func parseMacro(_ commands: [String]) {
         guard let first = commands.first else { return }
         let name = String(first.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, commands.count > 1 else { invalidDefinition(first, "Empty macro definition."); return }
-        var points: [Point2D] = []
-        var circleDiameter: Double?
-        for primitive in commands.dropFirst() {
-            let values = primitive.split(separator: ",", omittingEmptySubsequences: false)
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            guard let codeText = values.first, let code = Int(codeText) else {
-                invalidDefinition(primitive, "Unsupported or malformed macro statement."); return
-            }
-            if code == 0 { continue }
-            guard values.count >= 2, ["0", "1"].contains(values[1]) else {
-                invalidDefinition(primitive, "Invalid macro exposure."); return
-            }
-            if code == 4 {
-                guard values.count >= 3, let count = Int(values[2]), (3...5000).contains(count),
-                      values.count == 6 + count * 2 else {
-                    invalidDefinition(primitive, "Outline macro requires 3...5000 vertices and complete coordinates/rotation."); return
-                }
-                guard count + 1 <= maximumPoints - pointCount else {
-                    failure = GeometryLimitError(resource: "macro contour points", context: fileName); return
-                }
-                pointCount += count + 1
-                var local: [Point2D] = []
-                for index in 0...count {
-                    guard let x = Self.decimal(values[3 + index * 2]),
-                          let y = Self.decimal(values[4 + index * 2]),
-                          (x * format.unitScale).isFinite, (y * format.unitScale).isFinite else {
-                        invalidDefinition(primitive, "Invalid macro coordinate."); return
-                    }
-                    local.append(Point2D(x: x * format.unitScale, y: y * format.unitScale))
-                }
-                guard local.first == local.last, Self.decimal(values.last!) != nil else {
-                    invalidDefinition(primitive, "Outline macro must close and have a finite rotation."); return
-                }
-                points.append(contentsOf: local.dropLast())
-            } else if code == 1 {
-                guard (5...6).contains(values.count),
-                      let diameter = Self.decimal(values[2]), diameter >= 0,
-                      (diameter * format.unitScale).isFinite,
-                      values.dropFirst(3).allSatisfy({ Self.decimal($0) != nil }) else {
-                    invalidDefinition(primitive, "Invalid circle macro dimensions/position/rotation."); return
-                }
-                circleDiameter = diameter * format.unitScale
-            } else {
-                invalidDefinition(primitive, "Unsupported macro primitive \(code)."); return
+        guard !name.isEmpty, macros[name] == nil, commands.count > 1, commands.count <= 10_000 else { invalidDefinition(first, "Empty or oversized macro definition."); return }
+        // A literal illegal count is invalid even if the macro is never used.
+        // Parameter expressions and geometry are evaluated only at ADD.
+        for statement in commands.dropFirst() {
+            let fields = statement.split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            if fields.first == "4", fields.count >= 3, let count = Self.decimal(fields[2]) {
+                guard count.rounded() == count, (3.0...5000.0).contains(count) else { invalidDefinition(statement, "Invalid literal macro vertex count."); return }
             }
         }
-        guard !points.isEmpty || circleDiameter != nil else { invalidDefinition(first, "Macro has no supported geometry."); return }
-        macros[name] = points.isEmpty ? .circle(diameter: circleDiameter!) : .custom(points: points)
+        macros[name] = ApertureMacro(statements: Array(commands.dropFirst()))
     }
 
     mutating func parseAperture(_ command: String) {
@@ -327,7 +288,15 @@ private struct ParserMachine {
             apertures[code] = .polygon(diameter: modifiers[0], vertices: Int(modifiers[1]), rotationDegrees: modifiers.count > 2 ? modifiers[2] : 0)
         default:
             guard let macro = macros[shapeName] else { invalidDefinition(command, "Undefined aperture macro \(shapeName)."); return }
-            apertures[code] = macro
+            do {
+                let shape = try macro.instantiate(parameters: raw, scale: format.unitScale, fileName: fileName, command: command)
+                let cost = try GeometryLimits.shape(shape, context: command)
+                guard cost <= maximumPoints - pointCount else { failure = GeometryLimitError(resource: "macro geometry points", context: command); return }
+                pointCount += cost
+                apertures[code] = shape
+            } catch let error as GeometryLimitError { failure = error }
+              catch let error as GerberParseError { failure = error }
+              catch { invalidDefinition(command, error.localizedDescription) }
         }
     }
 

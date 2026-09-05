@@ -62,7 +62,18 @@ public enum GeometryLimits {
         return result
     }
 
-    static func shape(_ shape: ApertureShape, context: String) throws -> Int {
+    static func shape(_ shape: ApertureShape, context: String, depth: Int = 0) throws -> Int {
+        try require(depth < 32, "aperture nesting", context)
+        if case let .compound(primitives) = shape {
+            try require(primitives.count <= 5000, "aperture subprimitives", context)
+            var count = 0
+            for primitive in primitives {
+                let added = try cost(primitive, context: context, depth: depth + 1)
+                try require(added <= points - count, "aperture points", context)
+                count += added
+            }
+            return count
+        }
         let size = shape.dimensions
         try length(size.width, context: context)
         try length(size.height, context: context)
@@ -78,7 +89,7 @@ public enum GeometryLimits {
         }
     }
 
-    static func cost(_ primitive: GerberPrimitive, context: String) throws -> Int {
+    static func cost(_ primitive: GerberPrimitive, context: String, depth: Int = 0) throws -> Int {
         switch primitive {
         case let .line(start, end, width, _):
             try point(start, context: context); try point(end, context: context); try length(width, context: context)
@@ -89,7 +100,7 @@ public enum GeometryLimits {
                                      spacing: 0.1, minimum: 8, context: context).3 + 1
         case let .flash(center, shape, _):
             try point(center, context: context)
-            return try self.shape(shape, context: context)
+            return try self.shape(shape, context: context, depth: depth)
         case let .region(contours, _):
             var count = 0
             for contour in contours {

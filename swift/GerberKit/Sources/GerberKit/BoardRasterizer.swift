@@ -421,6 +421,28 @@ public struct BoardRasterizer: Sendable {
             path.closeSubpath()
             context.addPath(path)
             context.fillPath()
+        case let .compound(primitives):
+            guard let local = shape.localBounds else { return }
+            let low = pixel(local.minimum + center, bounds: bounds, scale: scale)
+            let high = pixel(local.maximum + center, bounds: bounds, scale: scale)
+            let left = max(0, floor(low.x) - 1), bottom = max(0, floor(low.y) - 1)
+            let right = min(Double(context.width), ceil(high.x) + 1), top = min(Double(context.height), ceil(high.y) + 1)
+            guard left < right, bottom < top else { return }
+            let width = Int(right - left), height = Int(top - bottom)
+            guard let apertureContext = makeContext(width: width, height: height) else { throw BoardRasterizerError.contextCreation }
+            let apertureBounds = Bounds2D(
+                minimum: Point2D(x: bounds.minimum.x + left / scale - center.x, y: bounds.minimum.y + bottom / scale - center.y),
+                maximum: Point2D(x: bounds.minimum.x + right / scale - center.x, y: bounds.minimum.y + top / scale - center.y))
+            for primitive in primitives {
+                try Task.checkCancellation()
+                try draw(primitive, in: apertureContext, bounds: apertureBounds, scale: scale)
+            }
+            guard let mask = apertureContext.makeImage() else { throw BoardRasterizerError.imageCreation }
+            let rect = CGRect(x: left, y: bottom, width: Double(width), height: Double(height))
+            context.saveGState()
+            context.clip(to: rect, mask: mask)
+            context.fill(rect)
+            context.restoreGState()
         case let .custom(points):
             guard let first = points.first else { return }
             let path = CGMutablePath()
