@@ -6,6 +6,10 @@ import Foundation
     static func main() {
         do {
             let source = FileHandle.standardInput.readDataToEndOfFile()
+            if CommandLine.arguments.contains("--zip") {
+                print("ACCEPTED \(try ZipArchiveReader().read(source).count)")
+                return
+            }
             let layer = try GerberParser().parse(data: source, fileName: "subprocess.gtl")
             print("ACCEPTED \(layer.primitives.count)")
         } catch {
