@@ -3,11 +3,14 @@ import Foundation
 public enum GerberParseError: Error, LocalizedError, Sendable {
     case textEncoding
     case missingGeometry(String)
+    case invalidDefinition(fileName: String, command: String, reason: String)
 
     public var errorDescription: String? {
         switch self {
         case .textEncoding:
             "The layer is not an ASCII or UTF-8 Gerber file."
+        case let .invalidDefinition(fileName, command, reason):
+            "\(fileName): \(command): \(reason)"
         case let .missingGeometry(fileName):
             "No drawable Gerber geometry was found in \(fileName)."
         }
@@ -200,65 +203,108 @@ private struct ParserMachine {
         format.decimalDigits = Int(String(digits.dropFirst().prefix(1))) ?? format.decimalDigits
     }
 
-    mutating func parseMacro(_ commands: [String]) {
-        let name = String(commands[0].dropFirst(2))
-        var points: [Point2D] = []
-        var fallbackDiameter = 0.2
+    mutating func invalidDefinition(_ command: String, _ reason: String) {
+        failure = GerberParseError.invalidDefinition(fileName: fileName, command: command, reason: reason)
+    }
 
+    // Gerber decimals do not have exponent, infinity, or NaN spellings.
+    static func decimal(_ raw: String) -> Double? {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text.range(of: #"^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$"#, options: .regularExpression) != nil,
+              let value = Double(text), value.isFinite else { return nil }
+        return value
+    }
+
+    mutating func parseMacro(_ commands: [String]) {
+        guard let first = commands.first else { return }
+        let name = String(first.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, commands.count > 1 else { invalidDefinition(first, "Empty macro definition."); return }
+        var points: [Point2D] = []
+        var circleDiameter: Double?
         for primitive in commands.dropFirst() {
-            let values = primitive.split(separator: ",").map(String.init)
-            guard let code = Int(values.first ?? "") else { continue }
-            if code == 4, values.count >= 7 {
-                let count = Int(values[2]) ?? 0
-                for index in 0..<count {
-                    let xIndex = 3 + index * 2
-                    let yIndex = xIndex + 1
-                    guard yIndex < values.count,
-                          let x = Double(values[xIndex]),
-                          let y = Double(values[yIndex]) else { continue }
-                    points.append(Point2D(x: x * format.unitScale, y: y * format.unitScale))
+            let values = primitive.split(separator: ",", omittingEmptySubsequences: false)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            guard let codeText = values.first, let code = Int(codeText) else {
+                invalidDefinition(primitive, "Unsupported or malformed macro statement."); return
+            }
+            if code == 0 { continue }
+            guard values.count >= 2, ["0", "1"].contains(values[1]) else {
+                invalidDefinition(primitive, "Invalid macro exposure."); return
+            }
+            if code == 4 {
+                guard values.count >= 3, let count = Int(values[2]), (3...5000).contains(count),
+                      values.count == 6 + count * 2 else {
+                    invalidDefinition(primitive, "Outline macro requires 3...5000 vertices and complete coordinates/rotation."); return
                 }
-            } else if code == 1, values.count >= 5, let diameter = Double(values[2]) {
-                fallbackDiameter = max(fallbackDiameter, diameter * format.unitScale)
+                var local: [Point2D] = []
+                for index in 0...count {
+                    guard let x = Self.decimal(values[3 + index * 2]),
+                          let y = Self.decimal(values[4 + index * 2]),
+                          (x * format.unitScale).isFinite, (y * format.unitScale).isFinite else {
+                        invalidDefinition(primitive, "Invalid macro coordinate."); return
+                    }
+                    local.append(Point2D(x: x * format.unitScale, y: y * format.unitScale))
+                }
+                guard local.first == local.last, Self.decimal(values.last!) != nil else {
+                    invalidDefinition(primitive, "Outline macro must close and have a finite rotation."); return
+                }
+                points.append(contentsOf: local.dropLast())
+            } else if code == 1 {
+                guard (5...6).contains(values.count),
+                      let diameter = Self.decimal(values[2]), diameter >= 0,
+                      (diameter * format.unitScale).isFinite,
+                      values.dropFirst(3).allSatisfy({ Self.decimal($0) != nil }) else {
+                    invalidDefinition(primitive, "Invalid circle macro dimensions/position/rotation."); return
+                }
+                circleDiameter = diameter * format.unitScale
+            } else {
+                invalidDefinition(primitive, "Unsupported macro primitive \(code)."); return
             }
         }
-
-        macros[name] = points.isEmpty ? .circle(diameter: fallbackDiameter) : .custom(points: points)
+        guard !points.isEmpty || circleDiameter != nil else { invalidDefinition(first, "Macro has no supported geometry."); return }
+        macros[name] = points.isEmpty ? .circle(diameter: circleDiameter!) : .custom(points: points)
     }
 
     mutating func parseAperture(_ command: String) {
         var tail = command.dropFirst(3)
         let codeDigits = tail.prefix(while: \.isNumber)
-        guard let code = Int(codeDigits) else { return }
+        guard let code = Int(codeDigits), code >= 10, code <= Int(Int32.max) else {
+            invalidDefinition(command, "Invalid aperture number."); return
+        }
         tail = tail.dropFirst(codeDigits.count)
-        let definition = String(tail)
-        let pieces = definition.split(separator: ",", maxSplits: 1).map(String.init)
-        let shapeName = pieces[0]
-        let modifiers = pieces.count > 1
-            ? pieces[1].split(separator: "X").compactMap { Double($0).map { $0 * format.unitScale } }
-            : []
-
+        let pieces = tail.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false)
+        guard let first = pieces.first, !first.isEmpty else { invalidDefinition(command, "Missing aperture template."); return }
+        let shapeName = String(first)
+        let texts = pieces.count > 1 ? pieces[1].split(separator: "X", omittingEmptySubsequences: false).map(String.init) : []
+        let raw = texts.compactMap(Self.decimal)
+        guard raw.count == texts.count, raw.allSatisfy({ ($0 * format.unitScale).isFinite }) else {
+            invalidDefinition(command, "Malformed, nonfinite, or out-of-range modifier."); return
+        }
+        // Field-specific unit conversion is corrected separately in RA6X-005.
+        let modifiers = raw.map { $0 * format.unitScale }
         switch shapeName {
         case "C":
-            apertures[code] = .circle(diameter: modifiers.first ?? 0.2)
-        case "R":
-            apertures[code] = .rectangle(
-                width: modifiers.first ?? 0.2,
-                height: modifiers.dropFirst().first ?? modifiers.first ?? 0.2
-            )
-        case "O":
-            apertures[code] = .obround(
-                width: modifiers.first ?? 0.2,
-                height: modifiers.dropFirst().first ?? modifiers.first ?? 0.2
-            )
+            guard (1...3).contains(raw.count), raw.allSatisfy({ $0 >= 0 }) else {
+                invalidDefinition(command, "Circle requires a nonnegative diameter and legal hole dimensions."); return
+            }
+            apertures[code] = .circle(diameter: modifiers[0])
+        case "R", "O":
+            guard (2...4).contains(raw.count), raw.allSatisfy({ $0 >= 0 }), raw[0] > 0, raw[1] > 0 else {
+                invalidDefinition(command, "Rectangle/obround requires positive width and height."); return
+            }
+            apertures[code] = shapeName == "R"
+                ? .rectangle(width: modifiers[0], height: modifiers[1])
+                : .obround(width: modifiers[0], height: modifiers[1])
         case "P":
-            apertures[code] = .polygon(
-                diameter: modifiers.first ?? 0.2,
-                vertices: Int(modifiers.dropFirst().first ?? 6),
-                rotationDegrees: modifiers.dropFirst(2).first ?? 0
-            )
+            guard (2...5).contains(raw.count), raw[0] > 0,
+                  let vertices = Int(texts[1]), (3...12).contains(vertices),
+                  raw.dropFirst(3).allSatisfy({ $0 >= 0 }), modifiers[1] < Double(Int.max) else {
+                invalidDefinition(command, "Polygon requires a positive diameter, 3...12 integer vertices, and finite rotation."); return
+            }
+            apertures[code] = .polygon(diameter: modifiers[0], vertices: Int(modifiers[1]), rotationDegrees: modifiers.count > 2 ? modifiers[2] : 0)
         default:
-            apertures[code] = macros[shapeName] ?? .circle(diameter: modifiers.first ?? 0.2)
+            guard let macro = macros[shapeName] else { invalidDefinition(command, "Undefined aperture macro \(shapeName)."); return }
+            apertures[code] = macro
         }
     }
 
