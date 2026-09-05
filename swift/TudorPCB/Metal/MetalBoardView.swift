@@ -7,6 +7,15 @@ import SwiftUI
 @Observable
 final class ViewerController {
     private(set) var cameraRevision = 0
+    private(set) var retryRevision = 0
+    var rendererError: String?
+    var use2DFallback = false
+
+    func retryRendering() {
+        rendererError = nil
+        use2DFallback = false
+        retryRevision += 1
+    }
     private(set) var cameraPreset = CameraPreset.perspective
 
     func show(_ preset: CameraPreset) {
@@ -21,7 +30,7 @@ struct MetalBoardView {
     var controller: ViewerController
 
     @MainActor
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator(controller: controller) }
 
     @MainActor
     fileprivate func makeMetalView(_ coordinator: Coordinator) -> InteractiveMTKView {
@@ -41,7 +50,10 @@ struct MetalBoardView {
 
     @MainActor
     fileprivate func sync(_ coordinator: Coordinator) {
-        coordinator.renderer?.update(document: document, textures: textures)
+        if let renderer = coordinator.renderer {
+            renderer.update(document: document, textures: textures)
+            coordinator.report(renderer.renderError?.localizedDescription)
+        }
         if coordinator.cameraRevision != controller.cameraRevision {
             coordinator.renderer?.apply(controller.cameraPreset)
             coordinator.cameraRevision = controller.cameraRevision
@@ -52,18 +64,40 @@ struct MetalBoardView {
     final class Coordinator: NSObject, MTKViewDelegate, BoardInteractionDelegate {
         var renderer: BoardRenderer?
         var cameraRevision = -1
+        let controller: ViewerController
+        private var reportRevision = 0
+        private let makeRenderer: (MTLDevice, MTLPixelFormat, MTLPixelFormat) throws -> BoardRenderer
+        init(controller: ViewerController, makeRenderer: @escaping (MTLDevice, MTLPixelFormat, MTLPixelFormat) throws -> BoardRenderer = {
+            try BoardRenderer(device: $0, colorPixelFormat: $1, depthPixelFormat: $2)
+        }) {
+            self.controller = controller
+            self.makeRenderer = makeRenderer
+        }
+
+        func report(_ error: String?) {
+            reportRevision += 1
+            let revision = reportRevision
+            Task { @MainActor in
+                guard revision == reportRevision else { return }
+                if controller.rendererError != error { controller.rendererError = error }
+            }
+        }
 
         func configure(view: MTKView) {
-            guard let device = view.device else { return }
-            renderer = try? BoardRenderer(
-                device: device,
-                colorPixelFormat: view.colorPixelFormat,
-                depthPixelFormat: view.depthStencilPixelFormat
-            )
+            guard let device = view.device else { report(BoardRenderer.RendererError.noDevice.localizedDescription); return }
+            renderer = nil
+            do {
+                renderer = try makeRenderer(device, view.colorPixelFormat, view.depthStencilPixelFormat)
+                renderer?.onError = { [weak self] in self?.report($0) }
+                report(nil)
+            } catch { report(error.localizedDescription) }
             view.delegate = self
         }
 
-        func draw(in view: MTKView) { renderer?.draw(in: view) }
+        func draw(in view: MTKView) {
+            renderer?.draw(in: view)
+            if let error = renderer?.renderError { report(error.localizedDescription) }
+        }
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { }
         func orbit(deltaX: Float, deltaY: Float) { renderer?.orbit(deltaX: deltaX, deltaY: deltaY) }
         func zoom(delta: Float) { renderer?.zoom(delta: delta) }

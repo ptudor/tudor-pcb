@@ -18,18 +18,24 @@ protocol BoardInteractionDelegate: AnyObject {
 
 @MainActor
 final class BoardRenderer {
+    enum AllocationStage: CaseIterable { case library, pipeline, topTexture, bottomTexture, maskTexture, vertexBuffer, indexBuffer }
+
     enum RendererError: Error, LocalizedError {
+        case noDevice
         case noCommandQueue
         case noShaderLibrary
         case noShaderFunction
         case bufferAllocation
         case meshCapacity
+        case commandEncoding
         var errorDescription: String? {
             switch self {
+            case .noDevice: "A Metal graphics device is unavailable."
             case .noCommandQueue: "Could not create the Metal command queue."
             case .noShaderLibrary: "Could not load the board shader library."
             case .noShaderFunction: "The board shader functions are missing."
             case .bufferAllocation: "Could not allocate the complete board mesh buffers."
+            case .commandEncoding: "Could not encode a Metal frame. Retry the 3D display."
             case .meshCapacity: "The board mesh exceeds the supported geometry or GPU buffer capacity."
             }
         }
@@ -49,6 +55,7 @@ final class BoardRenderer {
         var lightDirection: SIMD4<Float>
     }
 
+    private let beforeAllocation: (AllocationStage) throws -> Void
     private let allocateBuffer: (UnsafeRawPointer, Int) -> MTLBuffer?
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -59,9 +66,9 @@ final class BoardRenderer {
     private(set) var indexBuffer: MTLBuffer?
     private(set) var indexCount = 0
     private(set) var lastCommandBuffer: MTLCommandBuffer?
-    private var topTexture: MTLTexture?
-    private var bottomTexture: MTLTexture?
-    private var maskTexture: MTLTexture?
+    private(set) var topTexture: MTLTexture?
+    private(set) var bottomTexture: MTLTexture?
+    private(set) var maskTexture: MTLTexture?
 
     private var azimuth: Float = 0.58
     private var elevation: Float = 0.72
@@ -80,14 +87,28 @@ final class BoardRenderer {
         }
     }
     private var lastMeshIdentity: MeshIdentity?
-    private var lastTextureIdentity: ObjectIdentifier?
+    private struct TextureIdentity: Equatable {
+        let top: ObjectIdentifier
+        let bottom: ObjectIdentifier
+        let mask: ObjectIdentifier
+        init(_ textures: BoardTextureSet) {
+            top = ObjectIdentifier(textures.top); bottom = ObjectIdentifier(textures.bottom); mask = ObjectIdentifier(textures.boardMask)
+        }
+    }
+    private var lastTextureIdentity: TextureIdentity?
+    private(set) var hasCurrentResources = false
+    private var updateRevision = 0
+    var onError: ((String) -> Void)?
 
     init(device: MTLDevice, colorPixelFormat: MTLPixelFormat, depthPixelFormat: MTLPixelFormat,
-         bufferAllocator: ((UnsafeRawPointer, Int) -> MTLBuffer?)? = nil) throws {
+         bufferAllocator: ((UnsafeRawPointer, Int) -> MTLBuffer?)? = nil,
+         beforeAllocation: @escaping (AllocationStage) throws -> Void = { _ in }) throws {
+        self.beforeAllocation = beforeAllocation
         self.device = device
         self.allocateBuffer = bufferAllocator ?? { device.makeBuffer(bytes: $0, length: $1) }
         guard let queue = device.makeCommandQueue() else { throw RendererError.noCommandQueue }
         commandQueue = queue
+        try beforeAllocation(.library)
         guard let library = device.makeDefaultLibrary() else { throw RendererError.noShaderLibrary }
         guard let vertex = library.makeFunction(name: "board_vertex"),
               let fragment = library.makeFunction(name: "board_fragment") else {
@@ -100,6 +121,7 @@ final class BoardRenderer {
         descriptor.fragmentFunction = fragment
         descriptor.colorAttachments[0].pixelFormat = colorPixelFormat
         descriptor.depthAttachmentPixelFormat = depthPixelFormat
+        try beforeAllocation(.pipeline)
         pipeline = try device.makeRenderPipelineState(descriptor: descriptor)
 
         let depthDescriptor = MTLDepthStencilDescriptor()
@@ -123,30 +145,51 @@ final class BoardRenderer {
         self.sampler = sampler
     }
 
-    private(set) var geometryError: (any Error)?
+    private(set) var renderError: (any Error)?
+    var geometryError: (any Error)? { renderError }
 
-    func update(document: BoardDocument?, textures: BoardTextureSet?) {
-        guard let document, let textures else { return }
-        let textureIdentity = ObjectIdentifier(textures.top)
-        let meshIdentity = MeshIdentity(document)
-        if lastMeshIdentity != meshIdentity {
-            do { try buildMesh(for: document); geometryError = nil }
-            catch { geometryError = error; return }
-            lastMeshIdentity = meshIdentity
-            // Geometry changes reset the camera; texture/layer/finish updates retain it.
-            apply(.perspective)
+    @discardableResult
+    func update(document: BoardDocument?, textures: BoardTextureSet?) -> Bool {
+        updateRevision += 1
+        guard let document, let textures else {
+            vertexBuffer = nil; indexBuffer = nil; indexCount = 0
+            topTexture = nil; bottomTexture = nil; maskTexture = nil
+            lastMeshIdentity = nil; lastTextureIdentity = nil
+            hasCurrentResources = false; renderError = nil
+            return true
         }
-        if lastTextureIdentity != textureIdentity {
-            let loader = MTKTextureLoader(device: device)
-            let options: [MTKTextureLoader.Option: Any] = [
-                .SRGB: true,
-                .generateMipmaps: true,
-                .origin: MTKTextureLoader.Origin.bottomLeft
-            ]
-            topTexture = try? loader.newTexture(cgImage: textures.top, options: options)
-            bottomTexture = try? loader.newTexture(cgImage: textures.bottom, options: options)
-            maskTexture = try? loader.newTexture(cgImage: textures.boardMask, options: options)
-            lastTextureIdentity = textureIdentity
+        let textureIdentity = TextureIdentity(textures)
+        let meshIdentity = MeshIdentity(document)
+        do {
+            let meshChanged = lastMeshIdentity != meshIdentity
+            let nextMesh = meshChanged ? try buildMesh(for: document) : nil
+            var nextTop = topTexture, nextBottom = bottomTexture, nextMask = maskTexture
+            if lastTextureIdentity != textureIdentity {
+                let loader = MTKTextureLoader(device: device)
+                let options: [MTKTextureLoader.Option: Any] = [
+                    .SRGB: true, .generateMipmaps: true, .origin: MTKTextureLoader.Origin.bottomLeft
+                ]
+                try beforeAllocation(.topTexture)
+                nextTop = try loader.newTexture(cgImage: textures.top, options: options)
+                try beforeAllocation(.bottomTexture)
+                nextBottom = try loader.newTexture(cgImage: textures.bottom, options: options)
+                try beforeAllocation(.maskTexture)
+                nextMask = try loader.newTexture(cgImage: textures.boardMask, options: options)
+            }
+            guard let nextTop, let nextBottom, let nextMask,
+                  nextMesh != nil || (vertexBuffer != nil && indexBuffer != nil) else { throw RendererError.bufferAllocation }
+            // Publish a complete matching mesh/texture set and only then advance caches.
+            if let nextMesh { vertexBuffer = nextMesh.0; indexBuffer = nextMesh.1; indexCount = nextMesh.2 }
+            topTexture = nextTop; bottomTexture = nextBottom; maskTexture = nextMask
+            lastMeshIdentity = meshIdentity; lastTextureIdentity = textureIdentity
+            renderError = nil; hasCurrentResources = true
+            if meshChanged { apply(.perspective) } // Texture-only updates preserve the camera.
+            return true
+        } catch {
+            renderError = error
+            hasCurrentResources = false
+            onError?(error.localizedDescription)
+            return false
         }
     }
 
@@ -179,6 +222,7 @@ final class BoardRenderer {
     }
 
     func draw(in view: MTKView) {
+        guard hasCurrentResources else { return }
         distance += (targetDistance - distance) * 0.16
         guard let pass = view.currentRenderPassDescriptor,
               let drawable = view.currentDrawable,
@@ -187,9 +231,13 @@ final class BoardRenderer {
               let topTexture,
               let bottomTexture,
               let maskTexture,
-              indexCount > 0,
-              let commandBuffer = commandQueue.makeCommandBuffer(),
-              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+              indexCount > 0 else { return }
+        guard let commandBuffer = commandQueue.makeCommandBuffer(),
+              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else {
+            renderError = RendererError.commandEncoding
+            hasCurrentResources = false
+            return
+        }
 
         let aspect = Float(max(view.drawableSize.width, 1) / max(view.drawableSize.height, 1))
         let eye = SIMD3<Float>(
@@ -228,11 +276,21 @@ final class BoardRenderer {
         )
         encoder.endEncoding()
         commandBuffer.present(drawable)
+        let revision = updateRevision
+        commandBuffer.addCompletedHandler { [weak self] completed in
+            guard let error = completed.error else { return }
+            Task { @MainActor [weak self] in
+                guard let self, self.updateRevision == revision else { return }
+                self.renderError = error
+                self.hasCurrentResources = false
+                self.onError?(error.localizedDescription)
+            }
+        }
         commandBuffer.commit()
         lastCommandBuffer = commandBuffer
     }
 
-    private func buildMesh(for document: BoardDocument) throws {
+    private func buildMesh(for document: BoardDocument) throws -> (MTLBuffer, MTLBuffer, Int) {
         try document.validateForRendering()
         let longest = Float(max(document.bounds.width, document.bounds.height, 0.001))
         let halfWidth = Float(document.bounds.width) / longest / 2
@@ -298,16 +356,16 @@ final class BoardRenderer {
             }
         }
 
+        try beforeAllocation(.vertexBuffer)
         let newVertices = vertices.withUnsafeBytes { bytes in
             bytes.baseAddress.flatMap { allocateBuffer($0, bytes.count) }
         }
+        try beforeAllocation(.indexBuffer)
         let newIndices = indices.withUnsafeBytes { bytes in
             bytes.baseAddress.flatMap { allocateBuffer($0, bytes.count) }
         }
         guard let newVertices, let newIndices else { throw RendererError.bufferAllocation }
-        vertexBuffer = newVertices
-        indexBuffer = newIndices
-        indexCount = indices.count
+        return (newVertices, newIndices, indices.count)
 
         func worldPoint(_ point: Point2D) -> SIMD3<Float> {
             SIMD3<Float>(

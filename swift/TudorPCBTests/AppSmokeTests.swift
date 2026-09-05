@@ -355,3 +355,84 @@ extension AppSmokeTests {
         XCTAssertNil(model.errorMessage)
     }
 }
+
+private enum InjectedGPUError: Error, LocalizedError {
+    case allocation
+    var errorDescription: String? { "Injected GPU allocation failure" }
+}
+
+extension AppSmokeTests {
+    @MainActor
+    func testGPUResourceFailuresAreTransactionalAndRetryable() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let a = BoardDocument(name: "A")
+        let aTextures = try BoardRasterizer().render(a, options: .init(maximumTextureDimension: 256))
+        let b = BoardDocument(name: "B", thicknessMillimeters: 0.8)
+        let bTextures = try BoardRasterizer().render(b, options: .init(maximumTextureDimension: 256, solderMaskColor: .blueMask))
+        for stage in [BoardRenderer.AllocationStage.topTexture, .bottomTexture, .maskTexture, .vertexBuffer, .indexBuffer] {
+            var failedStage: BoardRenderer.AllocationStage?
+            let renderer = try BoardRenderer(device: device, colorPixelFormat: .bgra8Unorm_srgb, depthPixelFormat: .depth32Float,
+                beforeAllocation: { if $0 == failedStage { throw InjectedGPUError.allocation } })
+            XCTAssertTrue(renderer.update(document: a, textures: aTextures))
+            let oldMesh = renderer.vertexBuffer
+            let oldTop = renderer.topTexture
+            let oldBottom = renderer.bottomTexture
+            let oldMask = renderer.maskTexture
+            failedStage = stage
+            XCTAssertFalse(renderer.update(document: b, textures: bTextures))
+            XCTAssertFalse(renderer.hasCurrentResources)
+            XCTAssertNotNil(renderer.renderError)
+            XCTAssertTrue(renderer.vertexBuffer === oldMesh)
+            XCTAssertTrue(renderer.topTexture === oldTop)
+            XCTAssertTrue(renderer.bottomTexture === oldBottom)
+            XCTAssertTrue(renderer.maskTexture === oldMask)
+            failedStage = nil
+            XCTAssertTrue(renderer.update(document: b, textures: bTextures))
+            XCTAssertNil(renderer.renderError)
+            XCTAssertTrue(renderer.hasCurrentResources)
+            XCTAssertFalse(renderer.vertexBuffer === oldMesh)
+        }
+    }
+
+    @MainActor
+    func testBottomAndMaskChangesUploadWhenTopImageIsUnchanged() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let renderer = try BoardRenderer(device: device, colorPixelFormat: .bgra8Unorm_srgb, depthPixelFormat: .depth32Float)
+        let board = BoardDocument(name: "identity")
+        let a = try BoardRasterizer().render(board, options: .init(maximumTextureDimension: 256))
+        let b = try BoardRasterizer().render(board, options: .init(maximumTextureDimension: 256, solderMaskColor: .redMask))
+        XCTAssertTrue(renderer.update(document: board, textures: a))
+        let bottom = renderer.bottomTexture
+        let mask = renderer.maskTexture
+        let replacement = BoardTextureSet(top: a.top, bottom: b.bottom, boardMask: b.boardMask, pixelWidth: 256, pixelHeight: b.pixelHeight)
+        XCTAssertTrue(renderer.update(document: board, textures: replacement))
+        XCTAssertFalse(renderer.bottomTexture === bottom)
+        XCTAssertFalse(renderer.maskTexture === mask)
+    }
+
+    @MainActor
+    func testLibraryAndPipelineFailuresReachObservableStateAndRetry() async throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        for stage in [BoardRenderer.AllocationStage.library, .pipeline] {
+            var fail = true
+            let controller = ViewerController()
+            let coordinator = MetalBoardView.Coordinator(controller: controller, makeRenderer: { device, color, depth in
+                try BoardRenderer(device: device, colorPixelFormat: color, depthPixelFormat: depth,
+                    beforeAllocation: { if fail && $0 == stage { throw InjectedGPUError.allocation } })
+            })
+            let view = MTKView(frame: .zero, device: device)
+            view.colorPixelFormat = .bgra8Unorm_srgb
+            view.depthStencilPixelFormat = .depth32Float
+            coordinator.configure(view: view)
+            try await waitUntil { controller.rendererError != nil }
+            XCTAssertTrue(controller.rendererError?.contains("GPU allocation") == true)
+            XCTAssertNil(coordinator.renderer)
+            fail = false
+            controller.retryRendering()
+            coordinator.configure(view: view)
+            try await waitUntil { controller.rendererError == nil }
+            XCTAssertNotNil(coordinator.renderer)
+            XCTAssertEqual(controller.retryRevision, 1)
+        }
+    }
+}

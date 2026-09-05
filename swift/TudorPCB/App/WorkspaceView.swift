@@ -17,6 +17,26 @@ struct WorkspaceView: View {
         } detail: {
             ZStack {
                 MetalBoardView(document: model.document, textures: model.textures, controller: viewer)
+                    .id(viewer.retryRevision)
+                    .opacity(viewer.rendererError == nil && !viewer.use2DFallback ? 1 : 0)
+                if viewer.use2DFallback, let textures = model.textures {
+                    VStack {
+                        Text("2D faces · \(model.document?.name ?? "Board")")
+                        HStack {
+                            Image(decorative: textures.top, scale: 1).resizable().scaledToFit().accessibilityLabel("Top face")
+                            Image(decorative: textures.bottom, scale: 1).resizable().scaledToFit().accessibilityLabel("Bottom face in board coordinates")
+                        }
+                        Button("Retry 3D") { viewer.retryRendering() }
+                    }.padding().background(.background)
+                } else if let error = viewer.rendererError {
+                    VStack(spacing: 12) {
+                        Text("3D display unavailable").font(.headline)
+                        Text(model.document?.name ?? "Workspace")
+                        Text(error)
+                        Button("Retry 3D") { viewer.retryRendering() }
+                        if model.textures != nil { Button("Show 2D faces") { viewer.use2DFallback = true } }
+                    }.padding().background(.background, in: RoundedRectangle(cornerRadius: 12))
+                }
                 if model.document == nil { welcomeOverlay }
                 if model.isLoading {
                     VStack {
