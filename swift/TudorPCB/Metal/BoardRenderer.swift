@@ -18,11 +18,21 @@ protocol BoardInteractionDelegate: AnyObject {
 
 @MainActor
 final class BoardRenderer {
-    enum RendererError: Error {
+    enum RendererError: Error, LocalizedError {
         case noCommandQueue
         case noShaderLibrary
         case noShaderFunction
         case bufferAllocation
+        case meshCapacity
+        var errorDescription: String? {
+            switch self {
+            case .noCommandQueue: "Could not create the Metal command queue."
+            case .noShaderLibrary: "Could not load the board shader library."
+            case .noShaderFunction: "The board shader functions are missing."
+            case .bufferAllocation: "Could not allocate the complete board mesh buffers."
+            case .meshCapacity: "The board mesh exceeds the supported geometry or GPU buffer capacity."
+            }
+        }
     }
 
     struct BoardVertex {
@@ -39,14 +49,16 @@ final class BoardRenderer {
         var lightDirection: SIMD4<Float>
     }
 
+    private let allocateBuffer: (UnsafeRawPointer, Int) -> MTLBuffer?
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let pipeline: MTLRenderPipelineState
     private let depthState: MTLDepthStencilState
     private let sampler: MTLSamplerState
     private(set) var vertexBuffer: MTLBuffer?
-    private var indexBuffer: MTLBuffer?
-    private var indexCount = 0
+    private(set) var indexBuffer: MTLBuffer?
+    private(set) var indexCount = 0
+    private(set) var lastCommandBuffer: MTLCommandBuffer?
     private var topTexture: MTLTexture?
     private var bottomTexture: MTLTexture?
     private var maskTexture: MTLTexture?
@@ -58,8 +70,10 @@ final class BoardRenderer {
     private var lastDocumentName: String?
     private var lastTextureIdentity: ObjectIdentifier?
 
-    init(device: MTLDevice, colorPixelFormat: MTLPixelFormat, depthPixelFormat: MTLPixelFormat) throws {
+    init(device: MTLDevice, colorPixelFormat: MTLPixelFormat, depthPixelFormat: MTLPixelFormat,
+         bufferAllocator: ((UnsafeRawPointer, Int) -> MTLBuffer?)? = nil) throws {
         self.device = device
+        self.allocateBuffer = bufferAllocator ?? { device.makeBuffer(bytes: $0, length: $1) }
         guard let queue = device.makeCommandQueue() else { throw RendererError.noCommandQueue }
         commandQueue = queue
         guard let library = device.makeDefaultLibrary() else { throw RendererError.noShaderLibrary }
@@ -194,13 +208,14 @@ final class BoardRenderer {
         encoder.drawIndexedPrimitives(
             type: .triangle,
             indexCount: indexCount,
-            indexType: .uint16,
+            indexType: .uint32,
             indexBuffer: indexBuffer,
             indexBufferOffset: 0
         )
         encoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
+        lastCommandBuffer = commandBuffer
     }
 
     private func buildMesh(for document: BoardDocument) throws {
@@ -212,10 +227,27 @@ final class BoardRenderer {
         let yTop = halfHeight
         let yBottom = -halfHeight
 
+        let edgePaths = try BoardOutlineExtractor.edgePaths(in: document)
+        let maximumVertices = GeometryLimits.meshVertices
+        var faces = 2
+        for path in edgePaths {
+            let added = max(0, path.count - 1)
+            guard added <= maximumVertices / 4 - faces else { throw RendererError.meshCapacity }
+            faces += added
+        }
+        let plannedVertices = faces * 4
+        let plannedIndices = faces * 6
+        guard plannedVertices <= Int(UInt32.max),
+              plannedVertices <= device.maxBufferLength / MemoryLayout<BoardVertex>.stride,
+              plannedIndices <= device.maxBufferLength / MemoryLayout<UInt32>.stride else { throw RendererError.meshCapacity }
         var vertices: [BoardVertex] = []
-        var indices: [UInt16] = []
-        func face(_ positions: [SIMD3<Float>], normal: SIMD3<Float>, material: UInt32, uv: [SIMD2<Float>]) {
-            let base = UInt16(vertices.count)
+        var indices: [UInt32] = []
+        vertices.reserveCapacity(plannedVertices)
+        indices.reserveCapacity(plannedIndices)
+        func face(_ positions: [SIMD3<Float>], normal: SIMD3<Float>, material: UInt32, uv: [SIMD2<Float>]) throws {
+            guard vertices.count <= maximumVertices - 4, let base = UInt32(exactly: vertices.count), base <= UInt32.max - 3 else {
+                throw RendererError.meshCapacity
+            }
             for index in 0..<4 {
                 vertices.append(BoardVertex(position: positions[index], normal: normal, uv: uv[index], material: material))
             }
@@ -223,11 +255,11 @@ final class BoardRenderer {
         }
 
         let standardUV = [SIMD2<Float>(0, 0), SIMD2<Float>(1, 0), SIMD2<Float>(1, 1), SIMD2<Float>(0, 1)]
-        face([
+        try face([
             SIMD3(-halfWidth, yTop, halfDepth), SIMD3(halfWidth, yTop, halfDepth),
             SIMD3(halfWidth, yTop, -halfDepth), SIMD3(-halfWidth, yTop, -halfDepth)
         ], normal: SIMD3(0, 1, 0), material: 0, uv: standardUV)
-        face([
+        try face([
             SIMD3(halfWidth, yBottom, halfDepth), SIMD3(-halfWidth, yBottom, halfDepth),
             SIMD3(-halfWidth, yBottom, -halfDepth), SIMD3(halfWidth, yBottom, -halfDepth)
         ], normal: SIMD3(0, -1, 0), material: 1, uv: [
@@ -238,22 +270,29 @@ final class BoardRenderer {
         ])
 
         let edgeUV = Array(repeating: SIMD2<Float>(0.5, 0.5), count: 4)
-        for edgePath in try BoardOutlineExtractor.edgePaths(in: document) where edgePath.count >= 2 {
+        for edgePath in edgePaths where edgePath.count >= 2 {
             for index in 0..<(edgePath.count - 1) {
                 let p0 = worldPoint(edgePath[index])
                 let p1 = worldPoint(edgePath[index + 1])
                 let delta = p1 - p0
                 guard simd_length(delta) > 0.000_001 else { continue }
                 let normal = normalize(SIMD3<Float>(delta.z, 0, -delta.x))
-                face([
+                try face([
                     SIMD3(p0.x, yBottom, p0.z), SIMD3(p1.x, yBottom, p1.z),
                     SIMD3(p1.x, yTop, p1.z), SIMD3(p0.x, yTop, p0.z)
                 ], normal: normal, material: 2, uv: edgeUV)
             }
         }
 
-        vertexBuffer = device.makeBuffer(bytes: vertices, length: vertices.count * MemoryLayout<BoardVertex>.stride)
-        indexBuffer = device.makeBuffer(bytes: indices, length: indices.count * MemoryLayout<UInt16>.stride)
+        let newVertices = vertices.withUnsafeBytes { bytes in
+            bytes.baseAddress.flatMap { allocateBuffer($0, bytes.count) }
+        }
+        let newIndices = indices.withUnsafeBytes { bytes in
+            bytes.baseAddress.flatMap { allocateBuffer($0, bytes.count) }
+        }
+        guard let newVertices, let newIndices else { throw RendererError.bufferAllocation }
+        vertexBuffer = newVertices
+        indexBuffer = newIndices
         indexCount = indices.count
 
         func worldPoint(_ point: Point2D) -> SIMD3<Float> {

@@ -12,6 +12,7 @@ public enum GeometryLimits {
     public static let repeats = 100_000
     public static let primitives = 1_000_000
     public static let points = 4_000_000
+    public static let meshVertices = 2_000_000
     public static let polygonVertices = 5_000
     public static let segmentsPerArc = 250_000
     public static let coordinateMagnitude = 1_000_000.0
