@@ -6,6 +6,7 @@ struct WorkspaceView: View {
     @State private var model = WorkspaceModel()
     @State private var viewer = ViewerController()
     @State private var isImporting = false
+    @State private var isRelinking = false
     @State private var isImportingTopProof = false
     @State private var isImportingBottomProof = false
     @State private var isShowingHistory = false
@@ -139,6 +140,19 @@ struct WorkspaceView: View {
         } message: {
             Text(model.errorMessage ?? "Unknown error")
         }
+        .alert("History access needs attention", isPresented: Binding(
+            get: { model.historyAccessError != nil },
+            set: { if !$0 { model.historyAccessError = nil } }
+        )) {
+            Button("Reselect Source…") { isRelinking = true }
+            Button("Later", role: .cancel) { model.historyAccessError = nil }
+        } message: { Text(model.historyAccessError ?? "") }
+        .fileImporter(isPresented: $isRelinking, allowedContentTypes: [.zip, .folder, .data]) { result in
+            switch result {
+            case let .success(url): model.relink(url)
+            case let .failure(error): model.historyAccessError = error.localizedDescription
+            }
+        }
         .sheet(isPresented: $model.showProofs) {
             if let document = model.document { ProofGalleryView(document: document) }
         }
@@ -146,6 +160,7 @@ struct WorkspaceView: View {
             PackageBrowserView(
                 entries: model.historyEntries,
                 onOpen: { model.open($0) },
+                onRelink: { model.relinkEntry = $0; isShowingHistory = false; isRelinking = true },
                 onRemove: { model.removeFromHistory($0) },
                 onClear: { model.clearHistory() }
             )
@@ -406,6 +421,7 @@ struct WorkspaceView: View {
 private struct PackageBrowserView: View {
     let entries: [PackageHistoryEntry]
     let onOpen: (PackageHistoryEntry) -> Void
+    let onRelink: (PackageHistoryEntry) -> Void
     let onRemove: (PackageHistoryEntry) -> Void
     let onClear: () -> Void
 
@@ -444,6 +460,7 @@ private struct PackageBrowserView: View {
                             PackageHistoryRow(entry: entry)
                         }
                         .contextMenu {
+                            Button("Relink Source…") { onRelink(entry); dismiss() }
                             Button("Remove from History", role: .destructive) { onRemove(entry) }
                         }
                     }

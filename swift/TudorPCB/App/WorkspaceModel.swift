@@ -38,6 +38,8 @@ final class WorkspaceModel {
     var isOpening: Bool { if case .opening = phase { true } else { false } }
     var pendingFileName: String? { if case let .opening(name) = phase { name } else { nil } }
     var errorMessage: String?
+    var historyAccessError: String?
+    var relinkEntry: PackageHistoryEntry?
     var candidateChoices: [FabricationSelection] = []
     private var candidateURL: URL?
     var visibleLayerIDs: Set<String> = []
@@ -54,6 +56,7 @@ final class WorkspaceModel {
     private let loadPackage: @Sendable (URL) async throws -> BoardDocument
     private let loadSelection: @Sendable (URL, FabricationSelection) async throws -> BoardDocument
     private let renderBoard: @Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet
+    private let makeBookmark: (URL) throws -> Data
     private let saveHistory: ([PackageHistoryEntry]) -> Void
     private let startAccess: (URL) -> Bool
     private let stopAccess: (URL) -> Void
@@ -67,6 +70,7 @@ final class WorkspaceModel {
         renderBoard: (@Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet)? = nil,
         startAccess: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
         stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() },
+        makeBookmark: @escaping (URL) throws -> Data = { try PackageHistoryStore.makeBookmark(for: $0) },
         saveHistory: @escaping ([PackageHistoryEntry]) -> Void = { PackageHistoryStore.save($0) }
     ) {
         self.readProof = readProof
@@ -77,9 +81,10 @@ final class WorkspaceModel {
         self.startAccess = startAccess
         self.stopAccess = stopAccess
         self.saveHistory = saveHistory
+        self.makeBookmark = makeBookmark
     }
 
-    func open(_ url: URL, selection: FabricationSelection? = nil) {
+    func open(_ url: URL, selection: FabricationSelection? = nil, fromHistory: PackageHistoryEntry? = nil) {
         candidateChoices = []
         candidateURL = nil
         loadTask?.cancel()
@@ -91,6 +96,12 @@ final class WorkspaceModel {
         proofTask?.cancel()
         proofGeneration += 1
         let hasAccess = startAccess(url)
+        if fromHistory != nil && !hasAccess {
+            phase = .idle
+            relinkEntry = fromHistory
+            historyAccessError = HistoryAccessError.reselectRequired(url.path).localizedDescription
+            return
+        }
         phase = .opening(url.lastPathComponent)
         errorMessage = nil
         let maskStyle = self.maskStyle
@@ -106,7 +117,17 @@ final class WorkspaceModel {
                 let rendered = try await renderBoard(next, BoardRenderOptions(visibleLayerIDs: visible, solderMaskColor: maskStyle.color))
                 guard generation == documentGeneration else { return }
                 try Task.checkCancellation()
-                let historyEntry = PackageHistoryEntry.capture(url: url, document: next)
+                var historyEntry = PackageHistoryEntry.capture(url: url, document: next)
+                do {
+                    // A history URL holds scoped access here. Stale bookmarks
+                    // are refreshed only after the package successfully opens.
+                    historyEntry.bookmarkData = try makeBookmark(url)
+                    historyAccessError = nil
+                    relinkEntry = nil
+                } catch {
+                    historyAccessError = "The package opened, but persistent access could not be saved: \(error.localizedDescription) Reselect the source to retry."
+                    relinkEntry = historyEntry
+                }
                 document = next
                 textures = rendered
                 visibleLayerIDs = visible
@@ -138,10 +159,17 @@ final class WorkspaceModel {
 
     func open(_ entry: PackageHistoryEntry) {
         do {
-            open(try PackageHistoryStore.resolve(entry), selection: entry.sourceSelection)
+            open(try PackageHistoryStore.resolve(entry), selection: entry.sourceSelection, fromHistory: entry)
         } catch {
-            errorMessage = "The original package could not be reopened. It may have moved or no longer be available."
+            relinkEntry = entry
+            historyAccessError = "Could not restore access to \(entry.sourcePath): \(error.localizedDescription) Reselect the source to relink it."
         }
+    }
+
+    func relink(_ url: URL) {
+        let selection = relinkEntry?.sourceSelection
+        historyAccessError = nil
+        open(url, selection: selection)
     }
 
     func removeFromHistory(_ entry: PackageHistoryEntry) {

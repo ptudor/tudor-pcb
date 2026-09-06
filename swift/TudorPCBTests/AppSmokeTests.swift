@@ -232,6 +232,38 @@ private actor ControlledPackageLoader {
 
 extension AppSmokeTests {
     @MainActor
+    func testBookmarkFailuresRemainVisibleAndRequireReselection() async throws {
+        var creations = 0
+        let model = WorkspaceModel(loadPackage: { _ in BoardDocument(name: "opened") },
+            startAccess: { _ in false }, makeBookmark: { _ in
+                creations += 1
+                throw CocoaError(.fileReadNoPermission)
+            }, saveHistory: { _ in })
+        model.historyEntries = []
+        model.open(URL(fileURLWithPath: "/outside/board.gbr"))
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.document?.name, "opened")
+        XCTAssertNotNil(model.historyAccessError)
+        XCTAssertEqual(creations, 1)
+        let entry = try XCTUnwrap(model.historyEntries.first)
+        XCTAssertNil(entry.bookmarkData)
+        XCTAssertThrowsError(try PackageHistoryStore.resolve(entry))
+        model.open(entry)
+        XCTAssertNotNil(model.historyAccessError)
+        XCTAssertEqual(model.relinkEntry?.id, entry.id)
+        XCTAssertEqual(creations, 1)
+        model.relink(URL(fileURLWithPath: "/reselected/board.gbr"))
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(creations, 2)
+        var corrupt = entry
+        corrupt.bookmarkData = Data([0, 1, 2])
+        XCTAssertThrowsError(try PackageHistoryStore.resolve(corrupt))
+        // No bookmark can be refreshed if scoped access was denied.
+        model.open(URL(fileURLWithPath: entry.sourcePath), fromHistory: entry)
+        XCTAssertEqual(creations, 2)
+    }
+
+    @MainActor
     private func waitUntil(_ condition: () -> Bool) async throws {
         for _ in 0..<1000 {
             if condition() { return }

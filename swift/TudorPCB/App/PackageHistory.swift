@@ -56,7 +56,7 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
         return formatter.localizedString(for: ageDate, relativeTo: .now)
     }
 
-    static func capture(url: URL, document: BoardDocument, now: Date = .now) -> Self {
+    static func capture(url: URL, document: BoardDocument, now: Date = .now, bookmarkData: Data? = nil) -> Self {
         let keys: Set<URLResourceKey> = [
             .isDirectoryKey, .creationDateKey, .contentModificationDateKey,
             .fileSizeKey, .totalFileAllocatedSizeKey
@@ -105,7 +105,7 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
             colorSilkscreenSides: Set(document.colorSilkscreens.map(\.side)).count,
             packageRole: document.packageRole,
             enclosedSourceCount: document.enclosedSourceArchives.count,
-            bookmarkData: PackageHistoryStore.makeBookmark(for: url),
+            bookmarkData: bookmarkData,
             sourceSelection: document.sourceSelection
         )
     }
@@ -161,15 +161,15 @@ nonisolated enum PackageHistoryStore {
         return Array(updated.sorted { $0.lastOpenedAt > $1.lastOpenedAt }.prefix(maximumEntries))
     }
 
-    static func makeBookmark(for url: URL) -> Data? {
+    static func makeBookmark(for url: URL) throws -> Data {
         #if os(macOS)
-        return try? url.bookmarkData(
+        return try url.bookmarkData(
             options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         )
         #else
-        return try? url.bookmarkData(
+        return try url.bookmarkData(
             options: .minimalBookmark,
             includingResourceValuesForKeys: nil,
             relativeTo: nil
@@ -192,9 +192,13 @@ nonisolated enum PackageHistoryStore {
                 bookmarkDataIsStale: &stale
             )
         }
-        guard FileManager.default.fileExists(atPath: entry.sourcePath) else {
-            throw CocoaError(.fileNoSuchFile)
-        }
-        return URL(fileURLWithPath: entry.sourcePath)
+        throw HistoryAccessError.reselectRequired(entry.sourcePath)
+    }
+}
+
+nonisolated enum HistoryAccessError: Error, LocalizedError {
+    case reselectRequired(String)
+    var errorDescription: String? {
+        switch self { case let .reselectRequired(path): "Persistent access to \(path) is unavailable. Reselect the original file or folder to relink it." }
     }
 }
