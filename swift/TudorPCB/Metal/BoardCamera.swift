@@ -66,7 +66,11 @@ struct BoardCamera {
         targetDistance = min(max(5, fitDistance * 4), max(near * 2, targetDistance * exp(delta * 0.004)))
         isFitted = false
     }
-    mutating func advance() { distance += (targetDistance - distance) * 0.16 }
+    var isAnimating: Bool { abs(targetDistance - distance) > max(0.00001, targetDistance * 0.0001) }
+    mutating func advance() {
+        distance += (targetDistance - distance) * 0.16
+        if !isAnimating { distance = targetDistance }
+    }
     var viewProjection: simd_float4x4 {
         perspective(fovY: fov, aspect: aspect, near: near, far: max(20, distance + length(halfExtents) * 2 + 1)) * lookAt(eye: direction * distance, center: .zero, up: up)
     }

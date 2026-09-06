@@ -3,6 +3,7 @@ import GerberKit
 import UniformTypeIdentifiers
 
 struct WorkspaceView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var model = WorkspaceModel()
     @State private var viewer = ViewerController()
     @State private var preferredCompactColumn = NavigationSplitViewColumn.detail
@@ -17,7 +18,7 @@ struct WorkspaceView: View {
                 .toolbar { packageToolbar }
         } detail: {
             ZStack {
-                MetalBoardView(document: model.document, textures: model.textures, controller: viewer)
+                MetalBoardView(document: model.document, textures: model.textures, controller: viewer, isActive: scenePhase == .active && viewer.rendererError == nil && !viewer.use2DFallback && model.inspectionTarget == nil)
                     .id(viewer.retryRevision)
                     .opacity(viewer.rendererError == nil && !viewer.use2DFallback && model.inspectionTarget == nil ? 1 : 0)
                 if let document = model.document, model.inspectionTarget != nil {

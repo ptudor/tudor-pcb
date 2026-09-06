@@ -14,6 +14,7 @@ protocol BoardInteractionDelegate: AnyObject {
     func orbit(deltaX: Float, deltaY: Float)
     func zoom(delta: Float)
     func fitCamera()
+    func visibilityChanged()
 }
 
 @MainActor
@@ -71,6 +72,9 @@ final class BoardRenderer {
     private(set) var maskTexture: MTLTexture?
 
     private(set) var camera = BoardCamera()
+    private(set) var contentRevision = 0
+    private(set) var renderedFrameCount = 0
+    var isAnimating: Bool { camera.isAnimating }
     private struct MeshIdentity: Equatable {
         let bounds: Bounds2D
         let thickness: Double
@@ -147,8 +151,8 @@ final class BoardRenderer {
 
     @discardableResult
     func update(document: BoardDocument?, textures: BoardTextureSet?) -> Bool {
-        updateRevision += 1
         guard let document, let textures else {
+            updateRevision += 1; contentRevision += 1
             vertexBuffer = nil; indexBuffer = nil; indexCount = 0
             topTexture = nil; bottomTexture = nil; maskTexture = nil
             lastMeshIdentity = nil; lastTextureIdentity = nil
@@ -157,6 +161,8 @@ final class BoardRenderer {
         }
         let textureIdentity = TextureIdentity(textures)
         let meshIdentity = MeshIdentity(document)
+        if hasCurrentResources, lastMeshIdentity == meshIdentity, lastTextureIdentity == textureIdentity { return true }
+        updateRevision += 1; contentRevision += 1
         do {
             let meshChanged = lastMeshIdentity != meshIdentity
             let nextMesh = meshChanged ? try buildMesh(for: document) : nil
@@ -251,6 +257,7 @@ final class BoardRenderer {
             }
         }
         commandBuffer.commit()
+        renderedFrameCount += 1
         lastCommandBuffer = commandBuffer
     }
 

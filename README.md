@@ -132,3 +132,5 @@ Layer eyes control physical outer copper/mask/silkscreen appearance only. Every 
 Fit uses physical board bounds, thickness, orientation, viewport aspect and a 10% margin; resizing a fitted view preserves its selected side. The source inspector supports drag/pinch, double-tap focus, and labeled zoom/pan/Fit Source controls. Each completed zoom renders the original geometry into the selected millimeter viewport and reports viewport size and mm/texel; magnifying the 3D overview alone does not add fabrication detail.
 
 Color proofs use an adaptive, vertically scrolling gallery. Select Inspect Image to zoom/pan an individual supplied or attached image; its side and source filename stay identified, and Done returns to the gallery. Fit Image restores the full preview. History search and removal always select a remaining visible entry or show no detail; clearing history does not remove source files.
+
+Metal draws on document, texture, camera and size changes. Zoom easing temporarily runs at 60 Hz, then settles and pauses. Empty, hidden/occluded, backgrounded, and 2D-inspection views pause GPU submission and invalidate when visible again.

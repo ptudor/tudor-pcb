@@ -32,6 +32,7 @@ struct MetalBoardView {
     var document: BoardDocument?
     var textures: BoardTextureSet?
     var controller: ViewerController
+    var isActive = true
 
     @MainActor
     func makeCoordinator() -> Coordinator { Coordinator(controller: controller) }
@@ -44,8 +45,8 @@ struct MetalBoardView {
         view.clearColor = MTLClearColor(red: 0.018, green: 0.024, blue: 0.031, alpha: 1)
         view.clearDepth = 1
         view.preferredFramesPerSecond = 60
-        view.enableSetNeedsDisplay = false
-        view.isPaused = false
+        view.enableSetNeedsDisplay = true
+        view.isPaused = true
         view.interactionDelegate = coordinator
         coordinator.configure(view: view)
         sync(coordinator)
@@ -54,9 +55,12 @@ struct MetalBoardView {
 
     @MainActor
     fileprivate func sync(_ coordinator: Coordinator) {
+        coordinator.setActive(isActive)
         if let renderer = coordinator.renderer {
+            let revision = renderer.contentRevision
             renderer.update(document: document, textures: textures)
             coordinator.report(renderer.renderError?.localizedDescription)
+            if renderer.contentRevision != revision { coordinator.invalidate() }
         }
         if coordinator.zoomRevision != controller.zoomRevision {
             coordinator.zoom(delta: controller.zoomDelta)
@@ -65,12 +69,15 @@ struct MetalBoardView {
         if coordinator.cameraRevision != controller.cameraRevision {
             coordinator.renderer?.apply(controller.cameraPreset)
             coordinator.cameraRevision = controller.cameraRevision
+            coordinator.invalidate()
         }
     }
 
     @MainActor
     final class Coordinator: NSObject, MTKViewDelegate, BoardInteractionDelegate {
         var renderer: BoardRenderer?
+        private weak var view: MTKView?
+        private var isActive = true
         var cameraRevision = -1
         var zoomRevision = 0
         let controller: ViewerController
@@ -93,6 +100,9 @@ struct MetalBoardView {
         }
 
         func configure(view: MTKView) {
+            self.view = view
+            view.isPaused = true
+            view.enableSetNeedsDisplay = true
             guard let device = view.device else { report(BoardRenderer.RendererError.noDevice.localizedDescription); return }
             renderer = nil
             do {
@@ -103,14 +113,43 @@ struct MetalBoardView {
             view.delegate = self
         }
 
+        private var canDraw: Bool {
+            guard isActive, renderer?.hasCurrentResources == true, let view else { return false }
+            #if os(macOS)
+            return view.window?.isVisible == true && view.window?.occlusionState.contains(.visible) == true && !view.isHiddenOrHasHiddenAncestor
+            #else
+            return view.window != nil && !view.isHidden && view.alpha > 0
+            #endif
+        }
+        func setActive(_ active: Bool) {
+            guard active != isActive else { return }
+            isActive = active
+            invalidate()
+        }
+        func invalidate() {
+            guard let view else { return }
+            guard canDraw else { view.isPaused = true; return }
+            view.isPaused = renderer?.isAnimating != true
+            if view.isPaused {
+                #if os(macOS)
+                view.needsDisplay = true
+                #else
+                view.setNeedsDisplay()
+                #endif
+            }
+        }
         func draw(in view: MTKView) {
+            guard canDraw else { view.isPaused = true; return }
             renderer?.draw(in: view)
             if let error = renderer?.renderError { report(error.localizedDescription) }
+            view.isPaused = renderer?.isAnimating != true || !canDraw
         }
-        func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { renderer?.resize(size) }
-        func orbit(deltaX: Float, deltaY: Float) { renderer?.orbit(deltaX: deltaX, deltaY: deltaY) }
-        func zoom(delta: Float) { renderer?.zoom(delta: delta) }
-        func fitCamera() { renderer?.apply(.fit) }
+        func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { renderer?.resize(size); invalidate() }
+        func orbit(deltaX: Float, deltaY: Float) { renderer?.orbit(deltaX: deltaX, deltaY: deltaY); invalidate() }
+        func zoom(delta: Float) { renderer?.zoom(delta: delta); invalidate() }
+        func fitCamera() { renderer?.apply(.fit); invalidate() }
+        func visibilityChanged() { invalidate() }
+
     }
 }
 
@@ -123,6 +162,18 @@ extension MetalBoardView: NSViewRepresentable {
 final class InteractiveMTKView: MTKView {
     @MainActor weak var interactionDelegate: BoardInteractionDelegate?
 
+    override init(frame: CGRect, device: MTLDevice?) {
+        super.init(frame: frame, device: device)
+        NotificationCenter.default.addObserver(self, selector: #selector(windowVisibilityChanged(_:)), name: NSWindow.didChangeOcclusionStateNotification, object: nil)
+    }
+    required init(coder: NSCoder) { fatalError("Use init(frame:device:)") }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); interactionDelegate?.visibilityChanged() }
+    @objc private func windowVisibilityChanged(_ notification: Notification) {
+        guard let changed = notification.object as? NSWindow, changed === window else { return }
+        interactionDelegate?.visibilityChanged()
+    }
+
+    override var isHidden: Bool { didSet { interactionDelegate?.visibilityChanged() } }
     override var acceptsFirstResponder: Bool { true }
 
     override func mouseDragged(with event: NSEvent) {
@@ -172,6 +223,9 @@ final class InteractiveMTKView: MTKView, UIGestureRecognizerDelegate {
         accessibilityHint = "Adjust to zoom. Camera controls also provide top, bottom, and fit views."
         accessibilityTraits = .adjustable
     }
+
+    override var isHidden: Bool { didSet { interactionDelegate?.visibilityChanged() } }
+    override func didMoveToWindow() { super.didMoveToWindow(); interactionDelegate?.visibilityChanged() }
 
     required init(coder: NSCoder) { fatalError("Use init(frame:device:)") }
 

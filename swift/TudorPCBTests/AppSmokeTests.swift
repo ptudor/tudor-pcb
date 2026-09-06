@@ -886,3 +886,71 @@ extension AppSmokeTests {
         XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), "unchanged source")
     }
 }
+
+
+extension AppSmokeTests {
+    @MainActor
+    func testMetalFramesStopWhenEmptySettledHiddenOrInactiveAndResumeUpdates() async throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let view = InteractiveMTKView(frame: CGRect(x: 0, y: 0, width: 300, height: 240), device: device)
+        view.colorPixelFormat = .bgra8Unorm_srgb
+        view.depthStencilPixelFormat = .depth32Float
+        let coordinator = MetalBoardView.Coordinator(controller: ViewerController())
+        view.interactionDelegate = coordinator
+        coordinator.configure(view: view)
+        let renderer = try XCTUnwrap(coordinator.renderer)
+        let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = view
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertTrue(view.isPaused)
+        XCTAssertEqual(renderer.renderedFrameCount, 0)
+        let board = BoardDocument(name: "frame test", bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 20, y: 10)))
+        let textures = try BoardRasterizer().render(board, options: .init(maximumTextureDimension: 256))
+        renderer.update(document: board, textures: textures)
+        coordinator.invalidate()
+        try await Task.sleep(for: .milliseconds(250))
+        let first = renderer.renderedFrameCount
+        XCTAssertGreaterThan(first, 0)
+        XCTAssertTrue(view.isPaused)
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertEqual(renderer.renderedFrameCount, first)
+        coordinator.orbit(deltaX: 30, deltaY: 10)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertGreaterThan(renderer.renderedFrameCount, first)
+        coordinator.zoom(delta: -100)
+        XCTAssertFalse(view.isPaused)
+        for _ in 0..<40 where !view.isPaused { try await Task.sleep(for: .milliseconds(100)) }
+        XCTAssertTrue(view.isPaused)
+        XCTAssertFalse(renderer.isAnimating)
+        let settled = renderer.renderedFrameCount
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertEqual(renderer.renderedFrameCount, settled)
+        window.orderOut(nil)
+        try await Task.sleep(for: .milliseconds(100))
+        coordinator.zoom(delta: 100)
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertTrue(view.isPaused)
+        XCTAssertEqual(renderer.renderedFrameCount, settled)
+        window.orderFrontRegardless()
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertGreaterThan(renderer.renderedFrameCount, settled)
+        coordinator.setActive(false)
+        let background = renderer.renderedFrameCount
+        coordinator.orbit(deltaX: 20, deltaY: 10)
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertEqual(renderer.renderedFrameCount, background)
+        XCTAssertTrue(view.isPaused)
+        coordinator.setActive(true)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertGreaterThan(renderer.renderedFrameCount, background)
+        renderer.update(document: nil, textures: nil)
+        coordinator.invalidate()
+        let empty = renderer.renderedFrameCount
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(renderer.renderedFrameCount, empty)
+        XCTAssertTrue(view.isPaused)
+        print("RA6X-046 frame counts: empty=0, initial=\(first), settled=\(settled), hidden=\(settled), inactive=\(background), final=\(empty)")
+    }
+}
