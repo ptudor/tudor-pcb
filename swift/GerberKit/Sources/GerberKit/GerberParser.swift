@@ -265,26 +265,33 @@ private struct ParserMachine {
             invalidDefinition(command, "Malformed, nonfinite, or out-of-range modifier."); return
         }
         func dimension(_ index: Int) -> Double { raw[index] * format.unitScale }
+        func withHole(_ shape: ApertureShape, at index: Int) -> ApertureShape {
+            guard raw.count > index, raw[index] > 0 else { return shape }
+            return .compound(primitives: [
+                .flash(center: .zero, shape: shape, polarity: .dark),
+                .flash(center: .zero, shape: .circle(diameter: dimension(index)), polarity: .clear)
+            ])
+        }
         switch shapeName {
         case "C":
-            guard (1...3).contains(raw.count), raw.allSatisfy({ $0 >= 0 }) else {
-                invalidDefinition(command, "Circle requires a nonnegative diameter and legal hole dimensions."); return
+            guard (1...2).contains(raw.count), raw.allSatisfy({ $0 >= 0 }) else {
+                invalidDefinition(command, "Circle requires a nonnegative diameter and optional round hole; legacy rectangular holes are unsupported."); return
             }
-            apertures[code] = .circle(diameter: dimension(0))
+            apertures[code] = withHole(.circle(diameter: dimension(0)), at: 1)
         case "R", "O":
-            guard (2...4).contains(raw.count), raw.allSatisfy({ $0 >= 0 }), raw[0] > 0, raw[1] > 0 else {
-                invalidDefinition(command, "Rectangle/obround requires positive width and height."); return
+            guard (2...3).contains(raw.count), raw.allSatisfy({ $0 >= 0 }), raw[0] > 0, raw[1] > 0 else {
+                invalidDefinition(command, "Rectangle/obround requires positive width and height and optional round hole; legacy rectangular holes are unsupported."); return
             }
-            apertures[code] = shapeName == "R"
+            apertures[code] = withHole(shapeName == "R"
                 ? .rectangle(width: dimension(0), height: dimension(1))
-                : .obround(width: dimension(0), height: dimension(1))
+                : .obround(width: dimension(0), height: dimension(1)), at: 2)
         case "P":
-            guard (2...5).contains(raw.count), raw[0] > 0,
+            guard (2...4).contains(raw.count), raw[0] > 0,
                   let vertices = Int(texts[1]), (3...12).contains(vertices),
                   raw.dropFirst(3).allSatisfy({ $0 >= 0 }) else {
-                invalidDefinition(command, "Polygon requires a positive diameter, 3...12 integer vertices, and finite rotation."); return
+                invalidDefinition(command, "Polygon requires a positive diameter, 3...12 integer vertices, finite rotation and optional round hole; legacy rectangular holes are unsupported."); return
             }
-            apertures[code] = .polygon(diameter: dimension(0), vertices: vertices, rotationDegrees: raw.count > 2 ? raw[2] : 0)
+            apertures[code] = withHole(.polygon(diameter: dimension(0), vertices: vertices, rotationDegrees: raw.count > 2 ? raw[2] : 0), at: 3)
         default:
             guard let macro = macros[shapeName] else { invalidDefinition(command, "Undefined aperture macro \(shapeName)."); return }
             do {
