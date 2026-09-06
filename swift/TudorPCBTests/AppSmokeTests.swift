@@ -862,3 +862,27 @@ extension AppSmokeTests {
         }
     }
 }
+
+
+extension AppSmokeTests {
+    @MainActor
+    func testHistorySelectionAlwaysBelongsToPostFilterAndPostRemovalRows() throws {
+        let first = UUID(), middle = UUID(), last = UUID()
+        XCTAssertEqual(PackageHistorySelection.reconciled(first, visibleIDs: [middle, last]), middle)
+        XCTAssertEqual(PackageHistorySelection.reconciled(last, visibleIDs: [first, middle]), first)
+        XCTAssertEqual(PackageHistorySelection.reconciled(middle, visibleIDs: [middle]), middle)
+        XCTAssertNil(PackageHistorySelection.reconciled(middle, visibleIDs: []))
+        let source = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".gko")
+        try Data("unchanged source".utf8).write(to: source)
+        defer { try? FileManager.default.removeItem(at: source) }
+        let owner = PackageHistoryOwner(writer: { _ in })
+        let entry = PackageHistoryEntry.capture(url: source, document: BoardDocument(name: "source"))
+        owner.record(entry)
+        owner.remove(entry.id)
+        XCTAssertNil(PackageHistorySelection.reconciled(entry.id, visibleIDs: owner.entries.map(\.id)))
+        owner.record(entry)
+        owner.clear()
+        XCTAssertTrue(owner.entries.isEmpty)
+        XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), "unchanged source")
+    }
+}

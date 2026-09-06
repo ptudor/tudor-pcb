@@ -387,3 +387,12 @@ nonisolated enum HistorySourceAvailability: Sendable {
         }
     }
 }
+
+
+/// Selection is always resolved against the currently visible, post-mutation rows.
+enum PackageHistorySelection {
+    static func reconciled(_ selection: UUID?, visibleIDs: [UUID]) -> UUID? {
+        if let selection, visibleIDs.contains(selection) { return selection }
+        return visibleIDs.first
+    }
+}

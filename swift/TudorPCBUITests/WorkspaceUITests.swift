@@ -59,6 +59,56 @@ final class WorkspaceUITests: XCTestCase {
         add(screenshot)
     }
 
+    @MainActor
+    func testProofGalleryFitsLargeTextAndRotatesWithReachableImageInspection() throws {
+        let app = XCUIApplication(bundleIdentifier: "net.ptudor.tudorpcb")
+        func visibleDone() -> XCUIElement {
+            app.buttons.matching(identifier: "Done").allElementsBoundByIndex.first(where: \.isHittable) ?? app.buttons["Done"].firstMatch
+        }
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "boardA", withExtension: "gko", subdirectory: "Fixtures"))
+        let folder = FileManager.default.temporaryDirectory.appending(path: "gallery-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try FileManager.default.copyItem(at: fixture, to: folder.appending(path: "boardA.gko"))
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 600, height: 300)).pngData { context in
+            UIColor.green.setFill(); context.fill(CGRect(x: 0, y: 0, width: 600, height: 300))
+            UIColor.red.setFill(); context.fill(CGRect(x: 10, y: 10, width: 80, height: 40))
+        }
+        try image.write(to: folder.appending(path: "boardA_top.png"))
+        try image.write(to: folder.appending(path: "boardA_bottom.png"))
+        app.launchArguments = [folder.path, "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        XCTAssertTrue(app.navigationBars[folder.lastPathComponent].waitForExistence(timeout: 30))
+        if !app.buttons["Color proofs"].firstMatch.exists { app.buttons["OverflowBarButtonItem"].tap() }
+        app.buttons["Color proofs"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Color proofs"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(visibleDone().isHittable, app.debugDescription)
+        let inspect = app.buttons["Inspect Image…"].firstMatch
+        for _ in 0..<5 where !inspect.isHittable { app.swipeUp() }
+        XCTAssertTrue(inspect.isHittable, app.debugDescription)
+        inspect.tap()
+        XCTAssertTrue(app.buttons["Fit Image"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Zoom In"].firstMatch.tap()
+        let proof = app.descendants(matching: .any)["proof-inspection-image"].firstMatch
+        XCTAssertTrue(proof.exists, app.debugDescription)
+        proof.swipeLeft()
+        for orientation in [UIDeviceOrientation.landscapeLeft, .portrait] {
+            XCUIDevice.shared.orientation = orientation
+            XCTAssertTrue(visibleDone().waitForExistence(timeout: 5))
+            XCTAssertTrue(visibleDone().isHittable, app.debugDescription)
+            let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screenshot.name = "Adaptive proof inspection \(orientation.rawValue)"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
+        visibleDone().tap()
+        XCTAssertTrue(app.navigationBars["Color proofs"].waitForExistence(timeout: 5))
+        visibleDone().tap()
+        XCTAssertTrue(app.navigationBars[folder.lastPathComponent].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     private func greenPixels(_ screenshot: XCUIScreenshot) -> Int {
         guard let image = screenshot.image.cgImage else { return 0 }
         var bytes = [UInt8](repeating: 0, count: image.width * image.height * 4)

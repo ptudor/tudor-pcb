@@ -58,6 +58,9 @@ struct WorkspaceView: View {
                     Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
                         model.isShowingHistory = true
                     }
+                    if model.document?.sidePreviews.isEmpty == false {
+                        Button("Color proofs", systemImage: "photo.on.rectangle") { model.showProofs = true }
+                    }
                     Button("Perspective", systemImage: "cube.transparent") { viewer.show(.perspective) }
                         .disabled(model.document == nil)
                     Button("Top", systemImage: "square.3.layers.3d.top.filled") { viewer.show(.top) }
@@ -503,8 +506,8 @@ private struct PackageBrowserView: View {
     }
 
     private var selectedEntry: PackageHistoryEntry? {
-        let id = selection ?? filteredEntries.first?.id
-        return entries.first { $0.id == id }
+        let id = PackageHistorySelection.reconciled(selection, visibleIDs: filteredEntries.map(\.id))
+        return filteredEntries.first { $0.id == id }
     }
 
     var body: some View {
@@ -548,13 +551,14 @@ private struct PackageBrowserView: View {
                     dismiss()
                 } onRemove: {
                     onRemove(entry)
-                    selection = filteredEntries.first?.id
                 }
             } else {
                 ContentUnavailableView("Select a Package", systemImage: "shippingbox")
             }
         }
-        .onAppear { selection = selection ?? filteredEntries.first?.id }
+        .onChange(of: filteredEntries.map(\.id), initial: true) { _, ids in
+            selection = PackageHistorySelection.reconciled(selection, visibleIDs: ids)
+        }
         .confirmationDialog("Clear all fabrication history?", isPresented: $isConfirmingClear) {
             Button("Clear History", role: .destructive) {
                 onClear()
@@ -723,18 +727,22 @@ private struct ProofGalleryView: View {
     let onReset: (GerberSide) -> Void
     let onMap: (BoardSidePreview, BoardArtworkMapping) -> Void
     @State private var mappingPreview: BoardSidePreview?
+    @State private var inspectingPreview: BoardSidePreview?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            ScrollView(.horizontal) {
-                HStack(spacing: 18) {
+            GeometryReader { geometry in
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: min(280, max(120, geometry.size.width - 32))), spacing: 18)], spacing: 24) {
                     ForEach(document.sidePreviews) { preview in
                         VStack(alignment: .leading, spacing: 8) {
-                            proofImage(preview)
-                                .scaledToFit()
-                                .frame(maxHeight: 620)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            Button { inspectingPreview = preview } label: {
+                                proofImage(preview).scaledToFit().frame(height: 260)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }.buttonStyle(.plain)
+                                .accessibilityLabel("Inspect \(preview.side == .top ? "Top" : "Bottom") proof \(preview.fileName)")
+                            Button("Inspect Image…") { inspectingPreview = preview }
                             Text("\(preview.side == .top ? "Top" : "Bottom") · \(preview.fileName)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -753,18 +761,24 @@ private struct ProofGalleryView: View {
                         }
                     }
                 }
-                .padding(20)
+                .padding(16)
+            }
             }
             .navigationTitle("Color proofs")
             .toolbar {
                 ToolbarItemGroup {
-                    Button("Reset Top to Supplied Artwork") { onReset(.top) }
-                    Button("Reset Bottom to Supplied Artwork") { onReset(.bottom) }
+                    Menu("Reset Artwork", systemImage: "arrow.counterclockwise") {
+                        Button("Reset Top to Supplied Artwork") { onReset(.top) }
+                        Button("Reset Bottom to Supplied Artwork") { onReset(.bottom) }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
+        #if os(macOS)
         .frame(minWidth: 720, minHeight: 520)
+        #endif
+        .sheet(item: $inspectingPreview) { preview in ProofInspectionView(preview: preview) }
         .sheet(item: $mappingPreview) { preview in
             ProofMappingView(preview: preview, initialBounds: preview.mapping?.bounds ?? document.bounds) { mapping in
                 onMap(preview, mapping)
@@ -775,6 +789,75 @@ private struct ProofGalleryView: View {
     @ViewBuilder
     private func proofImage(_ preview: BoardSidePreview) -> some View {
         BoundedProofImageView(preview: preview)
+    }
+}
+
+
+private struct ProofInspectionView: View {
+    let preview: BoardSidePreview
+    @Environment(\.dismiss) private var dismiss
+    @State private var zoom: CGFloat = 1
+    @State private var offset = CGSize.zero
+    @GestureState private var pinch: CGFloat = 1
+    @GestureState private var drag = CGSize.zero
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { available in
+            ScrollView {
+            VStack {
+                Text("\(preview.side == .top ? "Top" : "Bottom") · \(preview.fileName)").font(.caption).textSelection(.enabled)
+                Text(preview.provenance == .supplied ? "Supplied with source" : "User attachment").font(.caption2)
+                GeometryReader { geometry in
+                    BoundedProofImageView(preview: preview).scaledToFit()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .scaleEffect(zoom * pinch)
+                        .offset(x: offset.width + drag.width, y: offset.height + drag.height)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .background(.black).clipped().contentShape(Rectangle())
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Proof image")
+                        .accessibilityAddTraits(.isImage)
+                        .accessibilityIdentifier("proof-inspection-image")
+                        .gesture(MagnifyGesture().updating($pinch) { value, state, _ in state = value.magnification }
+                            .onEnded { setZoom(zoom * $0.magnification) })
+                        .highPriorityGesture(DragGesture().updating($drag) { value, state, _ in state = value.translation }
+                            .onEnded { value in
+                                offset = CGSize(width: offset.width + value.translation.width, height: offset.height + value.translation.height)
+                                constrainOffset(geometry.size)
+                            }, including: zoom > 1 ? .all : .none)
+                        .onChange(of: zoom) { _, _ in constrainOffset(geometry.size) }
+                        .onChange(of: offset) { _, _ in constrainOffset(geometry.size) }
+                        .onChange(of: geometry.size) { _, size in constrainOffset(size) }
+                }.frame(height: max(200, min(600, available.size.height * 0.6)))
+                Text("Image preview · \(zoom, format: .number.precision(.fractionLength(1)))×").font(.caption.monospacedDigit())
+                ScrollView(.horizontal) {
+                    HStack {
+                        Button("Zoom In", systemImage: "plus.magnifyingglass") { setZoom(zoom * 2) }
+                        Button("Zoom Out", systemImage: "minus.magnifyingglass") { setZoom(zoom / 2) }
+                        Button("Fit Image") { setZoom(1); offset = .zero }
+                        Menu("Pan", systemImage: "arrow.up.and.down.and.arrow.left.and.right") {
+                            Button("Left") { offset.width += 60 }
+                            Button("Right") { offset.width -= 60 }
+                            Button("Up") { offset.height += 60 }
+                            Button("Down") { offset.height -= 60 }
+                        }
+                    }
+                }
+            }.padding()
+            }
+            }
+            .navigationTitle("\(preview.side == .top ? "Top" : "Bottom") proof")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        #if os(macOS)
+        .frame(minWidth: 600, minHeight: 500)
+        #endif
+    }
+    private func setZoom(_ value: CGFloat) { zoom = min(16, max(1, value)) }
+    private func constrainOffset(_ size: CGSize) {
+        offset.width = min(size.width * (zoom - 1) / 2, max(-size.width * (zoom - 1) / 2, offset.width))
+        offset.height = min(size.height * (zoom - 1) / 2, max(-size.height * (zoom - 1) / 2, offset.height))
     }
 }
 
