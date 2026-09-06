@@ -89,3 +89,8 @@ LZ retains leading zeros; TZ retains trailing zeros. This matches
 Integer coordinates without enough format information are rejected with an
 explicit diagnostic; export explicit decimals or include a recognized declaration.
 A present drill map does not establish alignment.
+
+Layer roles prefer structured Gerber `FileFunction` attributes, then recognized
+JLCCam basenames, established extensions, and finally basename keywords. Conflicts
+with filename roles produce warnings. Parent directory names never assign roles;
+Gerber and Excellon syntax are detected separately before parser dispatch.

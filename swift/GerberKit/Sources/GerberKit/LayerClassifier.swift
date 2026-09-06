@@ -1,98 +1,127 @@
 import Foundation
 
+public enum FabricationSyntax: Sendable { case gerber, excellon, unknown }
+
 public enum LayerClassifier {
     public static func classify(fileName: String, contents: String? = nil) -> GerberLayerKind {
-        let name = fileName.lowercased()
+        classification(fileName: fileName, contents: contents).kind
+    }
+
+    /// Precedence: structured FileFunction, recognized JLCCam basename, strong
+    /// extension, then basename keywords. Parent directories never assign roles.
+    public static func classification(fileName: String, contents: String? = nil) -> (kind: GerberLayerKind, warnings: [String]) {
+        let source = contents ?? ""
+        let inferred = filenameKind(fileName, contents: source)
+        let functions = fileFunctions(in: source)
+        guard let first = functions.first else { return (inferred, []) }
+        guard functions.allSatisfy({ $0 == first }) else {
+            return (.other, ["\(fileName): conflicting FileFunction attributes; layer role is unresolved."])
+        }
+        guard let explicit = attributeKind(first) else {
+            return (.other, ["\(fileName): unsupported FileFunction \(first.joined(separator: ",")); layer role is unresolved."])
+        }
+        var warnings: [String] = []
+        if inferred != .other && !compatible(inferred, explicit) {
+            warnings.append("\(fileName): FileFunction overrides conflicting filename role \(inferred.displayName).")
+        }
+        return (explicit, warnings)
+    }
+
+    static func fileFunctions(in source: String) -> [[String]] {
+        // Attributes belong to extended commands, never unrelated comment text.
+        source.components(separatedBy: "%").enumerated().filter { $0.offset % 2 == 1 }.flatMap { _, block in
+            block.components(separatedBy: "*").compactMap { command -> [String]? in
+                let text = command.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                guard text.hasPrefix("tf.filefunction,") else { return nil }
+                return text.dropFirst(16).split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
+            }
+        }
+    }
+
+    private static func attributeKind(_ fields: [String]) -> GerberLayerKind? {
+        guard let role = fields.first else { return nil }
+        func side(_ index: Int) -> GerberSide? {
+            guard fields.count > index else { return nil }
+            switch fields[index] { case "top": return .top; case "bot", "bottom": return .bottom; case "inr": return GerberSide.none; default: return nil }
+        }
+        switch role {
+        case "copper":
+            guard fields.count >= 3, fields[1].hasPrefix("l"), let index = Int(fields[1].dropFirst()), index > 0, let face = side(2) else { return nil }
+            return .copper(side: face, index: face == .none ? index : nil)
+        case "profile": return .outline
+        case "legend": return side(1).map { .silkscreen(side: $0) }
+        case "soldermask": return side(1).map { .solderMask(side: $0) }
+        case "paste": return side(1).map { .paste(side: $0) }
+        case "assemblydrawing", "fabricationdrawing", "otherdrawing": return .documentation
+        default: return nil
+        }
+    }
+
+    private static func compatible(_ a: GerberLayerKind, _ b: GerberLayerKind) -> Bool {
+        if case let .drill(pa) = a, case let .drill(pb) = b { return pa == nil || pb == nil || pa == pb }
+        if case let .copper(sa, ia) = a, case let .copper(sb, ib) = b { return sa == sb && (ia == nil || ib == nil || ia == ib) }
+        return a == b
+    }
+
+    private static func filenameKind(_ fileName: String, contents: String) -> GerberLayerKind {
+        let name = URL(fileURLWithPath: fileName).lastPathComponent.lowercased()
         let ext = URL(fileURLWithPath: name).pathExtension
-        let base = URL(fileURLWithPath: name).lastPathComponent
-        let source = contents?.lowercased() ?? ""
-
-        if source.contains("output software:jlccam"), let kind = jlccamKind(for: base) {
-            return kind
+        if contents.localizedCaseInsensitiveContains("output software:jlccam"), let kind = jlccamKind(for: name) { return kind }
+        func plating() -> Bool? {
+            if name.contains("npth") || contents.localizedCaseInsensitiveContains("TYPE=NON_PLATED") { return false }
+            if name.contains("pth") || contents.localizedCaseInsensitiveContains("TYPE=PLATED") { return true }
+            return nil
         }
-
-        if ext == "fcts" { return .colorfulSilkscreen(side: .top) }
-        if ext == "fcbs" { return .colorfulSilkscreen(side: .bottom) }
-        if ext == "fcbo" { return .other }
-        if ext == "fcbm" { return .documentation }
-        if ["gdd", "gdl", "gbrjob"].contains(ext) || name.contains("document") || name.contains("drawing") {
-            return .documentation
+        switch ext {
+        case "fcts": return .colorfulSilkscreen(side: .top)
+        case "fcbs": return .colorfulSilkscreen(side: .bottom)
+        case "fcbo": return .other
+        case "fcbm", "gdd", "gdl", "gbrjob": return .documentation
+        case "drl", "xln": return .drill(plated: plating())
+        case "gko", "gm1", "gml", "oln": return .outline
+        case "gtl", "top": return .copper(side: .top, index: nil)
+        case "gbl", "bot": return .copper(side: .bottom, index: nil)
+        case "gto", "sst": return .silkscreen(side: .top)
+        case "gbo", "ssb": return .silkscreen(side: .bottom)
+        case "gts", "smt": return .solderMask(side: .top)
+        case "gbs", "smb": return .solderMask(side: .bottom)
+        case "gtp": return .paste(side: .top)
+        case "gbp": return .paste(side: .bottom)
+        default: break
         }
-        if ext == "drl" || ext == "xln" || name.contains("drill") {
-            if name.contains("npth") || contents?.localizedCaseInsensitiveContains("TYPE=NON_PLATED") == true {
-                return .drill(plated: false)
-            }
-            if name.contains("pth") || contents?.localizedCaseInsensitiveContains("TYPE=PLATED") == true {
-                return .drill(plated: true)
-            }
-            return .drill(plated: nil)
-        }
-        if ["gko", "gm1", "gml", "oln"].contains(ext)
-            || name.contains("outline") || name.contains("edge.cuts") || name.contains("edge_cuts")
-            || source.contains("filefunction,profile") {
-            return .outline
-        }
-        if ["gtl", "top"].contains(ext) || name.contains("toplayer") || name.contains("top_copper")
-            || name.contains("f_cu")
-            || (source.contains("filefunction,copper") && source.contains(",top")) {
-            return .copper(side: .top, index: nil)
-        }
-        if ["gbl", "bot"].contains(ext) || name.contains("bottomlayer") || name.contains("bottom_copper")
-            || name.contains("b_cu")
-            || (source.contains("filefunction,copper") && (source.contains(",bot") || source.contains(",bottom"))) {
-            return .copper(side: .bottom, index: nil)
-        }
-        if ext.range(of: #"^g\d+$"#, options: .regularExpression) != nil {
-            return .copper(side: .none, index: Int(ext.dropFirst()))
-        }
-        if let index = x2CopperIndex(source) {
-            return .copper(side: .none, index: index)
-        }
-        if ["gto", "sst"].contains(ext) || name.contains("topsilk") || name.contains("f.silkscreen")
-            || name.contains("f_silk") || source.contains("filefunction,legend,top") {
-            return .silkscreen(side: .top)
-        }
-        if ["gbo", "ssb"].contains(ext) || name.contains("bottomsilk") || name.contains("b.silkscreen")
-            || name.contains("b_silk") || source.contains("filefunction,legend,bot") {
-            return .silkscreen(side: .bottom)
-        }
-        if ["gts", "smt"].contains(ext) || name.contains("topsoldermask") || name.contains("f.mask")
-            || name.contains("f_mask") || source.contains("filefunction,soldermask,top") {
-            return .solderMask(side: .top)
-        }
-        if ["gbs", "smb"].contains(ext) || name.contains("bottomsoldermask") || name.contains("b.mask")
-            || name.contains("b_mask") || source.contains("filefunction,soldermask,bot") {
-            return .solderMask(side: .bottom)
-        }
-        if ext == "gtp" || name.contains("toppaste") || name.contains("f.paste")
-            || name.contains("f_paste") || source.contains("filefunction,paste,top") {
-            return .paste(side: .top)
-        }
-        if ext == "gbp" || name.contains("bottompaste") || name.contains("b.paste")
-            || name.contains("b_paste") || source.contains("filefunction,paste,bot") {
-            return .paste(side: .bottom)
-        }
+        if ext.range(of: #"^g\d+$"#, options: .regularExpression) != nil { return .copper(side: .none, index: Int(ext.dropFirst())) }
+        if name.contains("document") || name.contains("drawing") { return .documentation }
+        if name.contains("drill") { return .drill(plated: plating()) }
+        if ["outline", "edge.cuts", "edge_cuts"].contains(where: name.contains) { return .outline }
+        if ["toplayer", "top_copper", "f_cu"].contains(where: name.contains) { return .copper(side: .top, index: nil) }
+        if ["bottomlayer", "bottom_copper", "b_cu"].contains(where: name.contains) { return .copper(side: .bottom, index: nil) }
+        if ["topsilk", "f.silkscreen", "f_silk"].contains(where: name.contains) { return .silkscreen(side: .top) }
+        if ["bottomsilk", "b.silkscreen", "b_silk"].contains(where: name.contains) { return .silkscreen(side: .bottom) }
+        if ["topsoldermask", "f.mask", "f_mask"].contains(where: name.contains) { return .solderMask(side: .top) }
+        if ["bottomsoldermask", "b.mask", "b_mask"].contains(where: name.contains) { return .solderMask(side: .bottom) }
+        if ["toppaste", "f.paste", "f_paste"].contains(where: name.contains) { return .paste(side: .top) }
+        if ["bottompaste", "b.paste", "b_paste"].contains(where: name.contains) { return .paste(side: .bottom) }
         return .other
     }
 
-    public static func isGerber(_ fileName: String, contents: String? = nil) -> Bool {
-        let source = contents?.lowercased() ?? ""
-        if source.contains("%fs"), source.contains("%mo") { return true }
-        let kind = classify(fileName: fileName, contents: contents)
-        switch kind {
-        case .drill, .colorfulSilkscreen, .other:
-            let ext = URL(fileURLWithPath: fileName).pathExtension.lowercased()
-            return ["gbr", "ger", "pho", "art"].contains(ext)
-        default:
-            return true
-        }
+    public static func syntax(contents: String) -> FabricationSyntax {
+        let source = contents.uppercased()
+        if source.range(of: #"%(?:FS|MO|ADD|AM)"#, options: .regularExpression) != nil { return .gerber }
+        if source.split(whereSeparator: \.isNewline).contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines) == "M48" }) { return .excellon }
+        return .unknown
     }
 
-    private static func x2CopperIndex(_ source: String) -> Int? {
-        guard let marker = source.range(of: "filefunction,copper,l") else { return nil }
-        let suffix = source[marker.upperBound...]
-        let digits = suffix.prefix(while: \.isNumber)
-        return Int(digits)
+    public static func isGerber(_ fileName: String, contents: String? = nil) -> Bool {
+        switch syntax(contents: contents ?? "") {
+        case .gerber: return true
+        case .excellon: return false
+        case .unknown: break
+        }
+        switch classify(fileName: fileName, contents: contents) {
+        case .drill, .colorfulSilkscreen, .other:
+            return ["gbr", "ger", "pho", "art"].contains(URL(fileURLWithPath: fileName).pathExtension.lowercased())
+        default: return true
+        }
     }
 
     private static func jlccamKind(for base: String) -> GerberLayerKind? {

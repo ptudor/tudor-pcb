@@ -143,13 +143,18 @@ public struct FabricationPackageLoader: Sendable {
         var warnings: [String] = []
 
         for file in files.sorted(by: { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) {
-            let contents = String(decoding: file.data.prefix(8_192), as: UTF8.self)
-            let kind = LayerClassifier.classify(fileName: file.name, contents: contents)
+            var contents = String(decoding: file.data.prefix(8_192), as: UTF8.self)
+            let initialKind = LayerClassifier.classify(fileName: file.name, contents: contents)
             let isDrill: Bool
-            if case .drill = kind { isDrill = true } else { isDrill = false }
+            if case .drill = initialKind { isDrill = true } else { isDrill = false }
             if isDrill || LayerClassifier.isGerber(file.name, contents: contents) {
                 try budget.decodedText(file.data.count, path: file.name)
+                contents = String(decoding: file.data, as: UTF8.self)
             }
+            let classification = LayerClassifier.classification(fileName: file.name, contents: contents)
+            warnings += classification.warnings
+            let kind = classification.kind
+            let syntax = LayerClassifier.syntax(contents: contents)
             if isJLCCamDrill(file.name, contents: contents) {
                 do {
                     let drillLayer = try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget)
@@ -173,7 +178,14 @@ public struct FabricationPackageLoader: Sendable {
                 ))
             case .drill:
                 do {
-                    drills += try drillParser.parse(data: file.data, fileName: file.name, budget: &budget)
+                    switch syntax {
+                    case .gerber:
+                        layers.append(try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget))
+                    case .excellon:
+                        drills += try drillParser.parse(data: file.data, fileName: file.name, budget: &budget)
+                    case .unknown:
+                        throw ExcellonParseError(fileName: file.name, command: "header", reason: "Unrecognized drill syntax.")
+                    }
                 } catch let error as ImportLimitError { throw error }
                   catch let error as GeometryLimitError { throw error }
                   catch is CancellationError { throw CancellationError() }
