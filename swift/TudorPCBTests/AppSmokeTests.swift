@@ -157,7 +157,8 @@ extension AppSmokeTests {
             return data as Data
         }
         let red = try png(.red), blue = try png(.blue), green = try png(.green)
-        let supplied = BoardSidePreview(side: .top, fileName: "artwork_top.png", imageData: red)
+        let mapping = BoardArtworkMapping(bounds: BoardDocument(name: "bounds").bounds, orientation: .boardCoordinates)
+        let supplied = BoardSidePreview(side: .top, fileName: "artwork_top.png", imageData: red, mapping: mapping)
         let model = WorkspaceModel(readProof: { url, side in
             let data = url.lastPathComponent == "blue.png" ? blue : green
             return BoardSidePreview(side: side, fileName: url.lastPathComponent, imageData: data, validatedImage: try ProofImageDecoder.decode(data, name: url.lastPathComponent))
@@ -168,15 +169,15 @@ extension AppSmokeTests {
             context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
             return Array(UnsafeBufferPointer(start: try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self), count: 4))
         }
-        model.attachColorProof(URL(fileURLWithPath: "/blue.png"), side: .top)
+        model.attachColorProof(URL(fileURLWithPath: "/blue.png"), side: .top, mapping: mapping)
         try await waitUntil { model.document?.activeArtwork(for: .top)?.provenance == .attached && !model.isLoading }
         XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[2], 240)
         XCTAssertEqual(model.document?.sidePreviews.map(\.fileName), ["artwork_top.png", "blue.png"])
         XCTAssertEqual(model.document?.sidePreviews.map(\.provenance), [.supplied, .attached])
-        model.attachColorProof(URL(fileURLWithPath: "/green.png"), side: .top)
+        model.attachColorProof(URL(fileURLWithPath: "/green.png"), side: .top, mapping: mapping)
         try await waitUntil { model.document?.activeArtwork(for: .top)?.fileName == "green.png" && !model.isLoading }
         XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[1], 240)
-        model.attachColorProof(URL(fileURLWithPath: "/blue.png"), side: .bottom)
+        model.attachColorProof(URL(fileURLWithPath: "/blue.png"), side: .bottom, mapping: mapping)
         try await waitUntil { model.document?.activeArtwork(for: .bottom) != nil && !model.isLoading }
         XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).bottom)[2], 240)
         XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[1], 240)
@@ -188,6 +189,14 @@ extension AppSmokeTests {
         model.selectArtwork(attached)
         try await waitUntil { !model.isLoading }
         XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[1], 240)
+        model.attachColorProof(URL(fileURLWithPath: "/blue.png"), side: .top)
+        try await waitUntil { model.showProofs && !model.isLoading }
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[1], 240) // Unmapped replacement does not displace active artwork.
+        let unmapped = try XCTUnwrap(model.document?.sidePreviews.first { $0.side == .top && $0.mapping == nil })
+        model.mapArtwork(unmapped, mapping: mapping)
+        try await waitUntil { !model.isLoading }
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[2], 240)
+
     }
 
     @MainActor

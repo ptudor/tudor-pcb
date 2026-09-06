@@ -31,17 +31,20 @@ public struct FabricationPackageLoader: Sendable {
         var budget = ImportBudget(limits: limits)
         let values = try url.resourceValues(forKeys: [.isDirectoryKey])
         let files: [ZipEntry]
+        var sidecarWarnings: [String] = []
         if values.isDirectory == true {
             files = try filesInDirectory(url, budget: &budget)
         } else if url.pathExtension.lowercased() == "zip" {
             let data = try readFile(url, budget: &budget, isArchive: true)
             files = try ZipArchiveReader().read(data, budget: &budget, path: url.lastPathComponent)
-                + sidecarImages(beside: url, budget: &budget)
+                + sidecarImages(beside: url, budget: &budget, warnings: &sidecarWarnings)
         } else {
             try budget.file(path: url.path)
             files = [ZipEntry(name: url.lastPathComponent, data: try readFile(url, budget: &budget))]
         }
-        return try loadContainer(files: files, name: url.deletingPathExtension().lastPathComponent, depth: 0, path: [], selection: selection, budget: &budget)
+        var document = try loadContainer(files: files, name: url.deletingPathExtension().lastPathComponent, depth: 0, path: [], selection: selection, budget: &budget)
+        document.warnings += sidecarWarnings
+        return document
     }
 
     public func load(files: [ZipEntry], name: String, selection: FabricationSelection? = nil) throws -> BoardDocument {
@@ -257,8 +260,7 @@ public struct FabricationPackageLoader: Sendable {
             default:
                 if let side = previewSide(for: file.name), isImage(file.name) {
                     let decoded = try ProofImageDecoder.decode(file.data, name: file.name, budget: &budget)
-                    previews.removeAll { $0.side == side }
-                    previews.append(BoardSidePreview(side: side, fileName: file.name, imageData: file.data, validatedImage: decoded))
+                    previews.append(BoardSidePreview(side: side, fileName: file.name, imageData: file.data, validatedImage: decoded, purpose: .galleryProof))
                 } else if LayerClassifier.isGerber(file.name, contents: contents) {
                     do {
                         layers.append(try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget))
@@ -340,23 +342,39 @@ public struct FabricationPackageLoader: Sendable {
             .contains(url.pathExtension.lowercased())
     }
 
-    private func sidecarImages(beside archive: URL, budget: inout ImportBudget) throws -> [ZipEntry] {
+    private func sidecarImages(beside archive: URL, budget: inout ImportBudget, warnings: inout [String]) throws -> [ZipEntry] {
         let parent = archive.deletingLastPathComponent()
-        let stem = archive.deletingPathExtension().lastPathComponent
-            .replacingOccurrences(of: "_Gerbers", with: "", options: .caseInsensitive)
-            .replacingOccurrences(of: "-Gerbers", with: "", options: .caseInsensitive)
-        guard let candidates = try? FileManager.default.contentsOfDirectory(
-            at: parent, includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey], options: [.skipsHiddenFiles]
-        ) else { return [] }
+        let candidates: [URL]
+        do {
+            candidates = try FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey], options: [.skipsHiddenFiles])
+        } catch {
+            warnings.append("Sibling proofs could not be inspected: \(error.localizedDescription) Use Color proof options to select a proof explicitly, or open its containing folder.")
+            return []
+        }
         var result: [ZipEntry] = []
-        for candidate in candidates {
+        for candidate in candidates.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
             let name = candidate.lastPathComponent
-            guard name.localizedCaseInsensitiveContains(stem), previewSide(for: name) != nil, isImage(name),
-                  try candidate.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else { continue }
-            try budget.file(path: candidate.path)
-            result.append(ZipEntry(name: name, data: try readFile(candidate, budget: &budget)))
+            guard Self.matchesSidecar(name, archiveName: archive.lastPathComponent), previewSide(for: name) != nil, isImage(name) else { continue }
+            do {
+                guard try candidate.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else { continue }
+                try budget.file(path: candidate.path)
+                result.append(ZipEntry(name: name, data: try readFile(candidate, budget: &budget)))
+            } catch let error as ImportLimitError { throw error }
+              catch is CancellationError { throw CancellationError() }
+              catch { warnings.append("\(name): sibling proof could not be read: \(error.localizedDescription) Select it explicitly with Color proof options.") }
         }
         return result
+    }
+
+    static func matchesSidecar(_ imageName: String, archiveName: String) -> Bool {
+        var stem = URL(fileURLWithPath: archiveName).deletingPathExtension().lastPathComponent.lowercased()
+        for suffix in ["_gerbers", "-gerbers"] where stem.hasSuffix(suffix) { stem.removeLast(suffix.count) }
+        let name = URL(fileURLWithPath: imageName).deletingPathExtension().lastPathComponent.lowercased()
+        guard name.hasPrefix(stem), name.count > stem.count else { return false }
+        let suffix = name.dropFirst(stem.count)
+        guard suffix.first == "_" || suffix.first == "-" else { return false }
+        let tokens = suffix.split(whereSeparator: { $0 == "_" || $0 == "-" }).map(String.init)
+        return !tokens.isEmpty && tokens.allSatisfy { ["top", "bottom", "artwork", "proof", "preview", "side"].contains($0) }
     }
 
     private func previewSide(for fileName: String) -> GerberSide? {

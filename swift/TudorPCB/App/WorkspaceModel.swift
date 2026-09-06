@@ -226,7 +226,7 @@ final class WorkspaceModel {
         rerender()
     }
 
-    func attachColorProof(_ url: URL, side: GerberSide) {
+    func attachColorProof(_ url: URL, side: GerberSide, mapping: BoardArtworkMapping? = nil) {
         guard document != nil, !isOpening else { return }
         proofTask?.cancel()
         proofGeneration += 1
@@ -240,13 +240,16 @@ final class WorkspaceModel {
                 var preview = try await task.value
                 guard generation == proofGeneration, documentIdentity == documentGeneration, var document else { return }
                 preview.fileName = url.lastPathComponent
-                preview.purpose = .boardArtwork
+                try mapping?.validate()
+                preview.purpose = mapping == nil ? .galleryProof : .boardArtwork
+                preview.mapping = mapping
                 preview.provenance = .attached
-                document.sidePreviews.removeAll { $0.side == side && $0.provenance == .attached }
+                document.sidePreviews.removeAll { $0.side == side && $0.provenance == .attached && (mapping != nil || $0.mapping == nil) }
                 document.sidePreviews.append(preview)
-                document.activeArtworkIDs[side] = preview.id
+                if mapping != nil { document.activeArtworkIDs[side] = preview.id }
                 self.document = document
                 proofTask = nil
+                if mapping == nil { showProofs = true }
                 rerender()
             } catch is CancellationError { }
               catch {
@@ -255,6 +258,17 @@ final class WorkspaceModel {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    func mapArtwork(_ preview: BoardSidePreview, mapping: BoardArtworkMapping) {
+        guard !isOpening, var document, let index = document.sidePreviews.firstIndex(where: { $0.id == preview.id }) else { return }
+        do { try mapping.validate() } catch { errorMessage = error.localizedDescription; return }
+        document.sidePreviews[index].mapping = mapping
+        document.sidePreviews[index].purpose = .boardArtwork
+        document.activeArtworkIDs[preview.side] = preview.id
+        document.sidePreviews.removeAll { $0.side == preview.side && $0.provenance == .attached && $0.id != preview.id && $0.mapping != nil }
+        self.document = document
+        rerender()
     }
 
     func selectArtwork(_ preview: BoardSidePreview) {

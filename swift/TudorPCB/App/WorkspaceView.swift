@@ -156,7 +156,7 @@ struct WorkspaceView: View {
             }
         }
         .sheet(isPresented: $model.showProofs) {
-            if let document = model.document { ProofGalleryView(document: document, onSelect: { model.selectArtwork($0) }, onReset: { model.resetArtwork($0) }) }
+            if let document = model.document { ProofGalleryView(document: document, onSelect: { model.selectArtwork($0) }, onReset: { model.resetArtwork($0) }, onMap: { model.mapArtwork($0, mapping: $1) }) }
         }
         .sheet(isPresented: $model.isShowingHistory) {
             PackageBrowserView(
@@ -278,6 +278,10 @@ struct WorkspaceView: View {
                     goodDetail: "Proof attached",
                     badDetail: "Factory-encrypted"
                 )
+            } else if !document.sidePreviews.isEmpty {
+                Button("View supplied proofs", systemImage: "photo.on.rectangle") { model.showProofs = true }
+                    .font(.callout)
+            }
                 Menu("Color proof options", systemImage: "photo.on.rectangle.angled") {
                     Button("Attach top artwork…") { isImportingTopProof = true }
                     Button("Attach bottom artwork…") { isImportingBottomProof = true }
@@ -287,10 +291,7 @@ struct WorkspaceView: View {
                     }
                 }
                 .font(.callout)
-            } else if !document.sidePreviews.isEmpty {
-                Button("View supplied proofs", systemImage: "photo.on.rectangle") { model.showProofs = true }
-                    .font(.callout)
-            }
+
         }
         .padding(12)
         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 12))
@@ -659,6 +660,8 @@ private struct ProofGalleryView: View {
     let document: BoardDocument
     let onSelect: (BoardSidePreview) -> Void
     let onReset: (GerberSide) -> Void
+    let onMap: (BoardSidePreview, BoardArtworkMapping) -> Void
+    @State private var mappingPreview: BoardSidePreview?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -676,11 +679,16 @@ private struct ProofGalleryView: View {
                                 .foregroundStyle(.secondary)
                             Text(preview.provenance == .supplied ? "Supplied with source" : "User attachment")
                                 .font(.caption2)
-                            if preview.purpose == .boardArtwork {
+                            if preview.purpose == .boardArtwork && preview.mapping != nil {
                                 if document.activeArtwork(for: preview.side)?.id == preview.id {
                                     Label("Active board artwork", systemImage: "checkmark.circle")
                                 } else { Button("Use as Board Artwork") { onSelect(preview) } }
-                            } else { Text("Gallery proof").font(.caption) }
+                            } else { Text("Unmapped gallery proof · not shown on board").font(.caption) }
+                            Button(preview.mapping == nil ? "Map to Board…" : "Edit Mapping…") { mappingPreview = preview }
+                            if let mapping = preview.mapping {
+                                Text("\(mapping.bounds.width, format: .number) × \(mapping.bounds.height, format: .number) mm · \(mapping.orientation == .boardCoordinates ? "Board coordinates" : "Viewed from bottom")")
+                                    .font(.caption2)
+                            }
                         }
                     }
                 }
@@ -696,6 +704,11 @@ private struct ProofGalleryView: View {
             }
         }
         .frame(minWidth: 720, minHeight: 520)
+        .sheet(item: $mappingPreview) { preview in
+            ProofMappingView(preview: preview, initialBounds: preview.mapping?.bounds ?? document.bounds) { mapping in
+                onMap(preview, mapping)
+            }
+        }
     }
 
     @ViewBuilder
@@ -726,5 +739,59 @@ private struct BoundedProofImageView: View {
             } catch is CancellationError { }
               catch { failure = error.localizedDescription }
         }
+    }
+}
+
+private struct ProofMappingView: View {
+    let preview: BoardSidePreview
+    let onMap: (BoardArtworkMapping) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var minimumX: Double
+    @State private var minimumY: Double
+    @State private var maximumX: Double
+    @State private var maximumY: Double
+    @State private var orientation: BoardArtworkMapping.Orientation?
+    @State private var error: String?
+
+    init(preview: BoardSidePreview, initialBounds: Bounds2D, onMap: @escaping (BoardArtworkMapping) -> Void) {
+        self.preview = preview; self.onMap = onMap
+        _minimumX = State(initialValue: initialBounds.minimum.x)
+        _minimumY = State(initialValue: initialBounds.minimum.y)
+        _maximumX = State(initialValue: initialBounds.maximum.x)
+        _maximumY = State(initialValue: initialBounds.maximum.y)
+        _orientation = State(initialValue: preview.mapping?.orientation)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Text(preview.fileName)
+                BoundedProofImageView(preview: preview).scaledToFit().frame(maxHeight: 220)
+                Text("Map the entire image to an axis-aligned rectangle in board millimeters. Initial bounds cover the full fabrication panel, including rails. Enter the artwork’s actual bounds; screenshots with margins need preparation before mapping.")
+                    .font(.callout)
+                TextField("Minimum X (mm)", value: $minimumX, format: .number)
+                TextField("Minimum Y (mm)", value: $minimumY, format: .number)
+                TextField("Maximum X (mm)", value: $maximumX, format: .number)
+                TextField("Maximum Y (mm)", value: $maximumY, format: .number)
+                Picker("Image orientation", selection: $orientation) {
+                    Text("Choose orientation").tag(Optional<BoardArtworkMapping.Orientation>.none)
+                    Text("Board coordinates · right is +X, up is +Y").tag(Optional(BoardArtworkMapping.Orientation.boardCoordinates))
+                    Text("Viewed from bottom · mirror image X").tag(Optional(BoardArtworkMapping.Orientation.viewedFromBottom))
+                }
+                if let error { Text(error).foregroundStyle(.red) }
+            }
+            .navigationTitle("Map \(preview.side == .top ? "Top" : "Bottom") Artwork")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Use Mapping") {
+                        guard let orientation else { return }
+                        let mapping = BoardArtworkMapping(bounds: Bounds2D(minimum: Point2D(x: minimumX, y: minimumY), maximum: Point2D(x: maximumX, y: maximumY)), orientation: orientation)
+                        do { try mapping.validate(); onMap(mapping); dismiss() }
+                        catch { self.error = error.localizedDescription }
+                    }.disabled(orientation == nil)
+                }
+            }
+        }.frame(idealWidth: 560, idealHeight: 650)
     }
 }

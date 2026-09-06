@@ -48,7 +48,7 @@ private let budgetLayer = Data("%FSLAX24Y24*%%MOMM*%%ADD10C,1*%D10*X0Y0D03*M02*"
     defer { try? FileManager.default.removeItem(at: root) }
     let archive = root.appending(path: "board.zip")
     try storedZIP([("board.gtl", budgetLayer)]).write(to: archive)
-    for i in 0..<4 { try Data([0]).write(to: root.appending(path: "board\(i)_top.png")) }
+    for ext in ["png", "jpg", "tiff", "heic"] { try Data([0]).write(to: root.appending(path: "board_top.\(ext)")) }
     var limits = ImportLimits()
     limits.files = 4
     #expect(throws: ImportLimitError.self) { try FabricationPackageLoader(limits: limits).load(from: archive) }

@@ -30,10 +30,22 @@ decrypt them. It detects both factory payloads, renders the accompanying normal
 silkscreen as a geometrically accurate fallback, and clearly labels the exact
 color proof as unavailable.
 
-For exact colors, place `*_top.png` / `*_bottom.png` review images beside the
-Gerber ZIP (they are discovered automatically), or use **Color proof options**
-to attach the original board-sized top/bottom artwork. Board-sized artwork is
-mapped to the main routed board rather than stretched across panel rails.
+Proof discovery matches the exact ZIP stem (optionally without a trailing
+`_Gerbers`/`-Gerbers`) followed by top/bottom proof tokens, so `rev1.zip` cannot
+select `rev10_top.png`. All matching images remain named gallery sources;
+duplicates never silently replace one another. A ZIP-only grant may not allow
+sibling discovery: use **Color proof options** to select an image explicitly or
+open the containing folder. No broader filesystem entitlement is requested.
+
+Gallery proofs are unmapped until **Map to Board…** confirms the entire image’s
+rectangle in board millimeters and its orientation. The initial rectangle covers
+the full panel, including rails; enter a single board’s actual rectangle when
+appropriate. Board coordinates mean image right = +X and image up = +Y. Artwork
+supplied as viewed from the bottom explicitly mirrors image X on the bottom
+face; Gerber bottom geometry is unchanged. Mapping is axis-aligned and uses the
+whole image, so screenshots with margins need cropping before mapping. The
+active source, provenance, orientation, and rectangle remain visible in the
+gallery; reset restores the sole mapped supplied artwork when unambiguous.
 
 ### JLCPCB production reviews
 

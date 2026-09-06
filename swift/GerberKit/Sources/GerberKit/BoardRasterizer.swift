@@ -143,10 +143,9 @@ public struct BoardRasterizer: Sendable {
         if options.useColorArtwork,
            let preview = document.activeArtwork(for: side) {
             let image = try (preview.validatedImage ?? ProofImageDecoder.decode(preview.imageData, name: preview.fileName)).cgImage
-            let artworkBounds = try BoardOutlineExtractor.contours(in: document)
-                .compactMap(Bounds2D.containing)
-                .max { $0.width * $0.height < $1.width * $1.height }
-                ?? bounds
+            guard let mapping = preview.mapping else { throw ProofImageError.invalid(preview.fileName + " (unmapped)") }
+            try mapping.validate()
+            let artworkBounds = mapping.bounds
             let artworkCanvas = CGRect(
                 x: (artworkBounds.minimum.x - bounds.minimum.x) * scale,
                 y: (artworkBounds.minimum.y - bounds.minimum.y) * scale,
@@ -156,6 +155,10 @@ public struct BoardRasterizer: Sendable {
             context.saveGState()
             context.setAlpha(0.98)
             context.interpolationQuality = .high
+            if mapping.orientation == .viewedFromBottom {
+                context.translateBy(x: artworkCanvas.midX * 2, y: 0)
+                context.scaleBy(x: -1, y: 1)
+            }
             context.draw(image, in: artworkCanvas)
             context.restoreGState()
         }
