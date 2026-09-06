@@ -381,8 +381,9 @@ private struct ParserMachine {
             if fields.firstValue(for: "X") == nil, fields.firstValue(for: "Y") == nil { return }
         }
 
-        let hasCoordinate = fields.firstValue(for: "X") != nil || fields.firstValue(for: "Y") != nil
-        guard hasCoordinate else { return }
+        let hasCoordinate = fields.contains { [Character("X"), "Y", "I", "J"].contains($0.key) }
+        let explicitOperation = dCode.map { (1...3).contains($0) } ?? false
+        guard hasCoordinate || explicitOperation else { return }
         guard hasFormat, hasUnits else { invalidCommand(command, "Declare coordinate format and units before operations."); return }
         for field in fields where [Character("X"), "Y", "I", "J"].contains(field.key) {
             guard format.decode(field.value) != nil else { invalidCommand(command, "Malformed coordinate."); return }
