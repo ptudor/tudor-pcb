@@ -287,13 +287,12 @@ public struct FabricationPackageLoader: Sendable {
         let preferredBounds = layers.filter { $0.kind == .outline }.compactMap(\.centerlineBounds)
         let allBounds = preferredBounds.isEmpty ? layers.compactMap(\.bounds) : preferredBounds
         var bounds = allBounds.reduce(nil) { partial, next in partial?.union(next) ?? next }
-        for drill in drills where bounds == nil {
-            let radius = drill.diameter / 2
-            let hitBounds = Bounds2D(
-                minimum: Point2D(x: drill.center.x - radius, y: drill.center.y - radius),
-                maximum: Point2D(x: drill.center.x + radius, y: drill.center.y + radius)
-            )
-            bounds = bounds?.union(hitBounds) ?? hitBounds
+        if bounds == nil {
+            for drill in drills {
+                let endpoints = [drill.center] + (drill.end.map { [$0] } ?? [])
+                let hitBounds = Bounds2D.containing(endpoints)!.expanded(by: drill.diameter / 2)
+                bounds = bounds?.union(hitBounds) ?? hitBounds
+            }
         }
         let safeBounds = bounds.flatMap { $0.width > 0 && $0.height > 0 ? $0 : nil }
             ?? Bounds2D(minimum: .zero, maximum: Point2D(x: 100, y: 60))
