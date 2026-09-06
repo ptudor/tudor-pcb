@@ -20,7 +20,8 @@ public struct ExcellonParser: Sendable {
         let plated: Bool?
         if case let .drill(value) = kind { plated = value } else { plated = nil }
 
-        var machine = ExcellonMachine(fileName: fileName, plated: plated)
+        let metadata = try MachiningMetadata(source: source, fileName: fileName, plated: plated)
+        var machine = ExcellonMachine(fileName: fileName, metadata: metadata)
         for sourceLine in source.split(whereSeparator: \.isNewline) {
             try Task.checkCancellation()
             try machine.consume(sourceLine.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(), budget: &budget)
@@ -33,7 +34,7 @@ public struct ExcellonParser: Sendable {
 private struct ExcellonMachine {
     enum Mode { case drill, rapid, linear }
     var format: ExcellonCoordinateFormat
-    let plated: Bool?
+    let metadata: MachiningMetadata
     var tools: [Int: Double] = [:]
     var selectedTool: Int?
     var current = Point2D.zero
@@ -43,9 +44,9 @@ private struct ExcellonMachine {
     var terminated = false
     var canRepeat = false
 
-    init(fileName: String, plated: Bool?) {
+    init(fileName: String, metadata: MachiningMetadata) {
         format = ExcellonCoordinateFormat(fileName: fileName)
-        self.plated = plated
+        self.metadata = metadata
     }
 
     mutating func consume(_ source: String, budget: inout ImportBudget) throws {
@@ -132,7 +133,7 @@ private struct ExcellonMachine {
             for index in 1...count {
                 try Task.checkCancellation()
                 current = Point2D(x: origin.x + Double(index) * dx, y: origin.y + Double(index) * dy)
-                result.append(DrillHit(center: current, diameter: size, plated: plated))
+                result.append(DrillHit(center: current, diameter: size, plated: metadata.plated, layerSpan: metadata.span))
             }
             return
         }
@@ -186,6 +187,6 @@ private struct ExcellonMachine {
     mutating func append(_ center: Point2D, end: Point2D?, line: String, budget: inout ImportBudget) throws {
         let size = try diameter(line)
         try reserve(1, pointsPerHit: end == nil ? 1 : 2, line: line, budget: &budget)
-        result.append(DrillHit(center: center, end: end, diameter: size, plated: plated))
+        result.append(DrillHit(center: center, end: end, diameter: size, plated: metadata.plated, layerSpan: metadata.span))
     }
 }

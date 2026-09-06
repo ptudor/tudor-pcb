@@ -94,3 +94,10 @@ Layer roles prefer structured Gerber `FileFunction` attributes, then recognized
 JLCCam basenames, established extensions, and finally basename keywords. Conflicts
 with filename roles produce warnings. Parent directory names never assign roles;
 Gerber and Excellon syntax are detected separately before parser dispatch.
+
+Machining import detects Excellon M48 headers independently of `.drl`, `.txt`,
+`.nc` or `.tap` names, and reads X2 Plated/NonPlated Gerbers and JLCCam `ok/drl`.
+Round holes, obround flashes and straight routed slots preserve physical dimensions;
+plating and declared through-layer spans are retained. Clear machining operations,
+unsupported shapes, arc routes and blind/buried depth models reject the affected
+layer with a warning instead of becoming ordinary through holes.

@@ -13,7 +13,14 @@ public enum LayerClassifier {
         let source = contents ?? ""
         let inferred = filenameKind(fileName, contents: source)
         let functions = fileFunctions(in: source)
-        guard let first = functions.first else { return (inferred, []) }
+        guard let first = functions.first else {
+            if syntax(contents: source) == .excellon {
+                if case .drill = inferred { return (inferred, []) }
+                let warning = inferred == .other ? [] : ["\(fileName): Excellon syntax conflicts with filename role \(inferred.displayName)."]
+                return (.drill(plated: nil), warning)
+            }
+            return (inferred, [])
+        }
         guard functions.allSatisfy({ $0 == first }) else {
             return (.other, ["\(fileName): conflicting FileFunction attributes; layer role is unresolved."])
         }
@@ -29,13 +36,19 @@ public enum LayerClassifier {
 
     static func fileFunctions(in source: String) -> [[String]] {
         // Attributes belong to extended commands, never unrelated comment text.
-        source.components(separatedBy: "%").enumerated().filter { $0.offset % 2 == 1 }.flatMap { _, block in
+        let gerber = source.components(separatedBy: "%").enumerated().filter { $0.offset % 2 == 1 }.flatMap { _, block in
             block.components(separatedBy: "*").compactMap { command -> [String]? in
                 let text = command.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
                 guard text.hasPrefix("tf.filefunction,") else { return nil }
                 return text.dropFirst(16).split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
             }
         }
+        let drillComments = source.split(whereSeparator: \.isNewline).compactMap { line -> [String]? in
+            let text = line.trimmingCharacters(in: .whitespaces).lowercased()
+            guard text.hasPrefix(";"), let marker = text.range(of: #"^;\s*#[@!]*\s*tf\.filefunction,"#, options: .regularExpression) else { return nil }
+            return text[marker.upperBound...].split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
+        }
+        return gerber + drillComments
     }
 
     private static func attributeKind(_ fields: [String]) -> GerberLayerKind? {
@@ -49,6 +62,10 @@ public enum LayerClassifier {
             guard fields.count >= 3, fields[1].hasPrefix("l"), let index = Int(fields[1].dropFirst()), index > 0, let face = side(2) else { return nil }
             return .copper(side: face, index: face == .none ? index : nil)
         case "profile": return .outline
+        case "plated", "nonplated":
+            guard fields.count >= 4 else { return nil }
+            return .drill(plated: role == "plated")
+        case "drillmap": return .documentation
         case "legend": return side(1).map { .silkscreen(side: $0) }
         case "soldermask": return side(1).map { .solderMask(side: $0) }
         case "paste": return side(1).map { .paste(side: $0) }

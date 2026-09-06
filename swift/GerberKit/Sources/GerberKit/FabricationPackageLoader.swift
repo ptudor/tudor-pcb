@@ -158,8 +158,9 @@ public struct FabricationPackageLoader: Sendable {
             if isJLCCamDrill(file.name, contents: contents) {
                 do {
                     let drillLayer = try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget)
+                    let hits = try GerberMachiningConverter.convert(drillLayer, source: contents, budget: &budget)
                     layers.append(drillLayer)
-                    drills += drillHits(from: drillLayer)
+                    drills += hits
                 } catch let error as ImportLimitError { throw error }
                   catch let error as GeometryLimitError { throw error }
                   catch is CancellationError { throw CancellationError() }
@@ -180,7 +181,10 @@ public struct FabricationPackageLoader: Sendable {
                 do {
                     switch syntax {
                     case .gerber:
-                        layers.append(try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget))
+                        let drillLayer = try gerberParser.parse(data: file.data, fileName: file.name, budget: &budget)
+                        let hits = try GerberMachiningConverter.convert(drillLayer, source: contents, budget: &budget)
+                        layers.append(drillLayer)
+                        drills += hits
                     case .excellon:
                         drills += try drillParser.parse(data: file.data, fileName: file.name, budget: &budget)
                     case .unknown:
@@ -340,24 +344,6 @@ public struct FabricationPackageLoader: Sendable {
     private func isJLCCamDrill(_ fileName: String, contents: String) -> Bool {
         URL(fileURLWithPath: fileName).lastPathComponent.lowercased() == "drl"
             && contents.localizedCaseInsensitiveContains("output software:jlccam")
-    }
-
-    private func drillHits(from layer: GerberLayer) -> [DrillHit] {
-        layer.primitives.compactMap { primitive in
-            switch primitive {
-            case let .flash(center, shape, polarity) where polarity == .dark:
-                let dimensions = shape.dimensions
-                return DrillHit(
-                    center: center,
-                    diameter: max(0.001, min(dimensions.width, dimensions.height)),
-                    plated: nil
-                )
-            case let .line(start, end, width, polarity) where polarity == .dark:
-                return DrillHit(center: start, end: end, diameter: max(width, 0.001), plated: nil)
-            default:
-                return nil
-            }
-        }
     }
 
     private func packageScore(_ document: BoardDocument) -> Int {
