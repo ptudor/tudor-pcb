@@ -280,11 +280,6 @@ public struct FabricationPackageLoader: Sendable {
             if !warnings.isEmpty { throw FabricationContainerError(path: [name], reason: warnings.joined(separator: "\n")) }
             throw FabricationPackageError.noSupportedLayers
         }
-        if !colorful.isEmpty, previews.isEmpty {
-            warnings.append(
-                "EasyEDA color-silkscreen payloads are present and valid for JLCPCB, but are encrypted for the factory. Add a top/bottom PNG proof to inspect the exact colors locally."
-            )
-        }
 
         let preferredBounds = layers.filter { $0.kind == .outline }.compactMap(\.centerlineBounds)
         let allBounds = preferredBounds.isEmpty ? layers.compactMap(\.bounds) : preferredBounds
@@ -309,6 +304,7 @@ public struct FabricationPackageLoader: Sendable {
             warnings: warnings
         )
         document.warnings += try BoardOutlineExtractor.topology(in: document).warnings
+        document.refreshProofWarnings()
         return document
     }
 

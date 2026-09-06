@@ -271,16 +271,17 @@ struct WorkspaceView: View {
             if document.packageRole == .jlcpcbProduction {
                 statusRow(true, label: "Production set", goodDetail: "JLCPCB OK", badDetail: "")
             }
+            ForEach([GerberSide.top, .bottom], id: \.self) { side in
+                if document.colorSilkscreens.contains(where: { $0.side == side }) || document.sidePreviews.contains(where: { $0.side == side }) {
+                    statusRow(document.proofState(for: side) == .mappedArtwork,
+                        label: "\(side.rawValue.capitalized) color",
+                        goodDetail: document.proofState(for: side).label,
+                        badDetail: document.proofState(for: side).label)
+                }
+            }
             if !document.colorSilkscreens.isEmpty {
-                statusRow(
-                    document.sidePreviews.contains { $0.fileName.contains("attached-artwork") || $0.fileName.contains("side") },
-                    label: "EasyEDA color",
-                    goodDetail: "Proof attached",
-                    badDetail: "Factory-encrypted"
-                )
-            } else if !document.sidePreviews.isEmpty {
-                Button("View supplied proofs", systemImage: "photo.on.rectangle") { model.showProofs = true }
-                    .font(.callout)
+                Text("Factory payloads present · validity unverified")
+                    .font(.caption).foregroundStyle(.secondary)
             }
                 Menu("Color proof options", systemImage: "photo.on.rectangle.angled") {
                     Button("Attach top artwork…") { isImportingTopProof = true }

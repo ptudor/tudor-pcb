@@ -49,6 +49,8 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
     var bookmarkData: Data?
     var sourceSelection: FabricationSelection? = nil
     var fileSystemIdentity: String? = nil
+    var topProofState: BoardProofState? = nil
+    var bottomProofState: BoardProofState? = nil
 
     var ageDate: Date { modifiedAt ?? createdAt ?? firstOpenedAt }
     var ageDescription: String {
@@ -108,7 +110,9 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
             enclosedSourceCount: document.enclosedSourceArchives.count,
             bookmarkData: bookmarkData,
             sourceSelection: document.sourceSelection,
-            fileSystemIdentity: fileSystemIdentity(for: url)
+            fileSystemIdentity: fileSystemIdentity(for: url),
+            topProofState: document.proofState(for: .top),
+            bottomProofState: document.proofState(for: .bottom)
         )
     }
 
@@ -330,8 +334,19 @@ final class PackageHistoryOwner {
         error = loaded.recovery?.message
     }
 
-    func record(_ entry: PackageHistoryEntry, reopening original: PackageHistoryEntry? = nil) {
+    @discardableResult
+    func record(_ entry: PackageHistoryEntry, reopening original: PackageHistoryEntry? = nil) -> UUID {
         entries = PackageHistoryStore.merging(entry, into: entries, reopening: original)
+        persist()
+        return original?.id ?? entries.first { $0.sourcePath == entry.sourcePath && $0.sourceSelection == entry.sourceSelection && $0.fileSystemIdentity == entry.fileSystemIdentity }?.id ?? entry.id
+    }
+
+    func updateInspection(_ id: UUID, document: BoardDocument) {
+        guard let index = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[index].warningCount = document.warnings.count
+        entries[index].colorSilkscreenSides = Set(document.colorSilkscreens.map(\.side)).count
+        entries[index].topProofState = document.proofState(for: .top)
+        entries[index].bottomProofState = document.proofState(for: .bottom)
         persist()
     }
     func remove(_ id: UUID) { entries.removeAll { $0.id == id }; persist() }

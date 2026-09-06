@@ -52,6 +52,7 @@ final class WorkspaceModel {
     var isImporting = false
     var isShowingHistory = false
     private var renderGeneration = 0
+    private var currentHistoryEntryID: UUID?
     private var historyResolutionTask: Task<HistoryResolvedSource, any Error>?
     private var historyResolutionRevision = 0
     private let resolveHistory: @Sendable (PackageHistoryEntry) throws -> HistoryResolvedSource
@@ -146,7 +147,7 @@ final class WorkspaceModel {
                 document = next
                 textures = rendered
                 visibleLayerIDs = visible
-                history.record(historyEntry, reopening: fromHistory ?? relinking)
+                currentHistoryEntryID = history.record(historyEntry, reopening: fromHistory ?? relinking)
                 phase = .idle
                 loadTask = nil
             } catch let error as HistoryAccessError {
@@ -233,7 +234,8 @@ final class WorkspaceModel {
         let generation = proofGeneration
         let documentIdentity = documentGeneration
         let readProof = self.readProof
-        let task = Task { try await readProof(url, side) }
+        phase = .rendering
+        let task = Task { try await Self.validatedProof(try await readProof(url, side)) }
         proofTask = task
         Task {
             do {
@@ -247,42 +249,78 @@ final class WorkspaceModel {
                 document.sidePreviews.removeAll { $0.side == side && $0.provenance == .attached && (mapping != nil || $0.mapping == nil) }
                 document.sidePreviews.append(preview)
                 if mapping != nil { document.activeArtworkIDs[side] = preview.id }
-                self.document = document
                 proofTask = nil
                 if mapping == nil { showProofs = true }
-                rerender()
+                publishProofDocument(document)
             } catch is CancellationError { }
               catch {
                 guard generation == proofGeneration, documentIdentity == documentGeneration else { return }
                 proofTask = nil
+                phase = .idle
                 errorMessage = error.localizedDescription
             }
         }
     }
 
-    func mapArtwork(_ preview: BoardSidePreview, mapping: BoardArtworkMapping) {
-        guard !isOpening, var document, let index = document.sidePreviews.firstIndex(where: { $0.id == preview.id }) else { return }
-        do { try mapping.validate() } catch { errorMessage = error.localizedDescription; return }
-        document.sidePreviews[index].mapping = mapping
-        document.sidePreviews[index].purpose = .boardArtwork
-        document.activeArtworkIDs[preview.side] = preview.id
-        document.sidePreviews.removeAll { $0.side == preview.side && $0.provenance == .attached && $0.id != preview.id && $0.mapping != nil }
+    private nonisolated static func validatedProof(_ preview: BoardSidePreview) async throws -> BoardSidePreview {
+        guard preview.validatedImage == nil else { return preview }
+        let task = Task.detached {
+            var result = preview
+            result.validatedImage = try ProofImageDecoder.decode(preview.imageData, name: preview.fileName)
+            return result
+        }
+        return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+    }
+
+    private func publishProofDocument(_ source: BoardDocument) {
+        var document = source
+        document.refreshProofWarnings()
         self.document = document
+        if let id = currentHistoryEntryID { history.updateInspection(id, document: document) }
         rerender()
     }
 
+    func mapArtwork(_ preview: BoardSidePreview, mapping: BoardArtworkMapping, resetToSupplied: Bool = false) {
+        guard !isOpening, document?.sidePreviews.contains(where: { $0.id == preview.id }) == true else { return }
+        do { try mapping.validate() } catch { errorMessage = error.localizedDescription; return }
+        proofTask?.cancel(); proofGeneration += 1
+        let generation = proofGeneration, identity = documentGeneration
+        phase = .rendering
+        let task = Task { try await Self.validatedProof(preview) }
+        proofTask = task
+        Task {
+            do {
+                var validated = try await task.value
+                guard generation == proofGeneration, identity == documentGeneration, var document,
+                      let index = document.sidePreviews.firstIndex(where: { $0.id == preview.id }) else { return }
+                validated.mapping = mapping; validated.purpose = .boardArtwork
+                document.sidePreviews[index] = validated
+                if resetToSupplied { document.activeArtworkIDs.removeValue(forKey: preview.side) }
+                else { document.activeArtworkIDs[preview.side] = preview.id }
+                if validated.provenance == .attached {
+                    document.sidePreviews.removeAll { $0.side == preview.side && $0.provenance == .attached && $0.id != preview.id && $0.mapping != nil }
+                }
+                proofTask = nil
+                publishProofDocument(document)
+            } catch {
+                guard generation == proofGeneration, identity == documentGeneration else { return }
+                proofTask = nil; phase = .idle
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     func selectArtwork(_ preview: BoardSidePreview) {
-        guard !isOpening, var document, document.sidePreviews.contains(where: { $0.id == preview.id && $0.purpose == .boardArtwork }) else { return }
-        document.activeArtworkIDs[preview.side] = preview.id
-        self.document = document
-        rerender()
+        guard let mapping = preview.mapping else { return }
+        mapArtwork(preview, mapping: mapping)
     }
 
     func resetArtwork(_ side: GerberSide) {
         guard !isOpening, var document else { return }
         document.activeArtworkIDs.removeValue(forKey: side)
-        self.document = document
-        rerender()
+        if let preview = document.activeArtwork(for: side), let mapping = preview.mapping {
+            mapArtwork(preview, mapping: mapping, resetToSupplied: true)
+        } else { publishProofDocument(document) }
     }
 
     func rerender() {

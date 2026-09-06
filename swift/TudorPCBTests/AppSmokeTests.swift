@@ -146,6 +146,57 @@ private actor DelayedProofReader {
 
 extension AppSmokeTests {
     @MainActor
+    func testProofValidationPerSideWarningsAndHistoryMetadataStayCurrent() async throws {
+        var source = BoardDocument(name: "two encrypted sides", colorSilkscreens: [
+            ColorSilkscreenInfo(side: .top, fileName: "empty.FCTS", payload: .encryptedJLC, byteCount: 0),
+            ColorSilkscreenInfo(side: .bottom, fileName: "bottom.FCBS", payload: .encryptedJLC, byteCount: 20)
+        ])
+        source.refreshProofWarnings()
+        let initial = source
+        let data = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, try BoardRasterizer().render(source, options: .init(maximumTextureDimension: 256)).top, nil)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        let valid = data as Data
+        let owner = PackageHistoryOwner(writer: { _ in })
+        let model = WorkspaceModel(readProof: { url, side in
+            BoardSidePreview(side: side, fileName: url.lastPathComponent, imageData: url.lastPathComponent == "valid.png" ? valid : Data("<svg>invalid unsupported bytes".utf8))
+        }, loadPackage: { _ in initial }, makeBookmark: { _ in Data([1]) }, history: owner)
+        model.open(URL(fileURLWithPath: "/two-sides.zip"))
+        try await waitUntil { !model.isLoading }
+        let mapping = BoardArtworkMapping(bounds: source.bounds, orientation: .boardCoordinates)
+        model.attachColorProof(URL(fileURLWithPath: "/random.png"), side: .top, mapping: mapping)
+        try await waitUntil { !model.isLoading }
+        XCTAssertTrue(model.errorMessage?.contains("random.png") == true)
+        XCTAssertEqual(model.document?.sidePreviews.count, 0)
+        XCTAssertEqual(model.document?.proofState(for: .top), .missing)
+        model.attachColorProof(URL(fileURLWithPath: "/valid.png"), side: .top, mapping: mapping)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.document?.proofState(for: .top), .mappedArtwork)
+        XCTAssertEqual(model.document?.proofState(for: .bottom), .missing)
+        XCTAssertTrue(model.document?.warnings.contains { $0.contains("Bottom:") && $0.contains("unavailable") } == true)
+        XCTAssertEqual(owner.entries[0].warningCount, model.document?.warnings.count)
+        XCTAssertEqual(owner.entries[0].topProofState, .mappedArtwork)
+        let previous = model.document?.activeArtwork(for: .top)?.id
+        model.attachColorProof(URL(fileURLWithPath: "/unsupported.png"), side: .top, mapping: mapping)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.document?.activeArtwork(for: .top)?.id, previous)
+        model.attachColorProof(URL(fileURLWithPath: "/valid.png"), side: .bottom, mapping: mapping)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(owner.entries[0].bottomProofState, .mappedArtwork)
+        XCTAssertEqual(owner.entries[0].openedCount, 1)
+        XCTAssertFalse(model.document?.warnings.contains { $0.contains("exact colors are unavailable") } == true)
+        XCTAssertTrue(model.document?.warnings.contains { $0.contains("empty.FCTS") && $0.contains("empty") } == true)
+        XCTAssertFalse(model.document?.warnings.contains { $0.contains("present and valid") } == true)
+        XCTAssertEqual(owner.entries[0].warningCount, model.document?.warnings.count)
+        var gallery = BoardDocument(name: "gallery", sidePreviews: [BoardSidePreview(side: .top, fileName: "valid.png", imageData: valid, validatedImage: try ProofImageDecoder.decode(valid, name: "valid.png"), purpose: .galleryProof)])
+        gallery.colorSilkscreens = source.colorSilkscreens
+        gallery.refreshProofWarnings()
+        XCTAssertEqual(gallery.proofState(for: .top), .galleryOnly)
+        XCTAssertTrue(gallery.warnings.contains { $0.contains("unmapped") })
+    }
+
+    @MainActor
     func testAttachedArtworkOverridesSuppliedAndCanResetWithoutLosingProvenance() async throws {
         func png(_ color: NSColor) throws -> Data {
             let context = try XCTUnwrap(CGContext(data: nil, width: 8, height: 8, bitsPerComponent: 8, bytesPerRow: 32, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))

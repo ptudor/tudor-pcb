@@ -37,6 +37,17 @@ public struct BoardArtworkMapping: Sendable, Equatable {
     }
 }
 
+public enum BoardProofState: String, Sendable, Codable {
+    case missing, galleryOnly, mappedArtwork
+    public var label: String {
+        switch self {
+        case .missing: "No validated proof"
+        case .galleryOnly: "Validated gallery proof · unmapped"
+        case .mappedArtwork: "Validated mapped artwork"
+        }
+    }
+}
+
 public enum BoardPreviewPurpose: String, Sendable { case galleryProof, boardArtwork }
 public enum BoardPreviewProvenance: String, Sendable { case supplied, attached }
 
@@ -119,6 +130,27 @@ public struct BoardDocument: Sendable, Equatable {
         self.warnings = warnings
         self.packageRole = packageRole
         self.enclosedSourceArchives = enclosedSourceArchives
+    }
+
+    public func proofState(for side: GerberSide) -> BoardProofState {
+        if let active = activeArtwork(for: side), active.validatedImage != nil { return .mappedArtwork }
+        return sidePreviews.contains { $0.side == side && $0.validatedImage != nil } ? .galleryOnly : .missing
+    }
+
+    public mutating func refreshProofWarnings() {
+        warnings.removeAll { $0.hasPrefix("[Color proof]") }
+        for payload in colorSilkscreens where payload.payload == .encryptedJLC && payload.byteCount == 0 {
+            warnings.append("[Color proof] \(payload.fileName): factory payload is empty; validity has not been established.")
+        }
+        for side in [GerberSide.top, .bottom] where colorSilkscreens.contains(where: { $0.side == side && $0.payload == .encryptedJLC }) {
+            switch proofState(for: side) {
+            case .mappedArtwork: break
+            case .galleryOnly:
+                warnings.append("[Color proof] \(side.rawValue.capitalized): a validated gallery proof is available but unmapped; exact board colors remain unavailable.")
+            case .missing:
+                warnings.append("[Color proof] \(side.rawValue.capitalized): factory payload present, validity unverified; exact colors are unavailable without a validated proof.")
+            }
+        }
     }
 
     public var isEasyEDA: Bool {
