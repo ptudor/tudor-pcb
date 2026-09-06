@@ -134,3 +134,5 @@ Fit uses physical board bounds, thickness, orientation, viewport aspect and a 10
 Color proofs use an adaptive, vertically scrolling gallery. Select Inspect Image to zoom/pan an individual supplied or attached image; its side and source filename stay identified, and Done returns to the gallery. Fit Image restores the full preview. History search and removal always select a remaining visible entry or show no detail; clearing history does not remove source files.
 
 Metal draws on document, texture, camera and size changes. Zoom easing temporarily runs at 60 Hz, then settles and pauses. Empty, hidden/occluded, backgrounded, and 2D-inspection views pause GPU submission and invalidate when visible again.
+
+Both products register as alternate, read-only viewers for explicit Gerber/Excellon suffixes and ZIP containers. They do not register for generic data/text, `.txt`, `.nc`, or `.tap`; these can still be selected explicitly and classified by their contents. iOS opens provider documents in place under existing URL security scope and read coordination. Fabrication sources are neither edited nor copied into app storage.

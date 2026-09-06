@@ -561,9 +561,25 @@ public struct BoardRasterizer: Sendable {
 public actor FabricationWorkSession {
     private var cache = RasterCache()
     public init() { }
-    public func load(_ url: URL, selection: FabricationSelection? = nil) throws -> BoardDocument {
-        try Task.checkCancellation()
-        return try FabricationPackageLoader().load(from: url, selection: selection)
+    public func load(_ url: URL, selection: FabricationSelection? = nil) async throws -> BoardDocument {
+        // The workspace holds URL security scope across this entire operation.
+        // Coordination protects read-only opening in place from provider changes.
+        let access = FabricationReadCoordination()
+        return try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            var coordinationError: NSError?
+            var result: Result<BoardDocument, any Error>?
+            access.coordinator.coordinate(readingItemAt: url, options: .withoutChanges, error: &coordinationError) { coordinated in
+                result = Result {
+                    try Task.checkCancellation()
+                    return try FabricationPackageLoader().load(from: coordinated, selection: selection)
+                }
+            }
+            try Task.checkCancellation()
+            if let coordinationError { throw coordinationError }
+            guard let result else { throw CocoaError(.fileReadUnknown) }
+            return try result.get()
+        } onCancel: { access.coordinator.cancel() }
     }
     public func inspect(_ document: BoardDocument, layerIDs: Set<String>, showDrills: Bool, viewport: Bounds2D? = nil) throws -> BoardInspectionImage {
         try BoardRasterizer().renderInspection(document, layerIDs: layerIDs, showDrills: showDrills, viewport: viewport)
@@ -613,4 +629,10 @@ fileprivate struct RasterCache {
     var maskWarnings: [String] = []
     var top: CGImage?
     var bottom: CGImage?
+}
+
+
+// NSFileCoordinator supports cancellation from the task's cancellation handler.
+private final class FabricationReadCoordination: @unchecked Sendable {
+    let coordinator = NSFileCoordinator()
 }
