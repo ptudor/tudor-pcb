@@ -34,12 +34,10 @@ public enum GeometryLimits {
     static func arcParameters(start: Point2D, end: Point2D, center: Point2D, clockwise: Bool,
                               spacing: Double, minimum: Int, context: String) throws -> (Double, Double, Double, Int) {
         for p in [start, end, center] { try point(p, context: context) }
-        let radius = hypot(start.x - center.x, start.y - center.y)
-        let angle = atan2(start.y - center.y, start.x - center.x)
-        var sweep = atan2(end.y - center.y, end.x - center.x) - angle
-        if clockwise, sweep >= 0 { sweep -= 2 * .pi }
-        if !clockwise, sweep <= 0 { sweep += 2 * .pi }
-        if start == end { sweep = clockwise ? -2 * .pi : 2 * .pi }
+        guard let arc = ArcSweep(start: start, end: end, center: center, clockwise: clockwise) else {
+            throw GeometryLimitError(resource: "valid arc radius/endpoints", context: context)
+        }
+        let radius = arc.radius, angle = arc.startAngle, sweep = arc.sweep
         let count = ceil(abs(sweep) * radius / spacing)
         try require(count.isFinite && count <= Double(segmentsPerArc), "tessellated segments per arc", context)
         return (radius, angle, sweep, max(minimum, Int(count)))

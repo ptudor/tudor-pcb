@@ -108,13 +108,8 @@ public enum GerberPrimitive: Sendable, Hashable, Codable {
         switch self {
         case let .line(start, end, width, _):
             return Bounds2D.containing([start, end])?.expanded(by: width / 2)
-        case let .arc(start, end, center, _, width, _):
-            let radius = hypot(start.x - center.x, start.y - center.y)
-            let circle = Bounds2D(
-                minimum: Point2D(x: center.x - radius, y: center.y - radius),
-                maximum: Point2D(x: center.x + radius, y: center.y + radius)
-            )
-            return circle.union(Bounds2D.containing([start, end]) ?? circle).expanded(by: width / 2)
+        case let .arc(start, end, center, clockwise, width, _):
+            return ArcSweep(start: start, end: end, center: center, clockwise: clockwise)?.bounds.expanded(by: width / 2)
         case let .flash(center, shape, _):
             guard let local = shape.localBounds else { return nil }
             return Bounds2D(minimum: local.minimum + center, maximum: local.maximum + center)
@@ -156,12 +151,8 @@ public struct GerberLayer: Sendable, Hashable, Codable, Identifiable {
             switch primitive {
             case let .line(start, end, _, _):
                 return Bounds2D.containing([start, end])
-            case let .arc(start, end, center, _, _, _):
-                let radius = hypot(start.x - center.x, start.y - center.y)
-                return Bounds2D(
-                    minimum: Point2D(x: center.x - radius, y: center.y - radius),
-                    maximum: Point2D(x: center.x + radius, y: center.y + radius)
-                ).union(Bounds2D.containing([start, end])!)
+            case let .arc(start, end, center, clockwise, _, _):
+                return ArcSweep(start: start, end: end, center: center, clockwise: clockwise)?.bounds
             case .flash, .region:
                 return primitive.bounds
             }
