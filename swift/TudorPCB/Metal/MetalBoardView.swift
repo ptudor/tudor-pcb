@@ -8,6 +8,10 @@ import SwiftUI
 final class ViewerController {
     private(set) var cameraRevision = 0
     private(set) var retryRevision = 0
+    private(set) var zoomRevision = 0
+    private(set) var zoomDelta: Float = 0
+
+    func zoom(by delta: Float) { zoomDelta = delta; zoomRevision += 1 }
     var rendererError: String?
     var use2DFallback = false
 
@@ -54,6 +58,10 @@ struct MetalBoardView {
             renderer.update(document: document, textures: textures)
             coordinator.report(renderer.renderError?.localizedDescription)
         }
+        if coordinator.zoomRevision != controller.zoomRevision {
+            coordinator.zoom(delta: controller.zoomDelta)
+            coordinator.zoomRevision = controller.zoomRevision
+        }
         if coordinator.cameraRevision != controller.cameraRevision {
             coordinator.renderer?.apply(controller.cameraPreset)
             coordinator.cameraRevision = controller.cameraRevision
@@ -64,6 +72,7 @@ struct MetalBoardView {
     final class Coordinator: NSObject, MTKViewDelegate, BoardInteractionDelegate {
         var renderer: BoardRenderer?
         var cameraRevision = -1
+        var zoomRevision = 0
         let controller: ViewerController
         private var reportRevision = 0
         private let makeRenderer: (MTLDevice, MTLPixelFormat, MTLPixelFormat) throws -> BoardRenderer
@@ -143,38 +152,49 @@ extension MetalBoardView: UIViewRepresentable {
     func updateUIView(_ view: InteractiveMTKView, context: Context) { sync(context.coordinator) }
 }
 
-final class InteractiveMTKView: MTKView {
+final class InteractiveMTKView: MTKView, UIGestureRecognizerDelegate {
     @MainActor weak var interactionDelegate: BoardInteractionDelegate?
-    private var previousTouch: CGPoint?
-    private var startingPinchDistance: CGFloat?
+    private lazy var pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinched(_:)))
+    private lazy var pan = UIPanGestureRecognizer(target: self, action: #selector(panned(_:)))
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        previousTouch = touches.first?.location(in: self)
-        startingPinchDistance = distance(between: touches)
+    override init(frame: CGRect, device: MTLDevice?) {
+        super.init(frame: frame, device: device)
+        isMultipleTouchEnabled = true
+        pinch.delegate = self
+        pan.delegate = self
+        pan.minimumNumberOfTouches = 1
+        pan.maximumNumberOfTouches = 2
+        addGestureRecognizer(pinch)
+        addGestureRecognizer(pan)
+        isAccessibilityElement = true
+        accessibilityIdentifier = "physical-board"
+        accessibilityLabel = "3D fabrication board"
+        accessibilityHint = "Adjust to zoom. Camera controls also provide top, bottom, and fit views."
+        accessibilityTraits = .adjustable
     }
 
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if touches.count >= 2, let previous = startingPinchDistance, let current = distance(between: touches) {
-            interactionDelegate?.zoom(delta: Float((previous - current) * 0.8))
-            startingPinchDistance = current
-        } else if let current = touches.first?.location(in: self), let previousTouch {
-            interactionDelegate?.orbit(
-                deltaX: Float(current.x - previousTouch.x),
-                deltaY: Float(previousTouch.y - current.y)
-            )
-            self.previousTouch = current
-        }
+    required init(coder: NSCoder) { fatalError("Use init(frame:device:)") }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        (gestureRecognizer === pinch && other === pan) || (gestureRecognizer === pan && other === pinch)
     }
 
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        previousTouch = nil
-        startingPinchDistance = nil
+    @objc private func pinched(_ gesture: UIPinchGestureRecognizer) {
+        // UIKit tracks the entire touch sequence, including staggered fingers and cancellation.
+        defer { gesture.scale = 1; pan.setTranslation(.zero, in: self) }
+        guard gesture.state == .changed, gesture.scale.isFinite, gesture.scale > 0 else { return }
+        interactionDelegate?.zoom(delta: Float(-log(gesture.scale) / 0.004))
     }
 
-    private func distance(between touches: Set<UITouch>) -> CGFloat? {
-        let points = touches.prefix(2).map { $0.location(in: self) }
-        guard points.count == 2 else { return nil }
-        return hypot(points[0].x - points[1].x, points[0].y - points[1].y)
+    @objc private func panned(_ gesture: UIPanGestureRecognizer) {
+        let translation = gesture.translation(in: self)
+        defer { gesture.setTranslation(.zero, in: self) }
+        guard gesture.state == .changed, gesture.numberOfTouches == 1,
+              pinch.state != .began, pinch.state != .changed else { return }
+        interactionDelegate?.orbit(deltaX: Float(translation.x), deltaY: Float(-translation.y))
     }
+
+    override func accessibilityIncrement() { interactionDelegate?.zoom(delta: -75) }
+    override func accessibilityDecrement() { interactionDelegate?.zoom(delta: 75) }
 }
 #endif

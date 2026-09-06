@@ -67,6 +67,11 @@ struct WorkspaceView: View {
                     Button("Fit", systemImage: "arrow.up.left.and.arrow.down.right") { viewer.show(.fit) }
                         .disabled(model.document == nil)
 
+                    Button("Zoom In", systemImage: "plus.magnifyingglass") { viewer.zoom(by: -75) }
+                        .disabled(model.document == nil)
+                    Button("Zoom Out", systemImage: "minus.magnifyingglass") { viewer.zoom(by: 75) }
+                        .disabled(model.document == nil)
+
                     Menu("Board finish", systemImage: "paintpalette") {
                         ForEach(BoardMaskStyle.allCases) { style in
                             Button {
