@@ -25,13 +25,25 @@ public struct ColorSilkscreenInfo: Sendable, Hashable, Codable {
     }
 }
 
-public struct BoardSidePreview: Sendable, Equatable {
+public enum BoardPreviewPurpose: String, Sendable { case galleryProof, boardArtwork }
+public enum BoardPreviewProvenance: String, Sendable { case supplied, attached }
+
+public struct BoardSidePreview: Sendable, Equatable, Identifiable {
+    public var id: UUID
+    public var purpose: BoardPreviewPurpose
+    public var provenance: BoardPreviewProvenance
     public var side: GerberSide
     public var fileName: String
     public var imageData: Data { didSet { validatedImage = nil } }
     public var validatedImage: ProofImage?
 
-    public init(side: GerberSide, fileName: String, imageData: Data, validatedImage: ProofImage? = nil) {
+    public init(side: GerberSide, fileName: String, imageData: Data, validatedImage: ProofImage? = nil,
+                id: UUID = UUID(), purpose: BoardPreviewPurpose? = nil, provenance: BoardPreviewProvenance = .supplied) {
+        self.id = id
+        // Migrate existing callers once; renderers consume explicit purpose.
+        let legacyName = fileName.lowercased()
+        self.purpose = purpose ?? (legacyName.contains("artwork") || legacyName.contains("top-side") || legacyName.contains("bottom-side") ? .boardArtwork : .galleryProof)
+        self.provenance = provenance
         self.side = side
         self.fileName = fileName
         self.imageData = imageData
@@ -41,6 +53,7 @@ public struct BoardSidePreview: Sendable, Equatable {
 
 extension BoardSidePreview {
     public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id && lhs.purpose == rhs.purpose && lhs.provenance == rhs.provenance &&
         lhs.side == rhs.side && lhs.fileName == rhs.fileName && lhs.imageData == rhs.imageData
     }
 }
@@ -57,6 +70,14 @@ public struct BoardDocument: Sendable, Equatable {
     public var packageRole: FabricationPackageRole
     public var enclosedSourceArchives: [String]
     public var sourceSelection: FabricationSelection? = nil
+    public var activeArtworkIDs: [GerberSide: UUID] = [:]
+
+    public func activeArtwork(for side: GerberSide) -> BoardSidePreview? {
+        if let id = activeArtworkIDs[side] {
+            return sidePreviews.first { $0.id == id && $0.side == side && $0.purpose == .boardArtwork }
+        }
+        return sidePreviews.first { $0.side == side && $0.purpose == .boardArtwork && $0.provenance == .supplied }
+    }
 
     public init(
         name: String,

@@ -239,9 +239,12 @@ final class WorkspaceModel {
             do {
                 var preview = try await task.value
                 guard generation == proofGeneration, documentIdentity == documentGeneration, var document else { return }
-                preview.fileName = "attached-artwork-\(side.rawValue)-side.\(url.pathExtension)"
-                document.sidePreviews.removeAll { $0.side == side && $0.fileName.contains("attached-artwork") }
+                preview.fileName = url.lastPathComponent
+                preview.purpose = .boardArtwork
+                preview.provenance = .attached
+                document.sidePreviews.removeAll { $0.side == side && $0.provenance == .attached }
                 document.sidePreviews.append(preview)
+                document.activeArtworkIDs[side] = preview.id
                 self.document = document
                 proofTask = nil
                 rerender()
@@ -252,6 +255,20 @@ final class WorkspaceModel {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    func selectArtwork(_ preview: BoardSidePreview) {
+        guard !isOpening, var document, document.sidePreviews.contains(where: { $0.id == preview.id && $0.purpose == .boardArtwork }) else { return }
+        document.activeArtworkIDs[preview.side] = preview.id
+        self.document = document
+        rerender()
+    }
+
+    func resetArtwork(_ side: GerberSide) {
+        guard !isOpening, var document else { return }
+        document.activeArtworkIDs.removeValue(forKey: side)
+        self.document = document
+        rerender()
     }
 
     func rerender() {

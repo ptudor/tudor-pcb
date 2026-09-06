@@ -141,7 +141,7 @@ public struct BoardRasterizer: Sendable {
         context.fill(canvas)
 
         if options.useColorArtwork,
-           let preview = preferredArtwork(for: side, in: document.sidePreviews) {
+           let preview = document.activeArtwork(for: side) {
             let image = try (preview.validatedImage ?? ProofImageDecoder.decode(preview.imageData, name: preview.fileName)).cgImage
             let artworkBounds = try BoardOutlineExtractor.contours(in: document)
                 .compactMap(Bounds2D.containing)
@@ -485,14 +485,6 @@ public struct BoardRasterizer: Sendable {
         }
     }
 
-    private func preferredArtwork(for side: GerberSide, in previews: [BoardSidePreview]) -> BoardSidePreview? {
-        previews.first {
-            guard $0.side == side else { return false }
-            let lower = $0.fileName.lowercased()
-            return lower.contains("top-side") || lower.contains("bottom-side") || lower.contains("artwork")
-        }
-    }
-
     private func pixel(_ point: Point2D, bounds: Bounds2D, scale: Double) -> CGPoint {
         CGPoint(x: (point.x - bounds.minimum.x) * scale, y: (point.y - bounds.minimum.y) * scale)
     }
@@ -548,6 +540,7 @@ fileprivate struct RasterCache {
         let mask: MaskKey
         let layers: [GerberLayer]
         let previews: [BoardSidePreview]
+        let activeArtworkID: UUID?
         let hasColor: Bool
         let color: RGBAColor
         let artwork: Bool
@@ -555,6 +548,7 @@ fileprivate struct RasterCache {
             self.mask = mask
             layers = document.layers.filter { $0.kind.side == side && (options.visibleLayerIDs?.contains($0.id) ?? true) }
             previews = document.sidePreviews.filter { $0.side == side }
+            activeArtworkID = document.activeArtwork(for: side)?.id
             hasColor = document.colorSilkscreens.contains { $0.side == side }
             color = options.solderMaskColor
             artwork = options.useColorArtwork

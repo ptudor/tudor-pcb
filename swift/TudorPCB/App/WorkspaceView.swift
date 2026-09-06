@@ -156,7 +156,7 @@ struct WorkspaceView: View {
             }
         }
         .sheet(isPresented: $model.showProofs) {
-            if let document = model.document { ProofGalleryView(document: document) }
+            if let document = model.document { ProofGalleryView(document: document, onSelect: { model.selectArtwork($0) }, onReset: { model.resetArtwork($0) }) }
         }
         .sheet(isPresented: $model.isShowingHistory) {
             PackageBrowserView(
@@ -657,13 +657,15 @@ private struct PackageHistoryDetail: View {
 
 private struct ProofGalleryView: View {
     let document: BoardDocument
+    let onSelect: (BoardSidePreview) -> Void
+    let onReset: (GerberSide) -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             ScrollView(.horizontal) {
                 HStack(spacing: 18) {
-                    ForEach(Array(document.sidePreviews.enumerated()), id: \.offset) { _, preview in
+                    ForEach(document.sidePreviews) { preview in
                         VStack(alignment: .leading, spacing: 8) {
                             proofImage(preview)
                                 .scaledToFit()
@@ -672,6 +674,13 @@ private struct ProofGalleryView: View {
                             Text("\(preview.side == .top ? "Top" : "Bottom") · \(preview.fileName)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                            Text(preview.provenance == .supplied ? "Supplied with source" : "User attachment")
+                                .font(.caption2)
+                            if preview.purpose == .boardArtwork {
+                                if document.activeArtwork(for: preview.side)?.id == preview.id {
+                                    Label("Active board artwork", systemImage: "checkmark.circle")
+                                } else { Button("Use as Board Artwork") { onSelect(preview) } }
+                            } else { Text("Gallery proof").font(.caption) }
                         }
                     }
                 }
@@ -679,6 +688,10 @@ private struct ProofGalleryView: View {
             }
             .navigationTitle("Color proofs")
             .toolbar {
+                ToolbarItemGroup {
+                    Button("Reset Top to Supplied Artwork") { onReset(.top) }
+                    Button("Reset Bottom to Supplied Artwork") { onReset(.bottom) }
+                }
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }

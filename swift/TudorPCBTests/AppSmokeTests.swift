@@ -1,6 +1,7 @@
 import XCTest
 import GerberKit
 import MetalKit
+import ImageIO
 @testable import TudorPCB
 
 final class AppSmokeTests: XCTestCase {
@@ -144,6 +145,51 @@ private actor DelayedProofReader {
 }
 
 extension AppSmokeTests {
+    @MainActor
+    func testAttachedArtworkOverridesSuppliedAndCanResetWithoutLosingProvenance() async throws {
+        func png(_ color: NSColor) throws -> Data {
+            let context = try XCTUnwrap(CGContext(data: nil, width: 8, height: 8, bitsPerComponent: 8, bytesPerRow: 32, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.setFillColor(color.cgColor); context.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+            let data = NSMutableData()
+            let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, try XCTUnwrap(context.makeImage()), nil)
+            XCTAssertTrue(CGImageDestinationFinalize(destination))
+            return data as Data
+        }
+        let red = try png(.red), blue = try png(.blue), green = try png(.green)
+        let supplied = BoardSidePreview(side: .top, fileName: "artwork_top.png", imageData: red)
+        let model = WorkspaceModel(readProof: { url, side in
+            let data = url.lastPathComponent == "blue.png" ? blue : green
+            return BoardSidePreview(side: side, fileName: url.lastPathComponent, imageData: data, validatedImage: try ProofImageDecoder.decode(data, name: url.lastPathComponent))
+        }, saveHistory: { _ in })
+        model.document = BoardDocument(name: "proofs", sidePreviews: [supplied])
+        func center(_ image: CGImage) throws -> [UInt8] {
+            let context = try XCTUnwrap(CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            return Array(UnsafeBufferPointer(start: try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self), count: 4))
+        }
+        model.attachColorProof(URL(fileURLWithPath: "/blue.png"), side: .top)
+        try await waitUntil { model.document?.activeArtwork(for: .top)?.provenance == .attached && !model.isLoading }
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[2], 240)
+        XCTAssertEqual(model.document?.sidePreviews.map(\.fileName), ["artwork_top.png", "blue.png"])
+        XCTAssertEqual(model.document?.sidePreviews.map(\.provenance), [.supplied, .attached])
+        model.attachColorProof(URL(fileURLWithPath: "/green.png"), side: .top)
+        try await waitUntil { model.document?.activeArtwork(for: .top)?.fileName == "green.png" && !model.isLoading }
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[1], 240)
+        model.attachColorProof(URL(fileURLWithPath: "/blue.png"), side: .bottom)
+        try await waitUntil { model.document?.activeArtwork(for: .bottom) != nil && !model.isLoading }
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).bottom)[2], 240)
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[1], 240)
+        model.resetArtwork(.top)
+        try await waitUntil { !model.isLoading }
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[0], 240)
+        XCTAssertEqual(model.document?.activeArtwork(for: .top)?.id, supplied.id)
+        let attached = try XCTUnwrap(model.document?.sidePreviews.first { $0.side == .top && $0.provenance == .attached })
+        model.selectArtwork(attached)
+        try await waitUntil { !model.isLoading }
+        XCTAssertGreaterThan(try center(XCTUnwrap(model.textures).top)[1], 240)
+    }
+
     @MainActor
     func testMovedBookmarkRetainsIdentityAndDoesNotCollapseReplacementAtOldPath() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: "moved-history-\(UUID())")
