@@ -46,6 +46,7 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
     var packageRole: FabricationPackageRole?
     var enclosedSourceCount: Int?
     var bookmarkData: Data?
+    var sourceSelection: FabricationSelection? = nil
 
     var ageDate: Date { modifiedAt ?? createdAt ?? firstOpenedAt }
     var isAvailable: Bool { FileManager.default.fileExists(atPath: sourcePath) }
@@ -104,7 +105,8 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
             colorSilkscreenSides: Set(document.colorSilkscreens.map(\.side)).count,
             packageRole: document.packageRole,
             enclosedSourceCount: document.enclosedSourceArchives.count,
-            bookmarkData: PackageHistoryStore.makeBookmark(for: url)
+            bookmarkData: PackageHistoryStore.makeBookmark(for: url),
+            sourceSelection: document.sourceSelection
         )
     }
 
@@ -146,7 +148,7 @@ nonisolated enum PackageHistoryStore {
 
     static func merging(_ entry: PackageHistoryEntry, into entries: [PackageHistoryEntry]) -> [PackageHistoryEntry] {
         var updated = entries
-        if let index = updated.firstIndex(where: { $0.sourcePath == entry.sourcePath }) {
+        if let index = updated.firstIndex(where: { $0.sourcePath == entry.sourcePath && $0.sourceSelection == entry.sourceSelection }) {
             var replacement = entry
             replacement.id = updated[index].id
             replacement.firstOpenedAt = updated[index].firstOpenedAt

@@ -38,6 +38,8 @@ final class WorkspaceModel {
     var isOpening: Bool { if case .opening = phase { true } else { false } }
     var pendingFileName: String? { if case let .opening(name) = phase { name } else { nil } }
     var errorMessage: String?
+    var candidateChoices: [FabricationSelection] = []
+    private var candidateURL: URL?
     var visibleLayerIDs: Set<String> = []
     var maskStyle = BoardMaskStyle.green
     var showProofs = false
@@ -50,6 +52,7 @@ final class WorkspaceModel {
     private var documentGeneration = 0
     private let readProof: @Sendable (URL, GerberSide) async throws -> BoardSidePreview
     private let loadPackage: @Sendable (URL) async throws -> BoardDocument
+    private let loadSelection: @Sendable (URL, FabricationSelection) async throws -> BoardDocument
     private let renderBoard: @Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet
     private let saveHistory: ([PackageHistoryEntry]) -> Void
     private let startAccess: (URL) -> Bool
@@ -60,6 +63,7 @@ final class WorkspaceModel {
             try await ProofImageDecoder.read($0, side: $1)
         },
         loadPackage: (@Sendable (URL) async throws -> BoardDocument)? = nil,
+        loadSelection: (@Sendable (URL, FabricationSelection) async throws -> BoardDocument)? = nil,
         renderBoard: (@Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet)? = nil,
         startAccess: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
         stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() },
@@ -68,13 +72,16 @@ final class WorkspaceModel {
         self.readProof = readProof
         let worker = FabricationWorkSession()
         self.loadPackage = loadPackage ?? { try await worker.load($0) }
+        self.loadSelection = loadSelection ?? { try await worker.load($0, selection: $1) }
         self.renderBoard = renderBoard ?? { try await worker.render($0, options: $1) }
         self.startAccess = startAccess
         self.stopAccess = stopAccess
         self.saveHistory = saveHistory
     }
 
-    func open(_ url: URL) {
+    func open(_ url: URL, selection: FabricationSelection? = nil) {
+        candidateChoices = []
+        candidateURL = nil
         loadTask?.cancel()
         renderTask?.cancel()
         documentGeneration += 1
@@ -91,7 +98,9 @@ final class WorkspaceModel {
             defer { if hasAccess { stopAccess(url) } }
             do {
                 try Task.checkCancellation()
-                let next = try await loadPackage(url)
+                let next: BoardDocument
+                if let selection { next = try await loadSelection(url, selection) }
+                else { next = try await loadPackage(url) }
                 guard generation == documentGeneration else { return }
                 let visible = Set(next.layers.map(\.id))
                 let rendered = try await renderBoard(next, BoardRenderOptions(visibleLayerIDs: visible, solderMaskColor: maskStyle.color))
@@ -105,6 +114,12 @@ final class WorkspaceModel {
                 saveHistory(historyEntries)
                 phase = .idle
                 loadTask = nil
+            } catch let error as FabricationSelectionRequired {
+                guard generation == documentGeneration else { return }
+                phase = .idle
+                loadTask = nil
+                candidateURL = url
+                candidateChoices = error.candidates
             } catch is CancellationError { }
               catch {
                 guard generation == documentGeneration else { return }
@@ -114,9 +129,16 @@ final class WorkspaceModel {
         }
     }
 
+    func chooseCandidate(_ selection: FabricationSelection) {
+        guard candidateChoices.contains(selection), let url = candidateURL else { return }
+        open(url, selection: selection)
+    }
+
+    func cancelCandidateSelection() { candidateChoices = []; candidateURL = nil }
+
     func open(_ entry: PackageHistoryEntry) {
         do {
-            open(try PackageHistoryStore.resolve(entry))
+            open(try PackageHistoryStore.resolve(entry), selection: entry.sourceSelection)
         } catch {
             errorMessage = "The original package could not be reopened. It may have moved or no longer be available."
         }

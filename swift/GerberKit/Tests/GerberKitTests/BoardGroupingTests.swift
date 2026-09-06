@@ -11,12 +11,12 @@ func groupingOutline(_ size: Int) -> Data {
         do {
             _ = try FabricationPackageLoader().load(files: [ZipEntry(name: names[0], data: groupingOutline(10)), ZipEntry(name: names[1], data: groupingOutline(20))], name: "mixed")
             Issue.record("Merged board sets")
-        } catch FabricationPackageError.ambiguousBoardSets(let paths) { #expect(paths.count == 2) }
+        } catch let error as FabricationSelectionRequired { #expect(error.candidates.count == 2) }
     }
     let jlc = Data("G04 -- output software:jlccam pro v3.4.8 *".utf8) + groupingOutline(10)
     var files: [ZipEntry] = []
     for prefix in ["a", "b"] { for layer in ["ko", "tl", "bl", "to"] { files.append(ZipEntry(name: "\(prefix)/ok/\(layer)", data: jlc)) } }
-    #expect(throws: FabricationPackageError.self) { try FabricationPackageLoader().load(files: files, name: "two-envelopes") }
+    #expect(throws: FabricationSelectionRequired.self) { try FabricationPackageLoader().load(files: files, name: "two-envelopes") }
     let duplicate = try ZipArchiveReader().read(storedZIP([("board.gko", groupingOutline(10)), ("board.gko", groupingOutline(20))]))
     #expect(throws: FabricationPackageError.self) { try FabricationPackageLoader().load(files: duplicate, name: "duplicate") }
 }

@@ -117,6 +117,20 @@ struct WorkspaceView: View {
             model.open(url)
             return true
         }
+        .sheet(isPresented: Binding(get: { !model.candidateChoices.isEmpty }, set: { if !$0 { model.cancelCandidateSelection() } })) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Choose fabrication board").font(.title2)
+                Text("This delivery contains several board sets. Choose the source path to inspect.")
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(model.candidateChoices) { candidate in
+                            Button(candidate.displayName) { model.chooseCandidate(candidate) }
+                        }
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Button("Cancel", role: .cancel) { model.cancelCandidateSelection() }
+            }.padding().frame(minWidth: 320, idealWidth: 500, minHeight: 240)
+        }
         .alert("Couldn’t open fabrication package", isPresented: Binding(
             get: { model.errorMessage != nil },
             set: { if !$0 { model.errorMessage = nil } }

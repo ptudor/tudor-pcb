@@ -27,7 +27,7 @@ public struct FabricationPackageLoader: Sendable {
     private let limits: ImportLimits
     public init(limits: ImportLimits = .init()) { self.limits = limits }
 
-    public func load(from url: URL) throws -> BoardDocument {
+    public func load(from url: URL, selection: FabricationSelection? = nil) throws -> BoardDocument {
         var budget = ImportBudget(limits: limits)
         let values = try url.resourceValues(forKeys: [.isDirectoryKey])
         let files: [ZipEntry]
@@ -41,16 +41,16 @@ public struct FabricationPackageLoader: Sendable {
             try budget.file(path: url.path)
             files = [ZipEntry(name: url.lastPathComponent, data: try readFile(url, budget: &budget))]
         }
-        return try loadContainer(files: files, name: url.deletingPathExtension().lastPathComponent, depth: 0, budget: &budget)
+        return try loadContainer(files: files, name: url.deletingPathExtension().lastPathComponent, depth: 0, path: [], selection: selection, budget: &budget)
     }
 
-    public func load(files: [ZipEntry], name: String) throws -> BoardDocument {
+    public func load(files: [ZipEntry], name: String, selection: FabricationSelection? = nil) throws -> BoardDocument {
         var budget = ImportBudget(limits: limits)
         for file in files {
             try budget.file(path: file.name)
             try budget.input(file.data.count, path: file.name, isArchive: file.name.lowercased().hasSuffix(".zip"))
         }
-        return try loadContainer(files: files, name: name, depth: 0, budget: &budget)
+        return try loadContainer(files: files, name: name, depth: 0, path: [], selection: selection, budget: &budget)
     }
 
     private func readFile(_ url: URL, budget: inout ImportBudget, isArchive: Bool = false) throws -> Data {
@@ -67,86 +67,82 @@ public struct FabricationPackageLoader: Sendable {
     }
 
     private func loadContainer(
-        files: [ZipEntry],
-        name: String,
-        depth: Int,
-        budget: inout ImportBudget
+        files: [ZipEntry], name: String, depth: Int, path: [String],
+        selection: FabricationSelection?, budget: inout ImportBudget
     ) throws -> BoardDocument {
         var names = Set<String>()
         for file in files {
-            guard names.insert(file.name).inserted else { throw FabricationPackageError.duplicateEntry(file.name) }
+            guard names.insert(file.name).inserted else { throw FabricationPackageError.duplicateEntry((path + [file.name]).joined(separator: " → ")) }
+        }
+        if let selection, path.count < selection.containers.count {
+            let requested = selection.containers[path.count]
+            guard let archive = files.first(where: { $0.name == requested && $0.name.lowercased().hasSuffix(".zip") }) else {
+                throw FabricationContainerError(path: path + [requested], reason: "The selected archive is no longer present.")
+            }
+            return try loadNested(archive, depth: depth, path: path, selection: selection, budget: &budget)
         }
         let groups = flatGroups(in: files)
-        guard groups.count <= 1 else { throw FabricationPackageError.ambiguousBoardSets(groups.map(\.name)) }
-        if let envelope = jlcpcbProductionEnvelope(in: files) {
+        var flatFiles = files
+        if let selectedGroup = selection?.group {
+            guard let group = groups.first(where: { $0.name == selectedGroup }) else {
+                throw FabricationContainerError(path: path, reason: "The selected board set is no longer present: " + selectedGroup)
+            }
+            flatFiles = group.files
+        } else if groups.count > 1 {
+            throw FabricationSelectionRequired(candidates: groups.map { .init(containers: path, group: $0.name) })
+        }
+        let identity = FabricationSelection(containers: path, group: selection?.group ?? groups.first?.name)
+        if let envelope = jlcpcbProductionEnvelope(in: flatFiles) {
             var document = try loadFlat(files: envelope.productionFiles, name: name, budget: &budget)
             document.packageRole = .jlcpcbProduction
             document.enclosedSourceArchives = envelope.originalArchives
+            document.sourceSelection = identity
             return document
         }
-
         var fallback: BoardDocument?
         do {
-            var document = try loadFlat(files: files, name: name, budget: &budget)
-            if document.layers.contains(where: {
-                $0.sourceGenerator?.localizedCaseInsensitiveContains("jlccam") == true
-            }) {
-                document.packageRole = .jlcpcbProduction
-            }
-            if isCompleteBoard(document) { return document }
+            var document = try loadFlat(files: flatFiles, name: name, budget: &budget)
+            if document.layers.contains(where: { $0.sourceGenerator?.localizedCaseInsensitiveContains("jlccam") == true }) { document.packageRole = .jlcpcbProduction }
+            document.sourceSelection = identity
+            if selection != nil { return document }
             fallback = document
         } catch FabricationPackageError.noSupportedLayers { }
-
-
-        let nested = files.filter {
-            URL(fileURLWithPath: $0.name).pathExtension.lowercased() == "zip"
-        }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        guard !nested.isEmpty else {
-            if let fallback { return fallback }
-            throw FabricationPackageError.noSupportedLayers
-        }
-        guard depth < limits.archiveDepth else { throw FabricationPackageError.nestedArchiveLimit }
-
-        var candidates: [(name: String, document: BoardDocument, score: Int)] = []
-        if let fallback { candidates.append((".", fallback, packageScore(fallback))) }
+        let nested = files.filter { $0.name.lowercased().hasSuffix(".zip") }.sorted { $0.name < $1.name }
+        var candidates: [BoardDocument] = fallback.map { [$0] } ?? []
         for archive in nested {
-            try budget.charge("nested archives", 1, maximum: limits.archives, path: archive.name)
-            let entries: [ZipEntry]
-            do {
-                entries = try ZipArchiveReader().read(archive.data, budget: &budget, path: archive.name)
-            } catch let error as ImportLimitError { throw error }
-              catch let error as GeometryLimitError { throw error }
-                  catch is CancellationError { throw CancellationError() }
-              catch { continue }
-            let archiveName = URL(fileURLWithPath: archive.name).deletingPathExtension().lastPathComponent
-            var document: BoardDocument
-            do { document = try loadContainer(
-                files: entries,
-                name: archiveName,
-                depth: depth + 1,
-                budget: &budget
-            ) } catch let error as ImportLimitError { throw error }
-                catch let error as GeometryLimitError { throw error }
-                  catch is CancellationError { throw CancellationError() }
-                catch { continue }
-            if document.packageRole == .direct {
-                document.packageRole = .nestedArchive
-            }
-            if document.packageRole == .nestedArchive,
-               !document.enclosedSourceArchives.contains(archive.name) {
-                document.enclosedSourceArchives.append(archive.name)
-            }
-            candidates.append((archive.name, document, packageScore(document)))
+            do { candidates.append(try loadNested(archive, depth: depth, path: path, selection: nil, budget: &budget)) }
+            catch FabricationPackageError.noSupportedLayers { continue } // Only safely evaluated non-board content is harmless.
         }
+        guard let bestScore = candidates.map(packageScore).max() else { throw FabricationPackageError.noSupportedLayers }
+        let best = candidates.filter { packageScore($0) == bestScore }
+        guard best.count == 1 else { throw FabricationSelectionRequired(candidates: best.compactMap(\.sourceSelection)) }
+        return best[0]
+    }
 
-        guard let bestScore = candidates.map(\.score).max() else {
-            throw FabricationPackageError.noSupportedLayers
+    private func loadNested(_ archive: ZipEntry, depth: Int, path: [String], selection: FabricationSelection?, budget: inout ImportBudget) throws -> BoardDocument {
+        let nextPath = path + [archive.name]
+        let context = nextPath.joined(separator: " → ")
+        guard depth < limits.archiveDepth else { throw ImportLimitError(resource: "archive depth", path: context) }
+        try budget.charge("nested archives", 1, maximum: limits.archives, path: context)
+        do {
+            let entries = try ZipArchiveReader().read(archive.data, budget: &budget, path: context)
+            var document = try loadContainer(files: entries, name: URL(fileURLWithPath: archive.name).deletingPathExtension().lastPathComponent,
+                                             depth: depth + 1, path: nextPath, selection: selection, budget: &budget)
+            if document.packageRole == .direct { document.packageRole = .nestedArchive }
+            if document.packageRole == .nestedArchive, !document.enclosedSourceArchives.contains(archive.name) { document.enclosedSourceArchives.append(archive.name) }
+            return document
+        } catch let error as ImportLimitError {
+            throw ImportLimitError(resource: error.resource, path: error.path.hasPrefix(context) ? error.path : context + " → " + error.path)
+        } catch let error as GeometryLimitError {
+            throw GeometryLimitError(resource: error.resource, context: context + " → " + error.context)
         }
-        let best = candidates.filter { $0.score == bestScore }
-        guard best.count == 1, let selection = best.first else {
-            throw FabricationPackageError.ambiguousNestedArchives(best.map(\.name))
+          catch let error as FabricationSelectionRequired { throw error }
+          catch let error as FabricationContainerError {
+            throw FabricationContainerError(path: error.path.starts(with: nextPath) ? error.path : nextPath + error.path, reason: error.reason)
         }
-        return selection.document
+          catch FabricationPackageError.noSupportedLayers { throw FabricationPackageError.noSupportedLayers }
+          catch is CancellationError { throw CancellationError() }
+          catch { throw FabricationContainerError(path: nextPath, reason: error.localizedDescription) }
     }
 
     private struct FlatGroup {
@@ -156,6 +152,7 @@ public struct FabricationPackageLoader: Sendable {
 
     private func flatGroups(in files: [ZipEntry]) -> [FlatGroup] {
         let material = files.filter { file in
+            guard !file.name.lowercased().hasSuffix(".zip") else { return false }
             let contents = String(decoding: file.data.prefix(8192), as: UTF8.self)
             switch LayerClassifier.classify(fileName: file.name, contents: contents) {
             case .copper, .outline, .drill, .solderMask, .silkscreen, .paste: return true
@@ -168,12 +165,16 @@ public struct FabricationPackageLoader: Sendable {
         }
         return directories.keys.sorted().flatMap { directory -> [FlatGroup] in
             let members = directories[directory]!
+            let directoryFiles = files.filter { file in
+                let parent = (file.name as NSString).deletingLastPathComponent
+                return (parent.isEmpty ? "." : parent) == directory
+            }
             // A production set may have multiple legend overlays by design.
             if members.contains(where: { String(decoding: $0.data.prefix(512), as: UTF8.self).localizedCaseInsensitiveContains("output software:jlccam") }) {
-                return [FlatGroup(name: directory, files: members)]
+                return [FlatGroup(name: directory, files: directoryFiles)]
             }
             let byRole = Dictionary(grouping: members) { LayerClassifier.classify(fileName: $0.name, contents: String(decoding: $0.data.prefix(8192), as: UTF8.self)) }
-            guard byRole.values.contains(where: { $0.count > 1 }) else { return [FlatGroup(name: directory, files: members)] }
+            guard byRole.values.contains(where: { $0.count > 1 }) else { return [FlatGroup(name: directory, files: directoryFiles)] }
             // Repeated roles with different stems are separate project candidates.
             let projects = Dictionary(grouping: members) { ($0.name as NSString).deletingPathExtension }
             let plausible = projects.filter { _, members in
@@ -182,14 +183,9 @@ public struct FabricationPackageLoader: Sendable {
             }
             // Separate PTH/via drill files and overlay layers are ordinary parts
             // of one set; a repeated role alone does not establish another board.
-            guard plausible.count > 1 else { return [FlatGroup(name: directory, files: members)] }
-            return projects.keys.sorted().map { FlatGroup(name: $0, files: projects[$0]!) }
+            guard plausible.count > 1 else { return [FlatGroup(name: directory, files: directoryFiles)] }
+            return projects.keys.sorted().map { stem in FlatGroup(name: stem, files: directoryFiles.filter { ($0.name as NSString).deletingPathExtension == stem }) }
         }
-    }
-
-    private func isCompleteBoard(_ document: BoardDocument) -> Bool {
-        document.layers.contains { $0.kind == .outline }
-            && (document.layers.contains { if case .copper = $0.kind { true } else { false } } || !document.drills.isEmpty)
     }
 
     private func loadFlat(files: [ZipEntry], name: String, budget: inout ImportBudget) throws -> BoardDocument {
@@ -202,6 +198,9 @@ public struct FabricationPackageLoader: Sendable {
         var warnings: [String] = []
 
         for file in files.sorted(by: { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) {
+            // Stored ZIP bytes can contain literal Gerber headers; containers
+            // must be evaluated only through the archive path.
+            if file.name.lowercased().hasSuffix(".zip") { continue }
             var contents = String(decoding: file.data.prefix(8_192), as: UTF8.self)
             let initialKind = LayerClassifier.classify(fileName: file.name, contents: contents)
             let isDrill: Bool
@@ -275,7 +274,10 @@ public struct FabricationPackageLoader: Sendable {
             }
         }
 
-        guard !layers.isEmpty || !drills.isEmpty else { throw FabricationPackageError.noSupportedLayers }
+        guard !layers.isEmpty || !drills.isEmpty else {
+            if !warnings.isEmpty { throw FabricationContainerError(path: [name], reason: warnings.joined(separator: "\n")) }
+            throw FabricationPackageError.noSupportedLayers
+        }
         if !colorful.isEmpty, previews.isEmpty {
             warnings.append(
                 "EasyEDA color-silkscreen payloads are present and valid for JLCPCB, but are encrypted for the factory. Add a top/bottom PNG proof to inspect the exact colors locally."
@@ -323,7 +325,9 @@ public struct FabricationPackageLoader: Sendable {
             guard values.isRegularFile == true, !isKnownIrrelevant(fileURL) else { continue }
             try budget.file(path: fileURL.path)
             files.append(ZipEntry(
-                name: String(fileURL.path.dropFirst(directory.path.count + 1)),
+                // URL enumeration can add /private to /var or /tmp. Component
+                // depth preserves the relative identity across those aliases.
+                name: fileURL.pathComponents.suffix(enumerator.level).joined(separator: "/"),
                 data: try readFile(fileURL, budget: &budget, isArchive: fileURL.pathExtension.lowercased() == "zip")
             ))
         }

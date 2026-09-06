@@ -56,6 +56,7 @@ public struct BoardDocument: Sendable, Equatable {
     public var warnings: [String]
     public var packageRole: FabricationPackageRole
     public var enclosedSourceArchives: [String]
+    public var sourceSelection: FabricationSelection? = nil
 
     public init(
         name: String,

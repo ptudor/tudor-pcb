@@ -43,7 +43,10 @@ names, ignores the `.ddw` and `.tgz` helper files, and records ZIPs in `YG/` as
 the enclosed original uploads. Generic nested ZIPs are searched up to three
 levels deep with archive-count and expanded-size limits. A unique best board is
 opened automatically; equally plausible boards are reported for explicit user
-choice instead of choosing one silently.
+choice instead of choosing one silently. The board picker displays exact container
+and source-set paths, and history reopens the selected path. Corrupt, ambiguous or
+over-budget enclosed candidates remain visible errors; they cannot silently let
+another board win. Explicit selection reads the selected nested path in memory.
 
 ## Build
 

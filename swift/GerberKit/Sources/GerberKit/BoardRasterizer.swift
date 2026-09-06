@@ -535,9 +535,9 @@ public struct BoardRasterizer: Sendable {
 public actor FabricationWorkSession {
     private var cache = RasterCache()
     public init() { }
-    public func load(_ url: URL) throws -> BoardDocument {
+    public func load(_ url: URL, selection: FabricationSelection? = nil) throws -> BoardDocument {
         try Task.checkCancellation()
-        return try FabricationPackageLoader().load(from: url)
+        return try FabricationPackageLoader().load(from: url, selection: selection)
     }
     public func render(_ document: BoardDocument, options: BoardRenderOptions = .init()) throws -> BoardTextureSet {
         try Task.checkCancellation()

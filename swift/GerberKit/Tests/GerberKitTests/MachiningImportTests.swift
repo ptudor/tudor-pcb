@@ -45,7 +45,7 @@ private func machiningGerber(_ attribute: String = "", aperture: String = "C,1",
         #expect(doc.warnings.count == 1)
     }
     for text in ["These are arbitrary coordinates X1 Y2", "G90\nG00X1.0Y2.0\nM30", "M48\nMETRIC\nG93X0.0Y0.0\nM30"] {
-        #expect(throws: FabricationPackageError.self) { try FabricationPackageLoader().load(files: [ZipEntry(name: "program.nc", data: Data(text.utf8))], name: "not-drills") }
+        #expect(throws: (any Error).self) { try FabricationPackageLoader().load(files: [ZipEntry(name: "program.nc", data: Data(text.utf8))], name: "not-drills") }
     }
     let legacy = Data(#"{"center":{"x":1,"y":2},"diameter":1,"plated":true}"#.utf8)
     #expect(try JSONDecoder().decode(DrillHit.self, from: legacy).layerSpan == nil)

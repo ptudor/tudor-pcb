@@ -436,3 +436,38 @@ extension AppSmokeTests {
         }
     }
 }
+
+extension AppSmokeTests {
+    @MainActor
+    func testCandidateChoiceAndHistoryReopenUseTheExactBoardSet() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for (name, size) in [("a", 10), ("b", 20)] {
+            let directory = root.appending(path: name)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let source = "%FSLAX24Y24*%%MOMM*%%ADD10C,0.1*%D10*X0Y0D02*X\(size*10000)Y0D01*Y\(size*10000)D01*X0D01*Y0D01*M02*"
+            try Data(source.utf8).write(to: directory.appending(path: "board.gko"))
+        }
+        let model = WorkspaceModel(saveHistory: { _ in })
+        model.historyEntries = []
+        model.open(root)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.candidateChoices.count, 2)
+        XCTAssertEqual(model.candidateChoices.compactMap(\.group), ["a", "b"])
+        XCTAssertNil(model.document)
+        XCTAssertNil(model.errorMessage)
+        let choice = try XCTUnwrap(model.candidateChoices.first { $0.group == "b" })
+        model.chooseCandidate(choice)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.document?.bounds.width, 20)
+        XCTAssertTrue(model.candidateChoices.isEmpty)
+        let entry = try XCTUnwrap(model.historyEntries.first)
+        XCTAssertEqual(entry.sourceSelection, choice)
+        model.open(entry)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(model.document?.sourceSelection, choice)
+        XCTAssertEqual(model.document?.bounds.width, 20)
+        XCTAssertTrue(model.candidateChoices.isEmpty)
+    }
+}
