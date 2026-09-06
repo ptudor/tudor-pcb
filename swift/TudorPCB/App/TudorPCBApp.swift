@@ -17,22 +17,29 @@ struct TudorPCBApp: App {
 }
 
 private struct GerberCommands: Commands {
+    @FocusedValue(\.fabricationWorkspace) private var workspace
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button("Open Fabrication Package…") {
-                NotificationCenter.default.post(name: .openFabricationPackage, object: nil)
+                workspace?.isImporting = true
             }
             .keyboardShortcut("o")
+            .disabled(workspace == nil)
         }
         CommandGroup(after: .newItem) {
             Button("Fabrication History…") {
-                NotificationCenter.default.post(name: .showPackageHistory, object: nil)
-            }
+                workspace?.isShowingHistory = true
+            }.disabled(workspace == nil)
         }
     }
 }
 
-extension Notification.Name {
-    static let openFabricationPackage = Notification.Name("TudorPCB.openFabricationPackage")
-    static let showPackageHistory = Notification.Name("TudorPCB.showPackageHistory")
+private struct FabricationWorkspaceKey: FocusedValueKey {
+    typealias Value = WorkspaceModel
+}
+extension FocusedValues {
+    var fabricationWorkspace: WorkspaceModel? {
+        get { self[FabricationWorkspaceKey.self] }
+        set { self[FabricationWorkspaceKey.self] = newValue }
+    }
 }

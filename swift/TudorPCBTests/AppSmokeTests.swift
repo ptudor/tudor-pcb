@@ -145,6 +145,52 @@ private actor DelayedProofReader {
 
 extension AppSmokeTests {
     @MainActor
+    func testSharedHistorySerializesInterleavedWindowsAndKeepsPresentationIndependent() async throws {
+        let name = "TudorPCB.history-windows-tests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let owner = PackageHistoryOwner(defaults: defaults)
+        func workspace() -> WorkspaceModel {
+            WorkspaceModel(loadPackage: { BoardDocument(name: $0.lastPathComponent) },
+                makeBookmark: { _ in Data([1]) }, history: owner)
+        }
+        let a = workspace(), b = workspace()
+        a.open(URL(fileURLWithPath: "/A.gbr"))
+        b.open(URL(fileURLWithPath: "/B.gbr"))
+        try await waitUntil { !a.isLoading && !b.isLoading }
+        XCTAssertEqual(Set(a.historyEntries.map(\.name)), ["A.gbr", "B.gbr"])
+        XCTAssertEqual(a.historyEntries, b.historyEntries)
+        let first = try XCTUnwrap(a.historyEntries.first { $0.name == "A.gbr" })
+        a.removeFromHistory(first)
+        b.open(URL(fileURLWithPath: "/C.gbr"))
+        try await waitUntil { !b.isLoading }
+        XCTAssertEqual(Set(a.historyEntries.map(\.name)), ["B.gbr", "C.gbr"])
+        a.clearHistory()
+        b.open(URL(fileURLWithPath: "/D.gbr"))
+        try await waitUntil { !b.isLoading }
+        XCTAssertEqual(a.historyEntries.map(\.name), ["D.gbr"])
+        let original = try XCTUnwrap(a.historyEntries.first)
+        a.open(URL(fileURLWithPath: "/D.gbr"))
+        try await waitUntil { !a.isLoading }
+        XCTAssertEqual(b.historyEntries[0].id, original.id)
+        XCTAssertEqual(b.historyEntries[0].firstOpenedAt, original.firstOpenedAt)
+        XCTAssertEqual(b.historyEntries[0].openedCount, 2)
+        XCTAssertEqual(PackageHistoryStore.load(defaults: defaults).entries, a.historyEntries)
+        // These are the per-scene observable values addressed by FocusedValues.
+        a.isImporting = true
+        b.isShowingHistory = true
+        XCTAssertFalse(b.isImporting)
+        XCTAssertFalse(a.isShowingHistory)
+        XCTAssertEqual(a.document?.name, "D.gbr")
+        XCTAssertEqual(b.document?.name, "D.gbr")
+        for index in 0..<101 {
+            owner.record(PackageHistoryEntry.capture(url: URL(fileURLWithPath: "/\(index).gbr"), document: BoardDocument(name: "\(index)")))
+        }
+        XCTAssertEqual(a.historyEntries.count, 100)
+        XCTAssertEqual(a.historyEntries, b.historyEntries)
+    }
+
+    @MainActor
     func testDelayedProofReadKeepsMainActorResponsiveAndRetainsPreviousDocumentOnFailure() async throws {
         let reader = DelayedProofReader()
         let model = WorkspaceModel(readProof: { _, _ in try await reader.read() })
@@ -280,7 +326,7 @@ extension AppSmokeTests {
                 creations += 1
                 throw CocoaError(.fileReadNoPermission)
             }, saveHistory: { _ in })
-        model.historyEntries = []
+        model.clearHistory()
         model.open(URL(fileURLWithPath: "/outside/board.gbr"))
         try await waitUntil { !model.isLoading }
         XCTAssertEqual(model.document?.name, "opened")
@@ -325,7 +371,7 @@ extension AppSmokeTests {
     func testPendingOpenOwnsDocumentDespiteOldLayerAndFinishActions() async throws {
         let loader = ControlledPackageLoader()
         let model = WorkspaceModel(loadPackage: { try await loader.load($0) }, saveHistory: { _ in })
-        model.historyEntries = []
+        model.clearHistory()
         let aLayer = GerberLayer(fileName: "a.gtl", kind: .copper(side: .top, index: nil), primitives: [])
         let bLayer = GerberLayer(fileName: "b.gbl", kind: .copper(side: .bottom, index: nil), primitives: [])
         let a = BoardDocument(name: "A", layers: [aLayer])
@@ -355,7 +401,7 @@ extension AppSmokeTests {
     func testLastOpenWinsOutOfOrderAndFailureRetainsOldBoard() async throws {
         let loader = ControlledPackageLoader()
         let model = WorkspaceModel(loadPackage: { try await loader.load($0) }, saveHistory: { _ in })
-        model.historyEntries = []
+        model.clearHistory()
         model.document = BoardDocument(name: "A")
         model.open(URL(fileURLWithPath: "/private/tmp/B.gtl"))
         try await waitForRequest("B.gtl", loader: loader)
@@ -477,7 +523,7 @@ extension AppSmokeTests {
             try Task.checkCancellation()
             return BoardDocument(name: url.lastPathComponent)
         }, startAccess: { _ in starts += 1; return true }, stopAccess: { _ in stops += 1 }, saveHistory: { _ in })
-        model.historyEntries = []
+        model.clearHistory()
         for i in 0..<20 { model.open(URL(fileURLWithPath: "/private/tmp/package-\(i).zip")) }
         try await waitUntil { !model.isLoading && stops == starts }
         XCTAssertEqual(starts, 20)
@@ -582,7 +628,7 @@ extension AppSmokeTests {
             try Data(source.utf8).write(to: directory.appending(path: "board.gko"))
         }
         let model = WorkspaceModel(saveHistory: { _ in })
-        model.historyEntries = []
+        model.clearHistory()
         model.open(root)
         try await waitUntil { !model.isLoading }
         XCTAssertEqual(model.candidateChoices.count, 2)

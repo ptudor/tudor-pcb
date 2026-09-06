@@ -45,9 +45,12 @@ final class WorkspaceModel {
     var visibleLayerIDs: Set<String> = []
     var maskStyle = BoardMaskStyle.green
     var showProofs = false
-    var historyEntries: [PackageHistoryEntry]
-    var historyError: String?
-    private(set) var historyRecovery: HistoryRecovery?
+    let history: PackageHistoryOwner
+    var historyEntries: [PackageHistoryEntry] { history.entries }
+    var historyError: String? { get { history.error } set { history.error = newValue } }
+    var historyRecovery: HistoryRecovery? { history.recovery }
+    var isImporting = false
+    var isShowingHistory = false
     private var renderGeneration = 0
     private var loadTask: Task<Void, Never>?
     private var renderTask: Task<Void, Never>?
@@ -59,7 +62,6 @@ final class WorkspaceModel {
     private let loadSelection: @Sendable (URL, FabricationSelection) async throws -> BoardDocument
     private let renderBoard: @Sendable (BoardDocument, BoardRenderOptions) async throws -> BoardTextureSet
     private let makeBookmark: (URL) throws -> Data
-    private let saveHistory: ([PackageHistoryEntry]) throws -> Void
     private let startAccess: (URL) -> Bool
     private let stopAccess: (URL) -> Void
 
@@ -73,12 +75,10 @@ final class WorkspaceModel {
         startAccess: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
         stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() },
         makeBookmark: @escaping (URL) throws -> Data = { try PackageHistoryStore.makeBookmark(for: $0) },
-        saveHistory: @escaping ([PackageHistoryEntry]) throws -> Void = { try PackageHistoryStore.save($0) }
+        history: PackageHistoryOwner? = nil,
+        saveHistory: (([PackageHistoryEntry]) throws -> Void)? = nil
     ) {
-        let history = PackageHistoryStore.load()
-        self.historyEntries = history.entries
-        self.historyRecovery = history.recovery
-        self.historyError = history.recovery?.message
+        self.history = history ?? (saveHistory.map { PackageHistoryOwner(writer: $0) } ?? .shared)
         self.readProof = readProof
         let worker = FabricationWorkSession()
         self.loadPackage = loadPackage ?? { try await worker.load($0) }
@@ -86,7 +86,6 @@ final class WorkspaceModel {
         self.renderBoard = renderBoard ?? { try await worker.render($0, options: $1) }
         self.startAccess = startAccess
         self.stopAccess = stopAccess
-        self.saveHistory = saveHistory
         self.makeBookmark = makeBookmark
     }
 
@@ -137,8 +136,7 @@ final class WorkspaceModel {
                 document = next
                 textures = rendered
                 visibleLayerIDs = visible
-                historyEntries = PackageHistoryStore.merging(historyEntry, into: historyEntries)
-                persistHistory()
+                history.record(historyEntry)
                 phase = .idle
                 loadTask = nil
             } catch let error as FabricationSelectionRequired {
@@ -178,31 +176,9 @@ final class WorkspaceModel {
         open(url, selection: selection)
     }
 
-    func removeFromHistory(_ entry: PackageHistoryEntry) {
-        historyEntries.removeAll { $0.id == entry.id }
-        persistHistory()
-    }
-
-    func clearHistory() {
-        historyEntries.removeAll()
-        persistHistory()
-    }
-
-    private func persistHistory() {
-        do {
-            guard historyRecovery == nil else { throw HistoryStorageError.invalid(historyRecovery!.message) }
-            try saveHistory(historyEntries)
-        } catch { historyError = "History was not saved: \(error.localizedDescription)" }
-    }
-
-    func recoverHistory() {
-        guard let recovery = historyRecovery else { return }
-        do {
-            try PackageHistoryStore.recover(historyEntries, original: recovery.original)
-            historyRecovery = nil
-            historyError = nil
-        } catch { historyError = error.localizedDescription }
-    }
+    func removeFromHistory(_ entry: PackageHistoryEntry) { history.remove(entry.id) }
+    func clearHistory() { history.clear() }
+    func recoverHistory() { history.recover() }
 
     func toggleLayer(_ layer: GerberLayer) {
         guard !isOpening else { return }

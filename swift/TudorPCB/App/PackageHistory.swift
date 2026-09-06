@@ -1,5 +1,6 @@
 import Foundation
 import GerberKit
+import Observation
 
 nonisolated enum FabricationSourceKind: String, Codable, Sendable {
     case archive
@@ -264,4 +265,49 @@ nonisolated struct HistoryRecovery {
 nonisolated enum HistoryStorageError: Error, LocalizedError {
     case invalid(String)
     var errorDescription: String? { switch self { case let .invalid(message): message } }
+}
+
+/// One main-actor owner serializes mutations for every window in this process.
+@MainActor
+@Observable
+final class PackageHistoryOwner {
+    static let shared = PackageHistoryOwner()
+    private(set) var entries: [PackageHistoryEntry]
+    private(set) var recovery: HistoryRecovery?
+    var error: String?
+    private let defaults: UserDefaults
+    private let writer: ([PackageHistoryEntry]) throws -> Void
+
+    init(defaults: UserDefaults = .standard, writer: (([PackageHistoryEntry]) throws -> Void)? = nil) {
+        self.defaults = defaults
+        self.writer = writer ?? { try PackageHistoryStore.save($0, defaults: defaults) }
+        let loaded = writer == nil ? PackageHistoryStore.load(defaults: defaults) : PackageHistoryLoad(entries: [], recovery: nil)
+        entries = loaded.entries
+        recovery = loaded.recovery
+        error = loaded.recovery?.message
+    }
+
+    func record(_ entry: PackageHistoryEntry) {
+        entries = PackageHistoryStore.merging(entry, into: entries)
+        persist()
+    }
+    func remove(_ id: UUID) { entries.removeAll { $0.id == id }; persist() }
+    func clear() { entries.removeAll(); persist() }
+
+    private func persist() {
+        do {
+            if let recovery { throw HistoryStorageError.invalid(recovery.message) }
+            try writer(entries)
+            error = nil
+        } catch { self.error = "History was not saved: \(error.localizedDescription)" }
+    }
+
+    func recover() {
+        guard let recovery else { return }
+        do {
+            try PackageHistoryStore.recover(entries, original: recovery.original, defaults: defaults)
+            self.recovery = nil
+            error = nil
+        } catch { self.error = error.localizedDescription }
+    }
 }

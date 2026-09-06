@@ -5,11 +5,9 @@ import UniformTypeIdentifiers
 struct WorkspaceView: View {
     @State private var model = WorkspaceModel()
     @State private var viewer = ViewerController()
-    @State private var isImporting = false
     @State private var isRelinking = false
     @State private var isImportingTopProof = false
     @State private var isImportingBottomProof = false
-    @State private var isShowingHistory = false
 
     var body: some View {
         NavigationSplitView {
@@ -51,7 +49,7 @@ struct WorkspaceView: View {
             .toolbar {
                 ToolbarItemGroup {
                     Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
-                        isShowingHistory = true
+                        model.isShowingHistory = true
                     }
                     Button("Perspective", systemImage: "cube.transparent") { viewer.show(.perspective) }
                         .disabled(model.document == nil)
@@ -80,7 +78,7 @@ struct WorkspaceView: View {
             }
         }
         .fileImporter(
-            isPresented: $isImporting,
+            isPresented: $model.isImporting,
             allowedContentTypes: [.zip, .folder, .data],
             allowsMultipleSelection: false
         ) { result in
@@ -100,12 +98,7 @@ struct WorkspaceView: View {
         ) { result in
             if case let .success(urls) = result, let url = urls.first { model.attachColorProof(url, side: .bottom) }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openFabricationPackage)) { _ in
-            isImporting = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .showPackageHistory)) { _ in
-            isShowingHistory = true
-        }
+        .focusedSceneValue(\.fabricationWorkspace, model)
         .onOpenURL { model.open($0) }
         .task {
             guard model.document == nil,
@@ -165,11 +158,11 @@ struct WorkspaceView: View {
         .sheet(isPresented: $model.showProofs) {
             if let document = model.document { ProofGalleryView(document: document) }
         }
-        .sheet(isPresented: $isShowingHistory) {
+        .sheet(isPresented: $model.isShowingHistory) {
             PackageBrowserView(
                 entries: model.historyEntries,
                 onOpen: { model.open($0) },
-                onRelink: { model.relinkEntry = $0; isShowingHistory = false; isRelinking = true },
+                onRelink: { model.relinkEntry = $0; model.isShowingHistory = false; isRelinking = true },
                 onRemove: { model.removeFromHistory($0) },
                 onClear: { model.clearHistory() }
             )
@@ -184,7 +177,7 @@ struct WorkspaceView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
-                    isShowingHistory = true
+                    model.isShowingHistory = true
                 }
                 .labelStyle(.iconOnly)
                 .buttonStyle(.plain)
@@ -213,11 +206,11 @@ struct WorkspaceView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
 
-                    Button("Open Package…") { isImporting = true }
+                    Button("Open Package…") { model.isImporting = true }
                         .buttonStyle(.borderedProminent)
                     if !model.historyEntries.isEmpty {
                         Button("Browse \(model.historyEntries.count) Recent Package\(model.historyEntries.count == 1 ? "" : "s")") {
-                            isShowingHistory = true
+                            model.isShowingHistory = true
                         }
                         .buttonStyle(.borderless)
                     }
@@ -380,13 +373,13 @@ struct WorkspaceView: View {
             Text("Drop a fabrication ZIP here, or open one from the sidebar.")
                 .foregroundStyle(.secondary)
             Button("Choose Gerber Package") {
-                isImporting = true
+                model.isImporting = true
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
             if !model.historyEntries.isEmpty {
                 Button("Browse fabrication history") {
-                    isShowingHistory = true
+                    model.isShowingHistory = true
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
