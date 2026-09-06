@@ -542,6 +542,7 @@ private struct PackageHistoryDetail: View {
     let entry: PackageHistoryEntry
     let onOpen: () -> Void
     let onRemove: () -> Void
+    @State private var availability = HistorySourceAvailability.checking
 
     var body: some View {
         ScrollView {
@@ -556,11 +557,12 @@ private struct PackageHistoryDetail: View {
                         Text(entry.name)
                             .font(.title2.weight(.semibold))
                         Label(
-                            entry.isAvailable ? "Source available" : "Source moved or unavailable",
-                            systemImage: entry.isAvailable ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                            availability.label,
+                            systemImage: availability.accessible ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
                         )
                         .font(.callout)
-                        .foregroundStyle(entry.isAvailable ? .green : .orange)
+                        .foregroundStyle(availability.accessible ? .green : .orange)
+                        .task(id: entry) { availability = .checking; availability = await PackageHistoryStore.availability(entry) }
                     }
                 }
 

@@ -52,6 +52,9 @@ final class WorkspaceModel {
     var isImporting = false
     var isShowingHistory = false
     private var renderGeneration = 0
+    private var historyResolutionTask: Task<HistoryResolvedSource, any Error>?
+    private var historyResolutionRevision = 0
+    private let resolveHistory: @Sendable (PackageHistoryEntry) throws -> HistoryResolvedSource
     private var loadTask: Task<Void, Never>?
     private var renderTask: Task<Void, Never>?
     private var proofTask: Task<BoardSidePreview, any Error>?
@@ -75,10 +78,12 @@ final class WorkspaceModel {
         startAccess: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
         stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() },
         makeBookmark: @escaping (URL) throws -> Data = { try PackageHistoryStore.makeBookmark(for: $0) },
+        resolveHistory: @escaping @Sendable (PackageHistoryEntry) throws -> HistoryResolvedSource = { try PackageHistoryStore.resolved($0) },
         history: PackageHistoryOwner? = nil,
         saveHistory: (([PackageHistoryEntry]) throws -> Void)? = nil
     ) {
         self.history = history ?? (saveHistory.map { PackageHistoryOwner(writer: $0) } ?? .shared)
+        self.resolveHistory = resolveHistory
         self.readProof = readProof
         let worker = FabricationWorkSession()
         self.loadPackage = loadPackage ?? { try await worker.load($0) }
@@ -89,7 +94,9 @@ final class WorkspaceModel {
         self.makeBookmark = makeBookmark
     }
 
-    func open(_ url: URL, selection: FabricationSelection? = nil, fromHistory: PackageHistoryEntry? = nil) {
+    func open(_ url: URL, selection: FabricationSelection? = nil, fromHistory: PackageHistoryEntry? = nil, relinking: PackageHistoryEntry? = nil) {
+        historyResolutionTask?.cancel()
+        historyResolutionRevision += 1
         candidateChoices = []
         candidateURL = nil
         loadTask?.cancel()
@@ -114,6 +121,9 @@ final class WorkspaceModel {
             defer { if hasAccess { stopAccess(url) } }
             do {
                 try Task.checkCancellation()
+                if let fromHistory {
+                    try await Task.detached { try PackageHistoryStore.validateResolvedIdentity(fromHistory, at: url) }.value
+                }
                 let next: BoardDocument
                 if let selection { next = try await loadSelection(url, selection) }
                 else { next = try await loadPackage(url) }
@@ -131,14 +141,19 @@ final class WorkspaceModel {
                     relinkEntry = nil
                 } catch {
                     historyAccessError = "The package opened, but persistent access could not be saved: \(error.localizedDescription) Reselect the source to retry."
-                    relinkEntry = historyEntry
+                    relinkEntry = fromHistory ?? relinking ?? historyEntry
                 }
                 document = next
                 textures = rendered
                 visibleLayerIDs = visible
-                history.record(historyEntry)
+                history.record(historyEntry, reopening: fromHistory ?? relinking)
                 phase = .idle
                 loadTask = nil
+            } catch let error as HistoryAccessError {
+                guard generation == documentGeneration else { return }
+                phase = .idle
+                relinkEntry = fromHistory
+                historyAccessError = error.localizedDescription
             } catch let error as FabricationSelectionRequired {
                 guard generation == documentGeneration else { return }
                 phase = .idle
@@ -162,18 +177,33 @@ final class WorkspaceModel {
     func cancelCandidateSelection() { candidateChoices = []; candidateURL = nil }
 
     func open(_ entry: PackageHistoryEntry) {
-        do {
-            open(try PackageHistoryStore.resolve(entry), selection: entry.sourceSelection, fromHistory: entry)
-        } catch {
-            relinkEntry = entry
-            historyAccessError = "Could not restore access to \(entry.sourcePath): \(error.localizedDescription) Reselect the source to relink it."
+        historyResolutionTask?.cancel()
+        historyResolutionRevision += 1
+        let revision = historyResolutionRevision
+        loadTask?.cancel(); renderTask?.cancel(); proofTask?.cancel()
+        documentGeneration += 1; renderGeneration += 1; proofGeneration += 1
+        phase = .opening(entry.name)
+        let resolver = resolveHistory
+        let task = Task.detached { try Task.checkCancellation(); return try resolver(entry) }
+        historyResolutionTask = task
+        Task {
+            do {
+                let source = try await task.value
+                guard revision == historyResolutionRevision else { return }
+                open(source.url, selection: entry.sourceSelection, fromHistory: entry)
+            } catch {
+                guard revision == historyResolutionRevision else { return }
+                phase = .idle
+                relinkEntry = entry
+                historyAccessError = "Could not restore access to \(entry.sourcePath): \(error.localizedDescription) Reselect the source to relink it."
+            }
         }
     }
 
     func relink(_ url: URL) {
-        let selection = relinkEntry?.sourceSelection
+        let entry = relinkEntry
         historyAccessError = nil
-        open(url, selection: selection)
+        open(url, selection: entry?.sourceSelection, relinking: entry)
     }
 
     func removeFromHistory(_ entry: PackageHistoryEntry) { history.remove(entry.id) }

@@ -48,9 +48,9 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
     var enclosedSourceCount: Int?
     var bookmarkData: Data?
     var sourceSelection: FabricationSelection? = nil
+    var fileSystemIdentity: String? = nil
 
     var ageDate: Date { modifiedAt ?? createdAt ?? firstOpenedAt }
-    var isAvailable: Bool { FileManager.default.fileExists(atPath: sourcePath) }
     var ageDescription: String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
@@ -107,8 +107,16 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
             packageRole: document.packageRole,
             enclosedSourceCount: document.enclosedSourceArchives.count,
             bookmarkData: bookmarkData,
-            sourceSelection: document.sourceSelection
+            sourceSelection: document.sourceSelection,
+            fileSystemIdentity: fileSystemIdentity(for: url)
         )
+    }
+
+    static func fileSystemIdentity(for url: URL) -> String? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let device = attributes[.systemNumber] as? NSNumber,
+              let inode = attributes[.systemFileNumber] as? NSNumber else { return nil }
+        return "\(device.stringValue):\(inode.stringValue)"
     }
 
     private static func latestModificationDate(for url: URL, isDirectory: Bool) -> Date? {
@@ -197,19 +205,25 @@ nonisolated enum PackageHistoryStore {
         }
     }
 
-    static func merging(_ entry: PackageHistoryEntry, into entries: [PackageHistoryEntry]) -> [PackageHistoryEntry] {
+    static func merging(_ entry: PackageHistoryEntry, into entries: [PackageHistoryEntry], reopening original: PackageHistoryEntry? = nil) -> [PackageHistoryEntry] {
         var updated = entries
-        if let index = updated.firstIndex(where: { $0.sourcePath == entry.sourcePath && $0.sourceSelection == entry.sourceSelection }) {
-            var replacement = entry
-            replacement.id = updated[index].id
-            replacement.firstOpenedAt = updated[index].firstOpenedAt
-            replacement.openedCount = updated[index].openedCount + 1
-            if replacement.bookmarkData == nil { replacement.bookmarkData = updated[index].bookmarkData }
-            updated[index] = replacement
-        } else {
-            updated.append(entry)
+        let index: Int?
+        if let original { index = updated.firstIndex { $0.id == original.id } }
+        else {
+            index = updated.firstIndex {
+                $0.sourcePath == entry.sourcePath && $0.sourceSelection == entry.sourceSelection &&
+                $0.fileSystemIdentity == entry.fileSystemIdentity
+            }
         }
-        return Array(updated.sorted { $0.lastOpenedAt > $1.lastOpenedAt }.prefix(maximumEntries))
+        var replacement = entry
+        if let previous = index.map({ updated[$0] }) ?? original {
+            replacement.id = previous.id
+            replacement.firstOpenedAt = previous.firstOpenedAt
+            replacement.openedCount = previous.openedCount + 1
+        }
+        if let index { updated[index] = replacement }
+        else { updated.append(replacement) }
+        return ordered(updated)
     }
 
     static func makeBookmark(for url: URL) throws -> Data {
@@ -228,7 +242,35 @@ nonisolated enum PackageHistoryStore {
         #endif
     }
 
-    static func resolve(_ entry: PackageHistoryEntry) throws -> URL {
+    static func availability(_ entry: PackageHistoryEntry,
+        resolver: @escaping @Sendable (PackageHistoryEntry) throws -> HistoryResolvedSource = { try resolved($0) },
+        startAccess: @escaping @Sendable (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
+        stopAccess: @escaping @Sendable (URL) -> Void = { $0.stopAccessingSecurityScopedResource() }
+    ) async -> HistorySourceAvailability {
+        await Task.detached {
+            do {
+                let source = try resolver(entry)
+                guard startAccess(source.url) else { return .inaccessible }
+                defer { stopAccess(source.url) }
+                guard try source.url.checkResourceIsReachable() else { return .missing }
+                try validateResolvedIdentity(entry, at: source.url)
+                return source.url.resolvingSymlinksInPath().path == URL(fileURLWithPath: entry.sourcePath).resolvingSymlinksInPath().path ? .available : .moved
+            } catch let error as CocoaError where error.code == .fileNoSuchFile || error.code == .fileReadNoSuchFile {
+                return .missing
+            } catch { return .inaccessible }
+        }.value
+    }
+
+    static func validateResolvedIdentity(_ entry: PackageHistoryEntry, at url: URL) throws {
+        if let expected = entry.fileSystemIdentity,
+           PackageHistoryEntry.fileSystemIdentity(for: url) != expected {
+            throw HistoryAccessError.reselectRequired("\(url.path) (the file identity changed)")
+        }
+    }
+
+    static func resolve(_ entry: PackageHistoryEntry) throws -> URL { try resolved(entry).url }
+
+    static func resolved(_ entry: PackageHistoryEntry) throws -> HistoryResolvedSource {
         if let bookmarkData = entry.bookmarkData {
             var stale = false
             #if os(macOS)
@@ -236,12 +278,13 @@ nonisolated enum PackageHistoryStore {
             #else
             let options: URL.BookmarkResolutionOptions = [.withoutUI]
             #endif
-            return try URL(
+            let url = try URL(
                 resolvingBookmarkData: bookmarkData,
                 options: options,
                 relativeTo: nil,
                 bookmarkDataIsStale: &stale
             )
+            return HistoryResolvedSource(url: url, stale: stale)
         }
         throw HistoryAccessError.reselectRequired(entry.sourcePath)
     }
@@ -287,8 +330,8 @@ final class PackageHistoryOwner {
         error = loaded.recovery?.message
     }
 
-    func record(_ entry: PackageHistoryEntry) {
-        entries = PackageHistoryStore.merging(entry, into: entries)
+    func record(_ entry: PackageHistoryEntry, reopening original: PackageHistoryEntry? = nil) {
+        entries = PackageHistoryStore.merging(entry, into: entries, reopening: original)
         persist()
     }
     func remove(_ id: UUID) { entries.removeAll { $0.id == id }; persist() }
@@ -309,5 +352,23 @@ final class PackageHistoryOwner {
             self.recovery = nil
             error = nil
         } catch { self.error = error.localizedDescription }
+    }
+}
+
+nonisolated struct HistoryResolvedSource: Sendable {
+    var url: URL
+    var stale: Bool
+}
+nonisolated enum HistorySourceAvailability: Sendable {
+    case checking, available, moved, missing, inaccessible
+    var accessible: Bool { self == .available || self == .moved }
+    var label: String {
+        switch self {
+        case .checking: "Checking source access…"
+        case .available: "Source available"
+        case .moved: "Source moved · bookmark resolves"
+        case .missing: "Source missing"
+        case .inaccessible: "Source inaccessible · relink required"
+        }
     }
 }

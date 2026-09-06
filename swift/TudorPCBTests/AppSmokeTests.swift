@@ -145,6 +145,53 @@ private actor DelayedProofReader {
 
 extension AppSmokeTests {
     @MainActor
+    func testMovedBookmarkRetainsIdentityAndDoesNotCollapseReplacementAtOldPath() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "moved-history-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let old = directory.appending(path: "old.gbr"), moved = directory.appending(path: "moved.gbr")
+        try Data("original".utf8).write(to: old)
+        let bookmark = try PackageHistoryStore.makeBookmark(for: old)
+        let original = PackageHistoryEntry.capture(url: old, document: BoardDocument(name: "original"), now: Date(timeIntervalSince1970: 100), bookmarkData: bookmark)
+        try FileManager.default.moveItem(at: old, to: moved)
+        XCTAssertEqual(try PackageHistoryStore.resolved(original).url.resolvingSymlinksInPath().path, moved.resolvingSymlinksInPath().path)
+        let available = await PackageHistoryStore.availability(original, startAccess: { _ in true }, stopAccess: { _ in })
+        XCTAssertEqual(available, .moved)
+        let denied = await PackageHistoryStore.availability(original, startAccess: { _ in false })
+        XCTAssertEqual(denied, .inaccessible)
+        let missing = await PackageHistoryStore.availability(original, resolver: { _ in HistoryResolvedSource(url: directory.appending(path: "missing"), stale: true) }, startAccess: { _ in true }, stopAccess: { _ in })
+        XCTAssertEqual(missing, .missing)
+        let owner = PackageHistoryOwner(writer: { _ in })
+        owner.record(original)
+        let model = WorkspaceModel(loadPackage: { BoardDocument(name: $0.lastPathComponent) }, startAccess: { _ in true }, stopAccess: { _ in }, history: owner)
+        model.open(original)
+        try await waitUntil { !model.isLoading }
+        let reopened = try XCTUnwrap(owner.entries.first { $0.id == original.id })
+        XCTAssertEqual(URL(fileURLWithPath: reopened.sourcePath).resolvingSymlinksInPath().path, moved.resolvingSymlinksInPath().path)
+        XCTAssertEqual(reopened.firstOpenedAt, original.firstOpenedAt)
+        XCTAssertEqual(reopened.openedCount, 2)
+        XCTAssertNotNil(reopened.bookmarkData)
+        XCTAssertEqual(owner.entries.count, 1)
+        try Data("different file".utf8).write(to: old)
+        let replacement = PackageHistoryEntry.capture(url: old, document: BoardDocument(name: "replacement"))
+        let oldList = PackageHistoryStore.merging(replacement, into: [original])
+        XCTAssertEqual(oldList.count, 2) // Same path is insufficient after replacement.
+        owner.record(replacement)
+        let wrongResolution = await PackageHistoryStore.availability(original, resolver: { _ in HistoryResolvedSource(url: old, stale: true) }, startAccess: { _ in true }, stopAccess: { _ in })
+        XCTAssertEqual(wrongResolution, .inaccessible)
+        let deniedModel = WorkspaceModel(loadPackage: { _ in XCTFail("Replacement must not open"); return BoardDocument(name: "wrong") }, startAccess: { _ in true }, stopAccess: { _ in }, resolveHistory: { _ in HistoryResolvedSource(url: old, stale: true) }, history: owner)
+        deniedModel.open(original)
+        try await waitUntil { !deniedModel.isLoading }
+        XCTAssertNotNil(deniedModel.historyAccessError)
+        XCTAssertEqual(owner.entries.first { $0.id == original.id }?.openedCount, 2)
+        model.relinkEntry = reopened
+        model.relink(moved)
+        try await waitUntil { !model.isLoading }
+        XCTAssertEqual(owner.entries.first { $0.id == original.id }?.openedCount, 3)
+        XCTAssertEqual(owner.entries.count, 2)
+    }
+
+    @MainActor
     func testSharedHistorySerializesInterleavedWindowsAndKeepsPresentationIndependent() async throws {
         let name = "TudorPCB.history-windows-tests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
@@ -336,6 +383,7 @@ extension AppSmokeTests {
         XCTAssertNil(entry.bookmarkData)
         XCTAssertThrowsError(try PackageHistoryStore.resolve(entry))
         model.open(entry)
+        try await waitUntil { !model.isLoading }
         XCTAssertNotNil(model.historyAccessError)
         XCTAssertEqual(model.relinkEntry?.id, entry.id)
         XCTAssertEqual(creations, 1)
