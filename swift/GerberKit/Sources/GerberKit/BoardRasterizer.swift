@@ -47,6 +47,7 @@ public struct BoardTextureSet: @unchecked Sendable {
     public var boardMask: CGImage
     public var pixelWidth: Int
     public var pixelHeight: Int
+    public var warnings: [String] = []
 
     public init(top: CGImage, bottom: CGImage, boardMask: CGImage, pixelWidth: Int, pixelHeight: Int) {
         self.top = top
@@ -89,8 +90,13 @@ public struct BoardRasterizer: Sendable {
         let canvas = CGRect(x: 0, y: 0, width: width, height: height)
         let maskKey = RasterCache.MaskKey(document: document, width: width, height: height)
         let mask: CGImage
-        if cache.maskKey == maskKey, let existing = cache.mask { mask = existing }
-        else { mask = try makeBoardMask(width: width, height: height, document: document, bounds: bounds, scale: scale) }
+        let topologyWarnings: [String]
+        if cache.maskKey == maskKey, let existing = cache.mask { mask = existing; topologyWarnings = cache.maskWarnings }
+        else {
+            let topology = try BoardOutlineExtractor.topology(in: document)
+            mask = try makeBoardMask(width: width, height: height, document: document, bounds: bounds, scale: scale, topology: topology)
+            topologyWarnings = topology.warnings
+        }
         try Task.checkCancellation()
         let topKey = RasterCache.SideKey(document: document, side: .top, options: options, mask: maskKey)
         let bottomKey = RasterCache.SideKey(document: document, side: .bottom, options: options, mask: maskKey)
@@ -102,10 +108,12 @@ public struct BoardRasterizer: Sendable {
         if cache.bottomKey == bottomKey, let existing = cache.bottom { bottom = existing }
         else { bottom = try renderSide(.bottom, document: document, options: options, bounds: bounds, scale: scale, canvas: canvas, boardMask: mask) }
         try Task.checkCancellation()
-        cache.maskKey = maskKey; cache.mask = mask
+        cache.maskKey = maskKey; cache.mask = mask; cache.maskWarnings = topologyWarnings
         cache.topKey = topKey; cache.top = top
         cache.bottomKey = bottomKey; cache.bottom = bottom
-        return BoardTextureSet(top: top, bottom: bottom, boardMask: mask, pixelWidth: width, pixelHeight: height)
+        var result = BoardTextureSet(top: top, bottom: bottom, boardMask: mask, pixelWidth: width, pixelHeight: height)
+        result.warnings = topologyWarnings
+        return result
     }
 
     private func renderSide(
@@ -204,48 +212,51 @@ public struct BoardRasterizer: Sendable {
     }
 
     private func makeBoardMask(
-        width: Int,
-        height: Int,
-        document: BoardDocument,
-        bounds: Bounds2D,
-        scale: Double
+        width: Int, height: Int, document: BoardDocument, bounds: Bounds2D,
+        scale: Double, topology: BoardOutlineTopology
     ) throws -> CGImage {
-        guard let context = makeContext(width: width, height: height) else {
-            throw BoardRasterizerError.contextCreation
-        }
+        guard let context = makeContext(width: width, height: height) else { throw BoardRasterizerError.contextCreation }
+        let canvas = CGRect(x: 0, y: 0, width: width, height: height)
         let outlineLayers = document.layers.filter { $0.kind == .outline }
         if outlineLayers.isEmpty {
             context.setFillColor(gray: 1, alpha: 1)
-            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+            context.fill(canvas)
         } else {
-            // Treat the outline drawing as a barrier, then flood from the canvas
-            // edge. This handles EasyEDA panel rails, whose routed perimeter is
-            // intentionally emitted as unordered, open segments around tabs.
-            for layer in outlineLayers {
-                for primitive in layer.primitives where primitive.polarity == .dark {
-                    try Task.checkCancellation()
-                    try draw(primitive, in: context, bounds: bounds, scale: scale, outlineBarrier: true)
+            if topology.requiresInference {
+                // Retain the established panel-rail inference only for unresolved
+                // paths, with an explicit diagnostic. Resolved contours below
+                // replace this inference throughout their known coverage.
+                for layer in outlineLayers {
+                    for primitive in layer.primitives where primitive.polarity == .dark {
+                        try Task.checkCancellation()
+                        try draw(primitive, in: context, bounds: bounds, scale: scale, outlineBarrier: true)
+                    }
                 }
-            }
-            try floodOutlineInterior(context: context, width: width, height: height)
-
-            // An enclosed contour nested inside a larger contour is a routed
-            // cutout rather than another island of substrate.
-            let contours = try BoardOutlineExtractor.contours(in: document)
-            for contour in contours where contourIsNested(contour, among: contours) {
-                let path = CGMutablePath()
-                path.move(to: pixel(contour[0], bounds: bounds, scale: scale))
-                for point in contour.dropFirst() { try Task.checkCancellation(); path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
-                path.closeSubpath()
-                context.saveGState()
+                try floodOutlineInterior(context: context, width: width, height: height)
                 context.setBlendMode(.clear)
-                context.addPath(path)
-                context.fillPath()
-                context.restoreGState()
+                for contour in topology.closedContours {
+                    context.addPath(try outlinePath([contour], bounds: bounds, scale: scale))
+                    context.fillPath()
+                }
+                context.setBlendMode(.normal)
             }
+            context.setBlendMode(.normal)
+            context.setFillColor(gray: 1, alpha: 1)
+            context.addPath(try outlinePath(topology.materialContours, bounds: bounds, scale: scale))
+            context.fillPath(using: .winding)
         }
         guard let image = context.makeImage() else { throw BoardRasterizerError.imageCreation }
         return image
+    }
+
+    private func outlinePath(_ contours: [[Point2D]], bounds: Bounds2D, scale: Double) throws -> CGPath {
+        let path = CGMutablePath()
+        for contour in contours where contour.count >= 3 {
+            path.move(to: pixel(contour[0], bounds: bounds, scale: scale))
+            for point in contour.dropFirst() { try Task.checkCancellation(); path.addLine(to: pixel(point, bounds: bounds, scale: scale)) }
+            path.closeSubpath()
+        }
+        return path
     }
 
     private func floodOutlineInterior(context: CGContext, width: Int, height: Int) throws {
@@ -287,37 +298,6 @@ public struct BoardRasterizer: Sendable {
             bytes[index * 4 + 2] = value
             bytes[index * 4 + 3] = value
         }
-    }
-
-    private func contourIsNested(_ contour: [Point2D], among contours: [[Point2D]]) -> Bool {
-        guard let point = contour.first else { return false }
-        let ownArea = abs(polygonArea(contour))
-        return contours.contains { candidate in
-            abs(polygonArea(candidate)) > ownArea && pointInPolygon(point, candidate)
-        }
-    }
-
-    private func pointInPolygon(_ point: Point2D, _ polygon: [Point2D]) -> Bool {
-        guard polygon.count >= 3 else { return false }
-        var inside = false
-        var previous = polygon.last!
-        for current in polygon {
-            if (current.y > point.y) != (previous.y > point.y) {
-                let crossing = (previous.x - current.x) * (point.y - current.y)
-                    / (previous.y - current.y) + current.x
-                if point.x < crossing { inside.toggle() }
-            }
-            previous = current
-        }
-        return inside
-    }
-
-    private func polygonArea(_ points: [Point2D]) -> Double {
-        guard points.count >= 3 else { return 0 }
-        return points.indices.reduce(0.0) { area, index in
-            let next = points[(index + 1) % points.count]
-            return area + points[index].x * next.y - next.x * points[index].y
-        } / 2
     }
 
     private func draw(_ primitive: GerberPrimitive, in context: CGContext, bounds: Bounds2D, scale: Double, outlineBarrier: Bool = false) throws {
@@ -579,6 +559,7 @@ fileprivate struct RasterCache {
     var topKey: SideKey?
     var bottomKey: SideKey?
     var mask: CGImage?
+    var maskWarnings: [String] = []
     var top: CGImage?
     var bottom: CGImage?
 }

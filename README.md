@@ -104,3 +104,11 @@ Round holes, obround flashes and straight routed slots preserve physical dimensi
 plating and declared through-layer spans are retained. Clear machining operations,
 unsupported shapes, arc routes and blind/buried depth models reject the affected
 layer with a warning instead of becoming ordinary through holes.
+
+Resolved outlines use board-coordinate contour parity and ordered dark/clear
+material operations. The resulting material boundaries drive both masks and
+sidewalls, independent of outline stroke width. Core Graphics polygon operations
+resolve overlapping regions before rasterization. Open, ambiguous or unsupported
+outline paths retain an explicitly warned panel-rail inference; that inference
+cannot override material inside resolved contours. Raster results also expose
+these diagnostics through `BoardTextureSet.warnings`.

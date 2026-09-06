@@ -1,11 +1,19 @@
 import Foundation
 
+public struct OutlineMaterialOperation: Sendable {
+    public var contours: [[Point2D]]
+    public var polarity: GerberPolarity
+}
+
 public struct BoardOutlineTopology: Sendable {
     public var closedContours: [[Point2D]] = []
     public var openPaths: [[Point2D]] = []
     public var ambiguousPaths: [[Point2D]] = []
     public var warnings: [String] = []
-    public var paths: [[Point2D]] { closedContours + openPaths + ambiguousPaths }
+    public var materialOperations: [OutlineMaterialOperation] = []
+    public var materialContours: [[Point2D]] = []
+    public var requiresInference: Bool { !openPaths.isEmpty || !ambiguousPaths.isEmpty || !warnings.isEmpty }
+    public var paths: [[Point2D]] { materialContours + openPaths + ambiguousPaths }
 }
 
 public enum BoardOutlineExtractor {
@@ -17,7 +25,7 @@ public enum BoardOutlineExtractor {
     }
 
     public static func contours(in document: BoardDocument, tolerance: Double = 0.08) throws -> [[Point2D]] {
-        try topology(in: document, tolerance: tolerance).closedContours
+        try topology(in: document, tolerance: tolerance).materialContours
     }
 
     public static func topology(in document: BoardDocument, tolerance: Double = 0.08) throws -> BoardOutlineTopology {
@@ -26,8 +34,21 @@ public enum BoardOutlineExtractor {
         var result = BoardOutlineTopology()
         for layer in document.layers where layer.kind == .outline {
             var edges: [[Point2D]] = []
-            for primitive in layer.primitives where primitive.polarity == .dark {
+            var polarity = GerberPolarity.dark
+            func flush() throws {
+                guard !edges.isEmpty else { return }
+                var batch = BoardOutlineTopology()
+                try assemble(edges, tolerance: tolerance, source: layer.fileName, into: &batch)
+                result.closedContours += batch.closedContours
+                result.openPaths += batch.openPaths
+                result.ambiguousPaths += batch.ambiguousPaths
+                result.warnings += batch.warnings
+                result.materialOperations.append(.init(contours: batch.closedContours, polarity: polarity))
+                edges.removeAll(keepingCapacity: true)
+            }
+            for primitive in layer.primitives {
                 try Task.checkCancellation()
+                if primitive.polarity != polarity { try flush(); polarity = primitive.polarity }
                 switch primitive {
                 case let .line(start, end, _, _):
                     if start != end { edges.append([start, end]) }
@@ -36,22 +57,27 @@ public enum BoardOutlineExtractor {
                     path[path.count - 1] = end
                     edges.append(path)
                 case let .region(contours, _):
+                    try flush()
+                    var region: [[Point2D]] = []
                     for contour in contours where contour.count >= 3 {
                         var closed = contour
                         if closed.last != closed.first { closed.append(closed[0]) }
                         if abs(area(closed)) > 1e-12 {
-                            result.closedContours.append(canonical(closed, closed: true))
+                            region.append(canonical(closed, closed: true))
                         } else {
                             result.ambiguousPaths.append(canonical(closed, closed: false))
                             result.warnings.append("\(layer.fileName): degenerate region contour; material topology is unresolved.")
                         }
                     }
+                    result.closedContours += region
+                    result.materialOperations.append(.init(contours: region, polarity: polarity))
                 case .flash:
                     result.warnings.append("\(layer.fileName): flashed outline geometry has no supported routed centerline.")
                 }
             }
-            try assemble(edges, tolerance: tolerance, source: layer.fileName, into: &result)
+            try flush()
         }
+        result.materialContours = try OutlineMaterialResolver.resolve(result.materialOperations)
         result.closedContours.sort(by: pathLess)
         result.openPaths.sort(by: pathLess)
         result.ambiguousPaths.sort(by: pathLess)
