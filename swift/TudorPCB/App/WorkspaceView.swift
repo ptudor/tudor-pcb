@@ -140,6 +140,15 @@ struct WorkspaceView: View {
         } message: {
             Text(model.errorMessage ?? "Unknown error")
         }
+        .alert("History needs recovery", isPresented: Binding(
+            get: { model.historyError != nil },
+            set: { if !$0 { model.historyError = nil } }
+        )) {
+            if model.historyRecovery != nil {
+                Button("Back Up Original and Recover Valid History") { model.recoverHistory() }
+            }
+            Button("Keep Original", role: .cancel) { model.historyError = nil }
+        } message: { Text(model.historyError ?? "") }
         .alert("History access needs attention", isPresented: Binding(
             get: { model.historyAccessError != nil },
             set: { if !$0 { model.historyAccessError = nil } }

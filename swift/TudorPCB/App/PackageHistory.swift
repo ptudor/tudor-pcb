@@ -129,21 +129,71 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
 }
 
 nonisolated enum PackageHistoryStore {
-    private static let defaultsKey = "TudorPCB.packageHistory.v1"
+    static let defaultsKey = "TudorPCB.packageHistory.v1"
     private static let maximumEntries = 100
 
-    static func load() -> [PackageHistoryEntry] {
-        guard let data = UserDefaults.standard.data(forKey: defaultsKey),
-              let entries = try? JSONDecoder().decode([PackageHistoryEntry].self, from: data) else {
-            return []
+    static func load(defaults: UserDefaults = .standard) -> PackageHistoryLoad {
+        guard let data = defaults.data(forKey: defaultsKey) else { return PackageHistoryLoad(entries: [], recovery: nil) }
+        do {
+            guard let records = try JSONSerialization.jsonObject(with: data) as? [Any] else {
+                throw HistoryStorageError.invalid("Unsupported history format/version.")
+            }
+            var entries: [PackageHistoryEntry] = [], invalid = 0
+            var identities: Set<UUID> = []
+            for record in records {
+                do {
+                    let bytes = try JSONSerialization.data(withJSONObject: record, options: .fragmentsAllowed)
+                    let entry = try JSONDecoder().decode(PackageHistoryEntry.self, from: bytes)
+                    try validate(entry)
+                    guard identities.insert(entry.id).inserted else { throw HistoryStorageError.invalid("Duplicate history identity.") }
+                    entries.append(entry)
+                } catch { invalid += 1 }
+            }
+            entries = ordered(entries)
+            return PackageHistoryLoad(entries: entries, recovery: invalid == 0 ? nil : HistoryRecovery(original: data,
+                message: "\(invalid) history record(s) could not be read. \(entries.count) valid record(s) are recoverable. Original data is preserved; saving is paused until you choose recovery."))
+        } catch {
+            return PackageHistoryLoad(entries: [], recovery: HistoryRecovery(original: data,
+                message: "History could not be read: \(error.localizedDescription) Original data is preserved; saving is paused until you choose recovery."))
         }
-        return entries.sorted { $0.lastOpenedAt > $1.lastOpenedAt }
     }
 
-    static func save(_ entries: [PackageHistoryEntry]) {
-        let trimmed = Array(entries.sorted { $0.lastOpenedAt > $1.lastOpenedAt }.prefix(maximumEntries))
-        guard let data = try? JSONEncoder().encode(trimmed) else { return }
-        UserDefaults.standard.set(data, forKey: defaultsKey)
+    static func save(_ entries: [PackageHistoryEntry], defaults: UserDefaults = .standard) throws {
+        if let recovery = load(defaults: defaults).recovery { throw HistoryStorageError.invalid(recovery.message) }
+        let data = try encoded(entries)
+        defaults.set(data, forKey: defaultsKey)
+    }
+
+    @discardableResult
+    static func recover(_ entries: [PackageHistoryEntry], original: Data, defaults: UserDefaults = .standard) throws -> String {
+        guard defaults.data(forKey: defaultsKey) == original else {
+            throw HistoryStorageError.invalid("History changed during recovery. Reload it before choosing recovery again.")
+        }
+        let data = try encoded(entries)
+        let backupKey = defaultsKey + ".recovery." + UUID().uuidString
+        defaults.set(original, forKey: backupKey)
+        defaults.set(data, forKey: defaultsKey)
+        return backupKey
+    }
+
+    private static func ordered(_ entries: [PackageHistoryEntry]) -> [PackageHistoryEntry] {
+        Array(entries.sorted { $0.lastOpenedAt > $1.lastOpenedAt }.prefix(maximumEntries))
+    }
+
+    private static func encoded(_ entries: [PackageHistoryEntry]) throws -> Data {
+        for entry in entries { try validate(entry) }
+        return try JSONEncoder().encode(ordered(entries))
+    }
+
+    private static func validate(_ entry: PackageHistoryEntry) throws {
+        guard entry.boardWidth.isFinite, entry.boardHeight.isFinite,
+              entry.boardWidth >= 0, entry.boardHeight >= 0,
+              entry.firstOpenedAt.timeIntervalSince1970.isFinite,
+              entry.lastOpenedAt.timeIntervalSince1970.isFinite,
+              entry.openedCount > 0, entry.layerCount >= 0, entry.drillCount >= 0,
+              entry.primitiveCount >= 0, entry.warningCount >= 0 else {
+            throw HistoryStorageError.invalid("History contains invalid activity or board statistics.")
+        }
     }
 
     static func merging(_ entry: PackageHistoryEntry, into entries: [PackageHistoryEntry]) -> [PackageHistoryEntry] {
@@ -201,4 +251,17 @@ nonisolated enum HistoryAccessError: Error, LocalizedError {
     var errorDescription: String? {
         switch self { case let .reselectRequired(path): "Persistent access to \(path) is unavailable. Reselect the original file or folder to relink it." }
     }
+}
+
+nonisolated struct PackageHistoryLoad {
+    var entries: [PackageHistoryEntry]
+    var recovery: HistoryRecovery?
+}
+nonisolated struct HistoryRecovery {
+    var original: Data
+    var message: String
+}
+nonisolated enum HistoryStorageError: Error, LocalizedError {
+    case invalid(String)
+    var errorDescription: String? { switch self { case let .invalid(message): message } }
 }

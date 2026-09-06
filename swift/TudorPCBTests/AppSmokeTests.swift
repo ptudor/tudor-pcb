@@ -4,6 +4,47 @@ import MetalKit
 @testable import TudorPCB
 
 final class AppSmokeTests: XCTestCase {
+    func testHistoryRecoveryPreservesOriginalBytesAndIndividualValidRecords() throws {
+        let name = "TudorPCB.history-recovery-tests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let entry = PackageHistoryEntry.capture(url: URL(fileURLWithPath: "/board.gbr"), document: BoardDocument(name: "valid"))
+        let record = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(entry)) as? [String: Any])
+        var malformed = record; malformed.removeValue(forKey: "id")
+        var unknown = record; unknown["sourceKind"] = "future-kind"
+        for bad in [malformed, unknown] {
+            let original = try JSONSerialization.data(withJSONObject: [record, bad])
+            defaults.set(original, forKey: PackageHistoryStore.defaultsKey)
+            let loaded = PackageHistoryStore.load(defaults: defaults)
+            XCTAssertEqual(loaded.entries, [entry])
+            XCTAssertNotNil(loaded.recovery)
+            XCTAssertThrowsError(try PackageHistoryStore.save([], defaults: defaults))
+            XCTAssertEqual(defaults.data(forKey: PackageHistoryStore.defaultsKey), original)
+            let backup = try PackageHistoryStore.recover(loaded.entries, original: original, defaults: defaults)
+            XCTAssertEqual(defaults.data(forKey: backup), original)
+            XCTAssertNil(PackageHistoryStore.load(defaults: defaults).recovery)
+            XCTAssertEqual(PackageHistoryStore.load(defaults: defaults).entries, [entry])
+        }
+        for original in [Data("[{\"id\":".utf8), Data("{\"version\":99,\"entries\":[]}".utf8)] {
+            defaults.set(original, forKey: PackageHistoryStore.defaultsKey)
+            XCTAssertNotNil(PackageHistoryStore.load(defaults: defaults).recovery)
+            XCTAssertThrowsError(try PackageHistoryStore.save([entry], defaults: defaults))
+            XCTAssertEqual(defaults.data(forKey: PackageHistoryStore.defaultsKey), original)
+            let backup = try PackageHistoryStore.recover([], original: original, defaults: defaults)
+            XCTAssertEqual(defaults.data(forKey: backup), original)
+        }
+        try PackageHistoryStore.save([entry], defaults: defaults)
+        let previous = defaults.data(forKey: PackageHistoryStore.defaultsKey)
+        var invalid = entry; invalid.boardWidth = .infinity
+        XCTAssertThrowsError(try PackageHistoryStore.save([invalid], defaults: defaults))
+        XCTAssertEqual(defaults.data(forKey: PackageHistoryStore.defaultsKey), previous)
+        let merged = PackageHistoryStore.merging(entry, into: PackageHistoryStore.load(defaults: defaults).entries)
+        try PackageHistoryStore.save(merged, defaults: defaults)
+        XCTAssertEqual(PackageHistoryStore.load(defaults: defaults).entries[0].openedCount, 2)
+        try PackageHistoryStore.save([], defaults: defaults)
+        XCTAssertTrue(PackageHistoryStore.load(defaults: defaults).entries.isEmpty)
+    }
+
     @MainActor
     func testMachinedFacesRevealContrastingBackgroundAndHavePhysicalWalls() throws {
         let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
