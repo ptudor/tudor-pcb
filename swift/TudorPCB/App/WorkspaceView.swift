@@ -5,14 +5,16 @@ import UniformTypeIdentifiers
 struct WorkspaceView: View {
     @State private var model = WorkspaceModel()
     @State private var viewer = ViewerController()
-    @State private var isRelinking = false
-    @State private var isImportingTopProof = false
-    @State private var isImportingBottomProof = false
+    @State private var preferredCompactColumn = NavigationSplitViewColumn.detail
+    private enum ImportPurpose { case package, proof(GerberSide), relink }
+    @State private var importPurpose = ImportPurpose.package
+    @State private var isChoosingFile = false
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(preferredCompactColumn: $preferredCompactColumn) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 230, ideal: 270, max: 340)
+                .toolbar { packageToolbar }
         } detail: {
             ZStack {
                 MetalBoardView(document: model.document, textures: model.textures, controller: viewer)
@@ -49,7 +51,9 @@ struct WorkspaceView: View {
                 if model.document != nil { interactionHint }
             }
             .background(Color(red: 0.025, green: 0.032, blue: 0.04))
+            .navigationTitle(model.document?.name ?? "Tudor PCB")
             .toolbar {
+                packageToolbar
                 ToolbarItemGroup {
                     Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
                         model.isShowingHistory = true
@@ -80,34 +84,28 @@ struct WorkspaceView: View {
                 }
             }
         }
-        .fileImporter(
-            isPresented: $model.isImporting,
-            allowedContentTypes: [.zip, .folder, .data],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case let .success(urls): if let url = urls.first { model.open(url) }
-            case let .failure(error): model.reportFailure(error, operation: .selectPackage)
-            }
+        .onChange(of: model.document?.name) { _, name in
+            if name != nil { preferredCompactColumn = .detail }
         }
-        .fileImporter(
-            isPresented: $isImportingTopProof,
-            allowedContentTypes: [.png, .jpeg, .tiff, .heic],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case let .success(urls): if let url = urls.first { model.attachColorProof(url, side: .top) }
-            case let .failure(error): model.reportFailure(error, operation: .selectProof, side: .top)
-            }
+        .onChange(of: model.isImporting) { _, requested in
+            if requested { model.isImporting = false; beginImport(.package) }
         }
-        .fileImporter(
-            isPresented: $isImportingBottomProof,
-            allowedContentTypes: [.png, .jpeg, .tiff, .heic],
-            allowsMultipleSelection: false
-        ) { result in
+        .fileImporter(isPresented: $isChoosingFile, allowedContentTypes: importContentTypes, allowsMultipleSelection: false) { result in
             switch result {
-            case let .success(urls): if let url = urls.first { model.attachColorProof(url, side: .bottom) }
-            case let .failure(error): model.reportFailure(error, operation: .selectProof, side: .bottom)
+            case let .success(urls):
+                guard let url = urls.first else { return }
+                switch importPurpose {
+                case .package: model.open(url)
+                case let .proof(side): model.attachColorProof(url, side: side)
+                case .relink: model.relink(url)
+                }
+            case let .failure(error):
+                switch importPurpose {
+                case .package: model.reportFailure(error, operation: .selectPackage)
+                case let .proof(side): model.reportFailure(error, operation: .selectProof, side: side)
+                case .relink:
+                    if (error as? CocoaError)?.code != .userCancelled && !(error is CancellationError) { model.historyAccessError = error.localizedDescription }
+                }
             }
         }
         .focusedSceneValue(\.fabricationWorkspace, model)
@@ -143,11 +141,11 @@ struct WorkspaceView: View {
         )) {
             switch model.failedOperation {
             case .openPackage, .selectPackage:
-                Button("Select Package…") { model.isImporting = true }
+                Button("Select Package…") { beginImport(.package) }
             case .attachProof, .selectProof:
                 Button("Select Proof…") {
-                    if model.failedProofSide == .bottom { isImportingBottomProof = true }
-                    else { isImportingTopProof = true }
+                    if model.failedProofSide == .bottom { beginImport(.proof(.bottom)) }
+                    else { beginImport(.proof(.top)) }
                 }
             case .mapProof: Button("Review Proof Mapping") { model.showProofs = true }
             case .renderBoard: Button("Retry Rendering") { model.rerender() }
@@ -169,16 +167,9 @@ struct WorkspaceView: View {
             get: { model.historyAccessError != nil },
             set: { if !$0 { model.historyAccessError = nil } }
         )) {
-            Button("Reselect Source…") { isRelinking = true }
+            Button("Reselect Source…") { beginImport(.relink) }
             Button("Later", role: .cancel) { model.historyAccessError = nil }
         } message: { Text(model.historyAccessError ?? "") }
-        .fileImporter(isPresented: $isRelinking, allowedContentTypes: [.zip, .folder, .data]) { result in
-            switch result {
-            case let .success(url): model.relink(url)
-            case let .failure(error):
-                if (error as? CocoaError)?.code != .userCancelled && !(error is CancellationError) { model.historyAccessError = error.localizedDescription }
-            }
-        }
         .sheet(isPresented: $model.showProofs) {
             if let document = model.document { ProofGalleryView(document: document, onSelect: { model.selectArtwork($0) }, onReset: { model.resetArtwork($0) }, onMap: { model.mapArtwork($0, mapping: $1) }) }
         }
@@ -186,11 +177,40 @@ struct WorkspaceView: View {
             PackageBrowserView(
                 entries: model.historyEntries,
                 onOpen: { model.open($0) },
-                onRelink: { model.relinkEntry = $0; model.isShowingHistory = false; isRelinking = true },
+                onRelink: { model.relinkEntry = $0; model.isShowingHistory = false; beginImport(.relink) },
                 onRemove: { model.removeFromHistory($0) },
                 onClear: { model.clearHistory() }
             )
         }
+    }
+
+    private var importContentTypes: [UTType] {
+        if case .proof = importPurpose { [.png, .jpeg, .tiff, .heic] }
+        else { [.zip, .folder, .data] }
+    }
+
+    private func beginImport(_ purpose: ImportPurpose) {
+        importPurpose = purpose
+        isChoosingFile = true
+    }
+
+    @ToolbarContentBuilder
+    private var packageToolbar: some ToolbarContent {
+        ToolbarItem(placement: openToolbarPlacement) {
+            Button(model.document == nil ? "Open Package…" : "Replace Package…", systemImage: "folder.badge.plus") {
+                beginImport(.package)
+            }
+            .accessibilityIdentifier("open-package")
+            .help("Open or replace the fabrication package")
+        }
+    }
+
+    private var openToolbarPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .navigation
+        #else
+        .topBarLeading
+        #endif
     }
 
     private var sidebar: some View {
@@ -230,7 +250,7 @@ struct WorkspaceView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
 
-                    Button("Open Package…") { model.isImporting = true }
+                    Button("Open Package…") { beginImport(.package) }
                         .buttonStyle(.borderedProminent)
                     if !model.historyEntries.isEmpty {
                         Button("Browse \(model.historyEntries.count) Recent Package\(model.historyEntries.count == 1 ? "" : "s")") {
@@ -319,8 +339,8 @@ struct WorkspaceView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
                 Menu("Color proof options", systemImage: "photo.on.rectangle.angled") {
-                    Button("Attach top artwork…") { isImportingTopProof = true }
-                    Button("Attach bottom artwork…") { isImportingBottomProof = true }
+                    Button("Attach top artwork…") { beginImport(.proof(.top)) }
+                    Button("Attach bottom artwork…") { beginImport(.proof(.bottom)) }
                     if !document.sidePreviews.isEmpty {
                         Divider()
                         Button("View supplied proofs") { model.showProofs = true }
@@ -410,7 +430,7 @@ struct WorkspaceView: View {
             Text("Drop a fabrication ZIP here, or open one from the sidebar.")
                 .foregroundStyle(.secondary)
             Button("Choose Gerber Package") {
-                model.isImporting = true
+                beginImport(.package)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)

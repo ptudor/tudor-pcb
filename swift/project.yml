@@ -83,3 +83,24 @@ targets:
         BUNDLE_LOADER: "$(TEST_HOST)"
     dependencies:
       - target: TudorPCBMac
+
+  TudorPCBUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: TudorPCBUITests
+        excludes: [Fixtures]
+      - path: TudorPCBUITests/Fixtures
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.ptudor.tudorpcb.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        TEST_TARGET_NAME: TudorPCB
+    dependencies:
+      - target: TudorPCB
+    scheme:
+      testTargets:
+        - TudorPCBUITests
