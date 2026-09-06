@@ -4,6 +4,8 @@ public enum FabricationPackageError: Error, LocalizedError, Sendable {
     case noSupportedLayers
     case nestedArchiveLimit
     case ambiguousNestedArchives([String])
+    case ambiguousBoardSets([String])
+    case duplicateEntry(String)
 
     public var errorDescription: String? {
         switch self {
@@ -11,6 +13,10 @@ public enum FabricationPackageError: Error, LocalizedError, Sendable {
             "No Gerber or Excellon layers were found in this package."
         case .nestedArchiveLimit:
             "The nested fabrication archives exceed the safe expansion limit."
+        case let .duplicateEntry(path):
+            "Duplicate archive entry \(path); a unique source path is required."
+        case let .ambiguousBoardSets(names):
+            "Separate board sets require selection: \(names.joined(separator: ", "))."
         case let .ambiguousNestedArchives(names):
             "Several equally likely fabrication packages were found: \(names.joined(separator: ", "))."
         }
@@ -66,6 +72,12 @@ public struct FabricationPackageLoader: Sendable {
         depth: Int,
         budget: inout ImportBudget
     ) throws -> BoardDocument {
+        var names = Set<String>()
+        for file in files {
+            guard names.insert(file.name).inserted else { throw FabricationPackageError.duplicateEntry(file.name) }
+        }
+        let groups = flatGroups(in: files)
+        guard groups.count <= 1 else { throw FabricationPackageError.ambiguousBoardSets(groups.map(\.name)) }
         if let envelope = jlcpcbProductionEnvelope(in: files) {
             var document = try loadFlat(files: envelope.productionFiles, name: name, budget: &budget)
             document.packageRole = .jlcpcbProduction
@@ -73,6 +85,7 @@ public struct FabricationPackageLoader: Sendable {
             return document
         }
 
+        var fallback: BoardDocument?
         do {
             var document = try loadFlat(files: files, name: name, budget: &budget)
             if document.layers.contains(where: {
@@ -80,19 +93,22 @@ public struct FabricationPackageLoader: Sendable {
             }) {
                 document.packageRole = .jlcpcbProduction
             }
-            return document
-        } catch FabricationPackageError.noSupportedLayers {
-            guard depth < limits.archiveDepth else {
-                throw FabricationPackageError.nestedArchiveLimit
-            }
-        }
+            if isCompleteBoard(document) { return document }
+            fallback = document
+        } catch FabricationPackageError.noSupportedLayers { }
+
 
         let nested = files.filter {
             URL(fileURLWithPath: $0.name).pathExtension.lowercased() == "zip"
         }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        guard !nested.isEmpty else { throw FabricationPackageError.noSupportedLayers }
+        guard !nested.isEmpty else {
+            if let fallback { return fallback }
+            throw FabricationPackageError.noSupportedLayers
+        }
+        guard depth < limits.archiveDepth else { throw FabricationPackageError.nestedArchiveLimit }
 
         var candidates: [(name: String, document: BoardDocument, score: Int)] = []
+        if let fallback { candidates.append((".", fallback, packageScore(fallback))) }
         for archive in nested {
             try budget.charge("nested archives", 1, maximum: limits.archives, path: archive.name)
             let entries: [ZipEntry]
@@ -131,6 +147,49 @@ public struct FabricationPackageLoader: Sendable {
             throw FabricationPackageError.ambiguousNestedArchives(best.map(\.name))
         }
         return selection.document
+    }
+
+    private struct FlatGroup {
+        var name: String
+        var files: [ZipEntry]
+    }
+
+    private func flatGroups(in files: [ZipEntry]) -> [FlatGroup] {
+        let material = files.filter { file in
+            let contents = String(decoding: file.data.prefix(8192), as: UTF8.self)
+            switch LayerClassifier.classify(fileName: file.name, contents: contents) {
+            case .copper, .outline, .drill, .solderMask, .silkscreen, .paste: return true
+            default: return false
+            }
+        }
+        let directories = Dictionary(grouping: material) { (file: ZipEntry) in
+            let directory = (file.name as NSString).deletingLastPathComponent
+            return directory.isEmpty ? "." : directory
+        }
+        return directories.keys.sorted().flatMap { directory -> [FlatGroup] in
+            let members = directories[directory]!
+            // A production set may have multiple legend overlays by design.
+            if members.contains(where: { String(decoding: $0.data.prefix(512), as: UTF8.self).localizedCaseInsensitiveContains("output software:jlccam") }) {
+                return [FlatGroup(name: directory, files: members)]
+            }
+            let byRole = Dictionary(grouping: members) { LayerClassifier.classify(fileName: $0.name, contents: String(decoding: $0.data.prefix(8192), as: UTF8.self)) }
+            guard byRole.values.contains(where: { $0.count > 1 }) else { return [FlatGroup(name: directory, files: members)] }
+            // Repeated roles with different stems are separate project candidates.
+            let projects = Dictionary(grouping: members) { ($0.name as NSString).deletingPathExtension }
+            let plausible = projects.filter { _, members in
+                let roles = Set(members.map { LayerClassifier.classify(fileName: $0.name, contents: String(decoding: $0.data.prefix(8192), as: UTF8.self)) })
+                return roles.contains(.outline) || roles.count >= 2
+            }
+            // Separate PTH/via drill files and overlay layers are ordinary parts
+            // of one set; a repeated role alone does not establish another board.
+            guard plausible.count > 1 else { return [FlatGroup(name: directory, files: members)] }
+            return projects.keys.sorted().map { FlatGroup(name: $0, files: projects[$0]!) }
+        }
+    }
+
+    private func isCompleteBoard(_ document: BoardDocument) -> Bool {
+        document.layers.contains { $0.kind == .outline }
+            && (document.layers.contains { if case .copper = $0.kind { true } else { false } } || !document.drills.isEmpty)
     }
 
     private func loadFlat(files: [ZipEntry], name: String, budget: inout ImportBudget) throws -> BoardDocument {
@@ -329,7 +388,7 @@ public struct FabricationPackageLoader: Sendable {
             guard !["ddw", "tgz", "gz", "7z"].contains(ext) else { continue }
             let contents = String(decoding: file.data.prefix(512), as: UTF8.self)
             guard contents.localizedCaseInsensitiveContains("output software:jlccam") else { continue }
-            productionFiles.append(ZipEntry(name: relativeName, data: file.data))
+            productionFiles.append(file)
         }
 
         guard productionFiles.contains(where: {
