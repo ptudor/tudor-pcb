@@ -34,6 +34,9 @@ public struct RGBAColor: Sendable, Hashable {
         self.alpha = alpha
     }
 
+    public static let exposedSubstrate = RGBAColor(red: 0.36, green: 0.28, blue: 0.15)
+    public static let exposedMetal = RGBAColor(red: 0.83, green: 0.58, blue: 0.18)
+
     public static let greenMask = RGBAColor(red: 0.035, green: 0.23, blue: 0.13)
     public static let whiteMask = RGBAColor(red: 0.82, green: 0.84, blue: 0.82)
     public static let blackMask = RGBAColor(red: 0.025, green: 0.03, blue: 0.032)
@@ -171,8 +174,27 @@ public struct BoardRasterizer: Sendable {
 
         let maskOpenings = visibleLayers.filter { $0.kind == .solderMask(side: side) }
         for layer in maskOpenings {
-            try composite(layer: layer, color: RGBAColor(red: 0.83, green: 0.58, blue: 0.18, alpha: 1),
+            try composite(layer: layer, color: .exposedSubstrate,
                           context: context, bounds: bounds, scale: scale, canvas: canvas)
+        }
+
+        if !copper.isEmpty && !maskOpenings.isEmpty {
+            guard let copperContext = makeContext(width: Int(canvas.width), height: Int(canvas.height)) else {
+                throw BoardRasterizerError.contextCreation
+            }
+            // Each source layer resolves its own clear polarity before union.
+            for layer in copper {
+                try composite(layer: layer, color: RGBAColor(red: 1, green: 1, blue: 1),
+                              context: copperContext, bounds: bounds, scale: scale, canvas: canvas)
+            }
+            guard let copperMask = copperContext.makeImage() else { throw BoardRasterizerError.imageCreation }
+            context.saveGState()
+            context.clip(to: canvas, mask: copperMask)
+            for layer in maskOpenings {
+                try composite(layer: layer, color: .exposedMetal,
+                              context: context, bounds: bounds, scale: scale, canvas: canvas)
+            }
+            context.restoreGState()
         }
 
         let silkLayers = visibleLayers.filter { $0.kind == .silkscreen(side: side) }
@@ -443,24 +465,6 @@ public struct BoardRasterizer: Sendable {
             let center = pixel(drill.center, bounds: bounds, scale: scale)
             let end = drill.end.map { pixel($0, bounds: bounds, scale: scale) }
             let diameter = max(1, drill.diameter * scale)
-            if drill.plated == true {
-                context.setFillColor(red: 0.73, green: 0.48, blue: 0.14, alpha: 1)
-                if let end {
-                    context.setStrokeColor(red: 0.73, green: 0.48, blue: 0.14, alpha: 1)
-                    context.setLineCap(.round)
-                    context.setLineWidth(diameter * 1.44)
-                    context.move(to: center)
-                    context.addLine(to: end)
-                    context.strokePath()
-                } else {
-                    context.fillEllipse(in: CGRect(
-                        x: center.x - diameter * 0.72,
-                        y: center.y - diameter * 0.72,
-                        width: diameter * 1.44,
-                        height: diameter * 1.44
-                    ))
-                }
-            }
             context.setFillColor(red: 0.012, green: 0.014, blue: 0.016, alpha: 1)
             if let end {
                 context.setStrokeColor(red: 0.012, green: 0.014, blue: 0.016, alpha: 1)
