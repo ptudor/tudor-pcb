@@ -2,6 +2,7 @@ import XCTest
 import GerberKit
 import MetalKit
 import ImageIO
+import simd
 @testable import TudorPCB
 
 final class AppSmokeTests: XCTestCase {
@@ -820,5 +821,44 @@ extension AppSmokeTests {
         XCTAssertEqual(model.document?.sourceSelection, choice)
         XCTAssertEqual(model.document?.bounds.width, 20)
         XCTAssertTrue(model.candidateChoices.isEmpty)
+    }
+}
+
+
+extension AppSmokeTests {
+    @MainActor
+    func testFitProjectsEveryPhysicalCornerAndPreservesSideOnResizeAndReset() {
+        for dimensions in [(100.0, 10.0), (10, 100), (100, 100)] {
+            for thickness in [0.2, 1.6, 20.0] {
+                let board = BoardDocument(name: "fit", bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: dimensions.0, y: dimensions.1)), thicknessMillimeters: thickness)
+                var camera = BoardCamera()
+                camera.configure(board)
+                for preset in [CameraPreset.perspective, .top, .bottom] {
+                    camera.apply(preset)
+                    let azimuth = camera.azimuth, elevation = camera.elevation
+                    for aspect in [0.15, 0.4, 1, 2.5, 6] {
+                        camera.resize(CGSize(width: aspect * 1000, height: 1000))
+                        for corner in camera.corners {
+                            let clip = camera.viewProjection * SIMD4(corner, 1)
+                            XCTAssertGreaterThan(clip.w, 0)
+                            XCTAssertLessThanOrEqual(abs(clip.x / clip.w), 0.910)
+                            XCTAssertLessThanOrEqual(abs(clip.y / clip.w), 0.910)
+                            XCTAssertGreaterThanOrEqual(clip.z / clip.w, 0)
+                            XCTAssertLessThanOrEqual(clip.z / clip.w, 1)
+                        }
+                        XCTAssertEqual(camera.azimuth, azimuth)
+                        XCTAssertEqual(camera.elevation, elevation)
+                        let fitDistance = camera.distance
+                        camera.zoom(delta: -300)
+                        camera.advance()
+                        XCTAssertLessThan(camera.distance, fitDistance)
+                        camera.apply(.fit)
+                        XCTAssertEqual(camera.distance, fitDistance, accuracy: 0.0001)
+                        XCTAssertEqual(camera.azimuth, azimuth)
+                        XCTAssertEqual(camera.elevation, elevation)
+                    }
+                }
+            }
+        }
     }
 }

@@ -27,3 +27,25 @@ import Testing
     let textures = try rasterizer.render(physical, options: .init(maximumTextureDimension: 1000))
     #expect(try rgba(textures.boardMask, x: 500, y: 500)[3] == 0)
 }
+
+
+@Test func zoomedSourceInspectionResolvesKnownPadsAndGapsAtEveryBoardEdge() throws {
+    let rasterizer = BoardRasterizer()
+    for center in [Point2D(x: 0.03, y: 50), Point2D(x: 99.97, y: 50), Point2D(x: 50, y: 0.03), Point2D(x: 50, y: 99.97)] {
+        let layer = GerberLayer(fileName: "edge pads", kind: .copper(side: .none, index: 2), primitives: [-0.0125, 0.0125].map {
+            .flash(center: Point2D(x: center.x + $0, y: center.y), shape: .circle(diameter: 0.02), polarity: .dark)
+        })
+        let board = BoardDocument(name: "100 mm board", layers: [layer], bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 100, y: 100)))
+        let overview = try rasterizer.renderInspection(board, layerIDs: [layer.id], showDrills: false, maximumTextureDimension: 1000)
+        let viewport = Bounds2D(minimum: Point2D(x: center.x - 0.05, y: center.y - 0.05), maximum: Point2D(x: center.x + 0.05, y: center.y + 0.05))
+        let detail = try rasterizer.renderInspection(board, layerIDs: [layer.id], showDrills: false, viewport: viewport, maximumTextureDimension: 1000)
+        #expect(overview.millimetersPerPixel == 0.1)
+        #expect(abs(detail.millimetersPerPixel - 0.0001) < 1e-10)
+        #expect(try rgba(detail.image, x: 375, y: 500)[3] == 255)
+        #expect(try rgba(detail.image, x: 625, y: 500)[3] == 255)
+        // The 0.005 mm gap is 50 freshly rasterized pixels, independent of the overview texture.
+        for x in 480...520 { #expect(try rgba(detail.image, x: x, y: 500)[3] == 0) }
+        #expect(board.layers[0].primitives == layer.primitives)
+        #expect(detail.bounds == viewport)
+    }
+}

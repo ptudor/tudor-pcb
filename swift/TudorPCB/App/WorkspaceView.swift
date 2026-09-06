@@ -864,7 +864,10 @@ private struct LayerInspectionView: View {
     @State private var showDrills = true
     @State private var output: BoardInspectionImage?
     @State private var error: String?
-    private struct Request: Equatable { var document: BoardDocument; var target: BoardInspectionTarget?; var drills: Bool }
+    @State private var viewport: Bounds2D?
+    @GestureState private var drag = CGSize.zero
+    @GestureState private var magnification: CGFloat = 1
+    private struct Request: Equatable { var document: BoardDocument; var target: BoardInspectionTarget?; var drills: Bool; var viewport: Bounds2D? }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -876,31 +879,86 @@ private struct LayerInspectionView: View {
                 Button("Physical Board") { target = nil }
             }
             Toggle("Show drill/slot overlay in this 2D view", isOn: $showDrills).disabled(document.drills.isEmpty)
-            ZStack {
-                Color.black
-                if let output { Image(decorative: output.image, scale: 1).resizable().scaledToFit().accessibilityLabel("Selected fabrication source in board coordinates") }
-                else { ProgressView("Drawing source geometry") }
-                if let error { Text(error).foregroundStyle(.orange).padding() }
+            ScrollView(.horizontal) {
+                HStack {
+                    Button("Zoom In", systemImage: "plus.magnifyingglass") { zoom(2) }
+                    Button("Zoom Out", systemImage: "minus.magnifyingglass") { zoom(0.5) }
+                    Button("Fit Source", systemImage: "arrow.up.left.and.arrow.down.right") { viewport = nil }
+                    Menu("Pan", systemImage: "arrow.up.and.down.and.arrow.left.and.right") {
+                        Button("Left") { pan(x: -0.25, y: 0) }
+                        Button("Right") { pan(x: 0.25, y: 0) }
+                        Button("Up") { pan(x: 0, y: 0.25) }
+                        Button("Down") { pan(x: 0, y: -0.25) }
+                    }
+                }
+            }.disabled(output == nil)
+            GeometryReader { geometry in
+                ZStack {
+                    Color.black
+                    if let output {
+                        Image(decorative: output.image, scale: 1).resizable().scaledToFit()
+                            .scaleEffect(magnification).offset(drag)
+                            .accessibilityLabel("Selected fabrication source in board coordinates")
+                    } else { ProgressView("Drawing source geometry") }
+                    if let error { Text(error).foregroundStyle(.orange).padding() }
+                }
+                .clipped().contentShape(Rectangle())
+                .gesture(DragGesture().updating($drag) { value, state, _ in state = value.translation }
+                    .onEnded { value in
+                        guard let output else { return }
+                        let scale = pointsPerMillimeter(geometry.size, output.bounds)
+                        setViewport(center: Point2D(x: output.bounds.center.x - value.translation.width / scale,
+                                                    y: output.bounds.center.y + value.translation.height / scale), bounds: output.bounds)
+                    })
+                .simultaneousGesture(MagnifyGesture().updating($magnification) { value, state, _ in state = value.magnification }
+                    .onEnded { zoom($0.magnification) })
+                .simultaneousGesture(SpatialTapGesture(count: 2).onEnded { value in
+                    guard let output else { return }
+                    let scale = pointsPerMillimeter(geometry.size, output.bounds)
+                    zoom(2, center: Point2D(x: output.bounds.center.x + (value.location.x - geometry.size.width / 2) / scale,
+                                           y: output.bounds.center.y - (value.location.y - geometry.size.height / 2) / scale))
+                })
             }
             if let output {
-                Text("Source geometry · \(output.millimetersPerPixel, format: .number.precision(.fractionLength(5))) mm/texel · \(output.image.width) × \(output.image.height) pixels")
+                Text("\(output.bounds.width, format: .number.precision(.fractionLength(4))) × \(output.bounds.height, format: .number.precision(.fractionLength(4))) mm · \(output.millimetersPerPixel, format: .number.precision(.significantDigits(3))) mm/texel · \(output.image.width) × \(output.image.height) pixels")
                     .font(.caption.monospacedDigit())
             }
-            Text("Outline strokes include a visible centerline overlay. Hiding the drill overlay does not change physical holes or source data.")
+            Text("Drag to pan; pinch or double-tap to focus. Source geometry is redrawn at each zoom. Outline centerlines are emphasized; drill visibility does not alter physical holes.")
                 .font(.caption2).foregroundStyle(.secondary)
         }.padding()
-        .task(id: Request(document: document, target: target, drills: showDrills)) {
+        .onChange(of: document) { _, _ in viewport = nil }
+        .onChange(of: target) { _, _ in viewport = nil }
+        .task(id: Request(document: document, target: target, drills: showDrills, viewport: viewport)) {
             output = nil; error = nil
             let ids: Set<String>
             if case let .layer(id) = target { ids = [id] } else { ids = [] }
-            let task = Task { try await render(document, ids, showDrills, nil) }
+            let task = Task { try await render(document, ids, showDrills, viewport) }
             do {
                 let image = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
                 try Task.checkCancellation()
                 output = image
-                error = nil
             } catch is CancellationError { }
               catch { self.error = error.localizedDescription }
         }
+    }
+
+    private func pointsPerMillimeter(_ size: CGSize, _ bounds: Bounds2D) -> Double {
+        max(0.000001, min(size.width / bounds.width, size.height / bounds.height))
+    }
+    private func zoom(_ scale: Double, center: Point2D? = nil) {
+        guard let output, scale.isFinite, scale > 0 else { return }
+        let bounds = output.bounds
+        let limited = min(max(scale, max(bounds.width, bounds.height) / 1_000_000), min(bounds.width, bounds.height) / 0.001)
+        let next = Bounds2D(minimum: .zero, maximum: Point2D(x: bounds.width / limited, y: bounds.height / limited))
+        setViewport(center: center ?? bounds.center, bounds: next)
+    }
+    private func pan(x: Double, y: Double) {
+        guard let output else { return }
+        setViewport(center: Point2D(x: output.bounds.center.x + x * output.bounds.width, y: output.bounds.center.y + y * output.bounds.height), bounds: output.bounds)
+    }
+    private func setViewport(center: Point2D, bounds: Bounds2D) {
+        let x = min(1_000_000 - bounds.width / 2, max(-1_000_000 + bounds.width / 2, center.x))
+        let y = min(1_000_000 - bounds.height / 2, max(-1_000_000 + bounds.height / 2, center.y))
+        viewport = Bounds2D(minimum: Point2D(x: x - bounds.width / 2, y: y - bounds.height / 2), maximum: Point2D(x: x + bounds.width / 2, y: y + bounds.height / 2))
     }
 }

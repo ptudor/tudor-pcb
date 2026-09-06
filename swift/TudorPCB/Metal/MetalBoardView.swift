@@ -107,7 +107,7 @@ struct MetalBoardView {
             renderer?.draw(in: view)
             if let error = renderer?.renderError { report(error.localizedDescription) }
         }
-        func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { }
+        func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { renderer?.resize(size) }
         func orbit(deltaX: Float, deltaY: Float) { renderer?.orbit(deltaX: deltaX, deltaY: deltaY) }
         func zoom(delta: Float) { renderer?.zoom(delta: delta) }
         func fitCamera() { renderer?.apply(.fit) }

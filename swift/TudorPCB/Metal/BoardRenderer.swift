@@ -70,10 +70,7 @@ final class BoardRenderer {
     private(set) var bottomTexture: MTLTexture?
     private(set) var maskTexture: MTLTexture?
 
-    private var azimuth: Float = 0.58
-    private var elevation: Float = 0.72
-    private var distance: Float = 1.72
-    private var targetDistance: Float = 1.72
+    private(set) var camera = BoardCamera()
     private struct MeshIdentity: Equatable {
         let bounds: Bounds2D
         let thickness: Double
@@ -183,7 +180,7 @@ final class BoardRenderer {
             topTexture = nextTop; bottomTexture = nextBottom; maskTexture = nextMask
             lastMeshIdentity = meshIdentity; lastTextureIdentity = textureIdentity
             renderError = nil; hasCurrentResources = true
-            if meshChanged { apply(.perspective) } // Texture-only updates preserve the camera.
+            if meshChanged { camera.configure(document); apply(.perspective) } // Texture-only updates preserve the camera.
             return true
         } catch {
             renderError = error
@@ -193,37 +190,15 @@ final class BoardRenderer {
         }
     }
 
-    func apply(_ preset: CameraPreset) {
-        switch preset {
-        case .perspective:
-            azimuth = 0.58
-            elevation = 0.72
-            targetDistance = 1.72
-        case .top:
-            azimuth = 0
-            elevation = .pi / 2 - 0.015
-            targetDistance = 1.5
-        case .bottom:
-            azimuth = .pi
-            elevation = -.pi / 2 + 0.015
-            targetDistance = 1.5
-        case .fit:
-            targetDistance = 1.72
-        }
-    }
-
-    func orbit(deltaX: Float, deltaY: Float) {
-        azimuth -= deltaX * 0.008
-        elevation = min(.pi / 2 - 0.025, max(-.pi / 2 + 0.025, elevation + deltaY * 0.008))
-    }
-
-    func zoom(delta: Float) {
-        targetDistance = min(5.0, max(0.72, targetDistance * exp(delta * 0.004)))
-    }
+    func apply(_ preset: CameraPreset) { camera.apply(preset) }
+    func resize(_ size: CGSize) { camera.resize(size) }
+    func orbit(deltaX: Float, deltaY: Float) { camera.orbit(deltaX: deltaX, deltaY: deltaY) }
+    func zoom(delta: Float) { camera.zoom(delta: delta) }
 
     func draw(in view: MTKView) {
         guard hasCurrentResources else { return }
-        distance += (targetDistance - distance) * 0.16
+        camera.resize(view.drawableSize)
+        camera.advance()
         guard let pass = view.currentRenderPassDescriptor,
               let drawable = view.currentDrawable,
               let vertexBuffer,
@@ -239,20 +214,9 @@ final class BoardRenderer {
             return
         }
 
-        let aspect = Float(max(view.drawableSize.width, 1) / max(view.drawableSize.height, 1))
-        let eye = SIMD3<Float>(
-            cos(elevation) * sin(azimuth) * distance,
-            sin(elevation) * distance,
-            cos(elevation) * cos(azimuth) * distance
-        )
-        let up: SIMD3<Float> = abs(sin(elevation)) > 0.98
-            ? SIMD3<Float>(0, 0, elevation > 0 ? -1 : 1)
-            : SIMD3<Float>(0, 1, 0)
-        let viewMatrix = lookAt(eye: eye, center: .zero, up: up)
-        let projection = perspective(fovY: 42 * .pi / 180, aspect: aspect, near: 0.05, far: 20)
         var uniforms = Uniforms(
             model: matrix_identity_float4x4,
-            viewProjection: projection * viewMatrix,
+            viewProjection: camera.viewProjection,
             lightDirection: SIMD4<Float>(0.35, 0.82, 0.48, 0)
         )
 
@@ -377,27 +341,4 @@ final class BoardRenderer {
         }
     }
 
-    private func perspective(fovY: Float, aspect: Float, near: Float, far: Float) -> simd_float4x4 {
-        let y = 1 / tan(fovY / 2)
-        let x = y / max(aspect, 0.001)
-        let z = far / (near - far)
-        return simd_float4x4(columns: (
-            SIMD4(x, 0, 0, 0),
-            SIMD4(0, y, 0, 0),
-            SIMD4(0, 0, z, -1),
-            SIMD4(0, 0, z * near, 0)
-        ))
-    }
-
-    private func lookAt(eye: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) -> simd_float4x4 {
-        let z = normalize(eye - center)
-        let x = normalize(cross(up, z))
-        let y = cross(z, x)
-        return simd_float4x4(columns: (
-            SIMD4(x.x, y.x, z.x, 0),
-            SIMD4(x.y, y.y, z.y, 0),
-            SIMD4(x.z, y.z, z.z, 0),
-            SIMD4(-dot(x, eye), -dot(y, eye), -dot(z, eye), 1)
-        ))
-    }
 }
