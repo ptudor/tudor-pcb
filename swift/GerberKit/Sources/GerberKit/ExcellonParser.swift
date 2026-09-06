@@ -20,9 +20,7 @@ public struct ExcellonParser: Sendable {
         let plated: Bool?
         if case let .drill(value) = kind { plated = value } else { plated = nil }
 
-        var unitScale = 1.0
-        var decimalDigits = 3
-        var leadingZerosOmitted = true
+        var format = ExcellonCoordinateFormat(fileName: fileName)
         var tools: [Int: Double] = [:]
         var selectedTool: Int?
         var current = Point2D.zero
@@ -31,34 +29,22 @@ public struct ExcellonParser: Sendable {
         for sourceLine in source.split(whereSeparator: \.isNewline) {
             try Task.checkCancellation()
             let line = sourceLine.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-            guard !line.isEmpty, !line.hasPrefix(";") else { continue }
-
-            if line.hasPrefix("METRIC") || line == "M71" {
-                unitScale = 1
-                leadingZerosOmitted = line.contains("LZ") || !line.contains("TZ")
-                if let pattern = line.split(separator: ",").last, pattern.contains(".") {
-                    decimalDigits = pattern.split(separator: ".").last?.count ?? decimalDigits
-                }
-                continue
-            }
-            if line.hasPrefix("INCH") || line == "M72" {
-                unitScale = 25.4
-                leadingZerosOmitted = line.contains("LZ") || !line.contains("TZ")
-                if let pattern = line.split(separator: ",").last, pattern.contains(".") {
-                    decimalDigits = pattern.split(separator: ".").last?.count ?? 4
-                } else {
-                    decimalDigits = 4
-                }
-                continue
-            }
+            guard !line.isEmpty else { continue }
+            if try format.declaration(line) { continue }
+            if line.hasPrefix(";") { continue }
+            if line.hasPrefix("G90") { format.absolute = true }
+            if line.hasPrefix("G91") { format.absolute = false }
 
             if line.hasPrefix("T"), let cIndex = line.firstIndex(of: "C") {
                 let toolText = line[line.index(after: line.startIndex)..<cIndex]
                 let diameterText = line[line.index(after: cIndex)...]
                     .prefix { $0.isNumber || $0 == "." || $0 == "-" || $0 == "+" }
-                if let tool = Int(toolText), let diameter = Double(diameterText) {
-                    tools[tool] = diameter * unitScale
+                guard let tool = Int(toolText), tool > 0, tool <= Int(Int32.max),
+                      let scale = format.unitScale, let diameter = Double(diameterText),
+                      diameter.isFinite, diameter > 0, diameter * scale <= GeometryLimits.coordinateMagnitude else {
+                    throw format.error(line, "Invalid tool number, diameter or undeclared units.")
                 }
+                tools[tool] = diameter * scale
                 continue
             }
 
@@ -69,13 +55,12 @@ public struct ExcellonParser: Sendable {
 
             let fields = coordinateFields(in: line)
             guard fields["X"] != nil || fields["Y"] != nil else { continue }
-            let x = fields["X"].flatMap {
-                decode($0, decimalDigits: decimalDigits, leadingZerosOmitted: leadingZerosOmitted)
-            }.map { $0 * unitScale } ?? current.x
-            let y = fields["Y"].flatMap {
-                decode($0, decimalDigits: decimalDigits, leadingZerosOmitted: leadingZerosOmitted)
-            }.map { $0 * unitScale } ?? current.y
-            current = Point2D(x: x, y: y)
+            let x = try fields["X"].map { try format.decode($0, line: line) }
+            let y = try fields["Y"].map { try format.decode($0, line: line) }
+            current = format.absolute
+                ? Point2D(x: x ?? current.x, y: y ?? current.y)
+                : Point2D(x: current.x + (x ?? 0), y: current.y + (y ?? 0))
+            try GeometryLimits.point(current, context: fileName + ": " + line)
             let diameter = selectedTool.flatMap { tools[$0] } ?? 0.3
             try budget.charge("geometry objects", 1, maximum: budget.limits.geometryObjects, path: fileName)
             try budget.charge("geometry points", 1, maximum: budget.limits.geometryPoints, path: fileName)
@@ -107,17 +92,4 @@ public struct ExcellonParser: Sendable {
         return fields
     }
 
-    private func decode(_ text: String, decimalDigits: Int, leadingZerosOmitted: Bool) -> Double? {
-        if text.contains(".") { return Double(text) }
-        var value = text
-        let negative = value.hasPrefix("-")
-        if negative || value.hasPrefix("+") { value.removeFirst() }
-        if !leadingZerosOmitted {
-            let totalDigits = decimalDigits + 3
-            value += String(repeating: "0", count: max(0, totalDigits - value.count))
-        }
-        guard let integer = Double(value) else { return nil }
-        return (negative ? -integer : integer) / pow(10, Double(decimalDigits))
-    }
 }
-

@@ -236,7 +236,7 @@ struct WorkspaceView: View {
                 goodDetail: "Parsed",
                 badDetail: "Missing"
             )
-            statusRow(!document.drills.isEmpty, label: "Drill map", goodDetail: "Aligned", badDetail: "Missing")
+            statusRow(!document.drills.isEmpty, label: "Drill map", goodDetail: "Present · alignment unverified", badDetail: "Missing")
             if document.packageRole == .jlcpcbProduction {
                 statusRow(true, label: "Production set", goodDetail: "JLCPCB OK", badDetail: "")
             }

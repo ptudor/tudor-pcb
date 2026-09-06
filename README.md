@@ -80,3 +80,12 @@ geometry. Codable retains all existing shape cases and adds `compound`; old
 payloads still decode, while older readers must reject the new case rather than
 substituting geometry. Reference semantics: [Ucamco Gerber specification, sections
 4.4–4.5](https://www.ucamco.com/files/downloads/file_en/456/gerber-layer-format-specification-revision-2024-05_en.pdf).
+
+Excellon coordinates support explicit decimals (including EasyEDA/XNC), G90/G91
+and ICI modes, declared integer/fractional precision, Altium `FILE_FORMAT`, and
+KiCad `FORMAT` comments. LZ/TZ use the CNC-7/KiCad **retained-zero** convention:
+LZ retains leading zeros; TZ retains trailing zeros. This matches
+[KiCad's exporter](https://docs.kicad.org/doxygen/gendrill__excellon__writer_8cpp_source.html).
+Integer coordinates without enough format information are rejected with an
+explicit diagnostic; export explicit decimals or include a recognized declaration.
+A present drill map does not establish alignment.
