@@ -264,20 +264,31 @@ struct WorkspaceView: View {
             statusRow(
                 document.layers.contains { $0.kind == .outline },
                 label: "Board outline",
-                goodDetail: "Parsed",
+                goodDetail: "Loaded · topology is not manufacturing validation",
                 badDetail: "Missing"
             )
-            statusRow(!document.drills.isEmpty, label: "Drill map", goodDetail: "Present · alignment unverified", badDetail: "Missing")
+            statusRow(!document.drills.isEmpty, label: "Drill map", goodDetail: "Present · registration unverified", badDetail: "Missing")
             if document.packageRole == .jlcpcbProduction {
-                statusRow(true, label: "Production set", goodDetail: "JLCPCB OK", badDetail: "")
+                Label("Source folder: ok/ · JLCPCB production data", systemImage: "folder")
+                    .font(.caption).foregroundStyle(.secondary)
             }
+            Text("Inspected source: \(document.name) · \(document.sourceSelection?.displayName ?? "direct input")")
+                .font(.caption).textSelection(.enabled)
+            Label("Review incomplete", systemImage: "exclamationmark.triangle")
+                .font(.caption.weight(.semibold)).foregroundStyle(.orange)
+            Text("Layer completeness, drill registration, and manufacturing suitability have not been verified. Check import warnings and layer display limits.")
+                .font(.caption).foregroundStyle(.secondary)
             ForEach([GerberSide.top, .bottom], id: \.self) { side in
                 if document.colorSilkscreens.contains(where: { $0.side == side }) || document.sidePreviews.contains(where: { $0.side == side }) {
                     statusRow(document.proofState(for: side) == .mappedArtwork,
                         label: "\(side.rawValue.capitalized) color",
                         goodDetail: document.proofState(for: side).label,
-                        badDetail: document.proofState(for: side).label)
+                        badDetail: document.proofState(for: side).label, validated: true)
                 }
+            }
+            if !document.sidePreviews.isEmpty {
+                Text("Proof validation checks image format and bounded pixel decoding; it does not check artwork registration.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             if !document.colorSilkscreens.isEmpty {
                 Text("Factory payloads present · validity unverified")
@@ -298,10 +309,10 @@ struct WorkspaceView: View {
         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 12))
     }
 
-    private func statusRow(_ good: Bool, label: String, goodDetail: String, badDetail: String) -> some View {
+    private func statusRow(_ good: Bool, label: String, goodDetail: String, badDetail: String, validated: Bool = false) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: good ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .foregroundStyle(good ? .green : .orange)
+            Image(systemName: good ? (validated ? "checkmark.circle.fill" : "info.circle") : "exclamationmark.triangle.fill")
+                .foregroundStyle(good ? (validated ? .green : .secondary) : .orange)
             Text(label)
             Spacer()
             Text(good ? goodDetail : badDetail)
