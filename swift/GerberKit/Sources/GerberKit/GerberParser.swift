@@ -130,6 +130,8 @@ private struct ParserMachine {
     var pendingRegionPoints = 0
     var terminated = false
     var repeatOpen = false
+    var repeatPrimitives: [GerberPrimitive] = []
+    var repeatExpandedCount = 0
     var singleQuadrant = false
     var hasFormat = false
     var hasUnits = false
@@ -309,6 +311,21 @@ private struct ParserMachine {
     mutating func parseStepRepeat(_ command: String) {
         if command == "SR" {
             guard repeatOpen else { invalidCommand(command, "Repeat close without an open block."); return }
+            // Ucamco copies the complete ordered block along Y, then X.
+            for x in 0..<stepRepeat.xCount {
+                for y in 0..<stepRepeat.yCount {
+                    let offset = Point2D(x: Double(x) * stepRepeat.xStep, y: Double(y) * stepRepeat.yStep)
+                    for primitive in repeatPrimitives {
+                        if Task.isCancelled { failure = CancellationError(); return }
+                        let translated = Self.translate(primitive, by: offset)
+                        do { _ = try GeometryLimits.cost(translated, context: fileName) }
+                        catch { failure = error; return }
+                        primitives.append(translated)
+                    }
+                }
+            }
+            repeatPrimitives.removeAll()
+            repeatExpandedCount = 0
             stepRepeat = StepRepeat(); repeatOpen = false; return
         }
         guard !repeatOpen else { invalidCommand(command, "Nested step-repeat is not supported; layer rejected."); return }
@@ -489,7 +506,7 @@ private struct ParserMachine {
 
     mutating func append(_ primitive: GerberPrimitive) {
         let (copies, overflow) = stepRepeat.xCount.multipliedReportingOverflow(by: stepRepeat.yCount)
-        guard !overflow, copies <= maximumObjects - primitives.count else {
+        guard !overflow, copies <= maximumObjects - primitives.count - repeatExpandedCount else {
             failure = ImportLimitError(resource: "geometry objects", path: fileName); return
         }
         let points: Int
@@ -500,17 +517,11 @@ private struct ParserMachine {
             failure = ImportLimitError(resource: "geometry points", path: fileName); return
         }
         pointCount += addedPoints
-        for x in 0..<stepRepeat.xCount {
-            for y in 0..<stepRepeat.yCount {
-                if Task.isCancelled { failure = CancellationError(); return }
-                let translated = Self.translate(
-                    primitive,
-                    by: Point2D(x: Double(x) * stepRepeat.xStep, y: Double(y) * stepRepeat.yStep)
-                )
-                do { _ = try GeometryLimits.cost(translated, context: fileName) }
-                catch { failure = error; return }
-                primitives.append(translated)
-            }
+        if repeatOpen {
+            repeatExpandedCount += copies
+            repeatPrimitives.append(primitive)
+        } else {
+            primitives.append(primitive)
         }
     }
 
