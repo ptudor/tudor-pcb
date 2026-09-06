@@ -22,6 +22,8 @@ enum BoardMaskStyle: String, CaseIterable, Identifiable {
     }
 }
 
+enum BoardInspectionTarget: Hashable { case layer(String), drills }
+
 enum WorkspaceOperation {
     case openPackage, selectPackage, attachProof, selectProof, mapProof, renderBoard
     var failureTitle: String {
@@ -59,6 +61,8 @@ final class WorkspaceModel {
     var relinkEntry: PackageHistoryEntry?
     var candidateChoices: [FabricationSelection] = []
     private var candidateURL: URL?
+    var inspectionTarget: BoardInspectionTarget?
+    let inspectBoard: @Sendable (BoardDocument, Set<String>, Bool, Bounds2D?) async throws -> BoardInspectionImage
     var visibleLayerIDs: Set<String> = []
     var maskStyle = BoardMaskStyle.green
     var showProofs = false
@@ -104,6 +108,7 @@ final class WorkspaceModel {
         self.resolveHistory = resolveHistory
         self.readProof = readProof
         let worker = FabricationWorkSession()
+        self.inspectBoard = { try await worker.inspect($0, layerIDs: $1, showDrills: $2, viewport: $3) }
         self.loadPackage = loadPackage ?? { try await worker.load($0) }
         self.loadSelection = loadSelection ?? { try await worker.load($0, selection: $1) }
         self.renderBoard = renderBoard ?? { try await worker.render($0, options: $1) }
@@ -164,6 +169,7 @@ final class WorkspaceModel {
                 document = next
                 textures = rendered
                 visibleLayerIDs = visible
+                inspectionTarget = nil
                 currentHistoryEntryID = history.record(historyEntry, reopening: fromHistory ?? relinking)
                 phase = .idle
                 loadTask = nil
@@ -236,7 +242,7 @@ final class WorkspaceModel {
     func recoverHistory() { history.recover() }
 
     func toggleLayer(_ layer: GerberLayer) {
-        guard !isOpening else { return }
+        guard !isOpening, layer.kind.hasPhysicalAppearanceControl else { return }
         if visibleLayerIDs.contains(layer.id) {
             visibleLayerIDs.remove(layer.id)
         } else {

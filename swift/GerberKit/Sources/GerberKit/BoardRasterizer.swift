@@ -61,6 +61,12 @@ public struct BoardTextureSet: @unchecked Sendable {
     }
 }
 
+public struct BoardInspectionImage: @unchecked Sendable {
+    public let image: CGImage
+    public let bounds: Bounds2D
+    public let millimetersPerPixel: Double
+}
+
 public enum BoardRasterizerError: Error, LocalizedError, Sendable {
     case contextCreation
     case imageCreation
@@ -79,6 +85,45 @@ public struct BoardRasterizer: Sendable {
     public func render(_ document: BoardDocument, options: BoardRenderOptions = .init()) throws -> BoardTextureSet {
         var cache = RasterCache()
         return try render(document, options: options, cache: &cache)
+    }
+
+    /// Draws source layers independently of substrate/face material. Drill marks
+    /// are an optional inspection overlay and never modify physical geometry.
+    public func renderInspection(_ document: BoardDocument, layerIDs: Set<String>, showDrills: Bool,
+                                 viewport: Bounds2D? = nil, maximumTextureDimension: Int = 2048) throws -> BoardInspectionImage {
+        try document.validateForRendering()
+        var bounds = document.bounds
+        if let viewport { bounds = viewport }
+        else {
+            for layer in document.layers where layerIDs.contains(layer.id) {
+                if let layerBounds = layer.bounds { bounds = bounds.union(layerBounds) }
+            }
+            if showDrills {
+                for drill in document.drills {
+                    bounds = bounds.union(Bounds2D.containing([drill.center] + (drill.end.map { [$0] } ?? []))!.expanded(by: drill.diameter / 2))
+                }
+            }
+        }
+        var validation = document; validation.bounds = bounds
+        try validation.validateForRendering()
+        let scale = Double(min(4096, max(256, maximumTextureDimension))) / max(bounds.width, bounds.height)
+        let width = max(8, Int(ceil(bounds.width * scale))), height = max(8, Int(ceil(bounds.height * scale)))
+        let canvas = CGRect(x: 0, y: 0, width: width, height: height)
+        guard let context = makeContext(width: width, height: height) else { throw BoardRasterizerError.contextCreation }
+        for layer in document.layers where layerIDs.contains(layer.id) {
+            try composite(layer: layer, color: RGBAColor(red: 0.9, green: 0.94, blue: 1), context: context,
+                          bounds: bounds, scale: scale, canvas: canvas, outlineBarrier: layer.kind == .outline)
+        }
+        if showDrills {
+            let primitives = document.drills.map { drill -> GerberPrimitive in
+                if let end = drill.end { return .line(start: drill.center, end: end, width: drill.diameter, polarity: .dark) }
+                return .flash(center: drill.center, shape: .circle(diameter: drill.diameter), polarity: .dark)
+            }
+            try composite(layer: GerberLayer(fileName: "Drill overlay", kind: .drill(plated: nil), primitives: primitives),
+                          color: RGBAColor(red: 1, green: 0.65, blue: 0.15), context: context, bounds: bounds, scale: scale, canvas: canvas)
+        }
+        guard let image = context.makeImage() else { throw BoardRasterizerError.imageCreation }
+        return BoardInspectionImage(image: image, bounds: bounds, millimetersPerPixel: 1 / scale)
     }
 
     fileprivate func render(_ document: BoardDocument, options: BoardRenderOptions, cache: inout RasterCache) throws -> BoardTextureSet {
@@ -218,14 +263,15 @@ public struct BoardRasterizer: Sendable {
         context: CGContext,
         bounds: Bounds2D,
         scale: Double,
-        canvas: CGRect
+        canvas: CGRect,
+        outlineBarrier: Bool = false
     ) throws {
         guard let maskContext = makeContext(width: Int(canvas.width), height: Int(canvas.height)) else {
             throw BoardRasterizerError.contextCreation
         }
         for primitive in layer.primitives {
             try Task.checkCancellation()
-            try draw(primitive, in: maskContext, bounds: bounds, scale: scale)
+            try draw(primitive, in: maskContext, bounds: bounds, scale: scale, outlineBarrier: outlineBarrier)
         }
         guard let mask = maskContext.makeImage() else { throw BoardRasterizerError.imageCreation }
         context.saveGState()
@@ -518,6 +564,9 @@ public actor FabricationWorkSession {
     public func load(_ url: URL, selection: FabricationSelection? = nil) throws -> BoardDocument {
         try Task.checkCancellation()
         return try FabricationPackageLoader().load(from: url, selection: selection)
+    }
+    public func inspect(_ document: BoardDocument, layerIDs: Set<String>, showDrills: Bool, viewport: Bounds2D? = nil) throws -> BoardInspectionImage {
+        try BoardRasterizer().renderInspection(document, layerIDs: layerIDs, showDrills: showDrills, viewport: viewport)
     }
     public func render(_ document: BoardDocument, options: BoardRenderOptions = .init()) throws -> BoardTextureSet {
         try Task.checkCancellation()

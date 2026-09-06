@@ -181,3 +181,13 @@ public struct DrillHit: Sendable, Hashable, Codable {
         self.layerSpan = layerSpan
     }
 }
+
+extension GerberLayerKind {
+    public var hasPhysicalAppearanceControl: Bool {
+        switch self {
+        case let .copper(side, index): index == nil && (side == .top || side == .bottom)
+        case let .solderMask(side), let .silkscreen(side): side == .top || side == .bottom
+        default: false
+        }
+    }
+}

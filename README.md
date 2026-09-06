@@ -126,3 +126,5 @@ cannot override material inside resolved contours. Raster results also expose
 these diagnostics through `BoardTextureSet.warnings`.
 
 Through holes and straight slots remove material from both faces and the board mask. Their 3D walls follow the actual tool diameter and endpoints; plated barrels use a metal finish and NPTH/unknown plating uses substrate. Blind/buried machining is rejected on import because partial-depth geometry is not supported. Closed routed and drilled boundaries are resolved together to avoid walls inside overlapping holes. Open-route panel inference remains explicitly diagnosed.
+
+Layer eyes control physical outer copper/mask/silkscreen appearance only. Every source layer has a selectable 2D inspector, including inner copper, paste, routed outlines, and V-cut/documentation. Outline and machining always determine physical board shape; their inspector overlays do not alter source geometry. Drills/slots have an explicit overlay visibility control in the 2D view. The inspector reports its actual physical raster resolution.

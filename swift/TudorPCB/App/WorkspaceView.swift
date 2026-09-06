@@ -17,8 +17,11 @@ struct WorkspaceView: View {
             ZStack {
                 MetalBoardView(document: model.document, textures: model.textures, controller: viewer)
                     .id(viewer.retryRevision)
-                    .opacity(viewer.rendererError == nil && !viewer.use2DFallback ? 1 : 0)
-                if viewer.use2DFallback, let textures = model.textures {
+                    .opacity(viewer.rendererError == nil && !viewer.use2DFallback && model.inspectionTarget == nil ? 1 : 0)
+                if let document = model.document, model.inspectionTarget != nil {
+                    LayerInspectionView(document: document, target: $model.inspectionTarget, render: model.inspectBoard)
+                        .background(.background)
+                } else if viewer.use2DFallback, let textures = model.textures {
                     VStack {
                         Text("2D faces · \(model.document?.name ?? "Board")")
                         HStack {
@@ -348,28 +351,28 @@ struct WorkspaceView: View {
             Text("LAYERS")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
+            Text("Eyes affect outer copper, mask and silk appearance. Outline and machining always define the physical board; inspect their source overlays in 2D.")
+                .font(.caption2).foregroundStyle(.secondary)
             ForEach(document.layers) { layer in
-                Button {
-                    model.toggleLayer(layer)
-                } label: {
-                    HStack(spacing: 9) {
-                        Image(systemName: model.visibleLayerIDs.contains(layer.id) ? "eye" : "eye.slash")
-                            .frame(width: 16)
-                            .foregroundStyle(layerColor(layer.kind))
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(layer.kind.displayName)
-                                .foregroundStyle(.primary)
-                            Text("\(layer.primitives.count.formatted()) objects")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
+                HStack(spacing: 9) {
+                    if layer.kind.hasPhysicalAppearanceControl {
+                        Button { model.toggleLayer(layer) } label: {
+                            Image(systemName: model.visibleLayerIDs.contains(layer.id) ? "eye" : "eye.slash")
+                        }.accessibilityLabel("Toggle physical \(layer.kind.displayName)")
+                    } else { Text("2D").font(.caption2).foregroundStyle(.secondary) }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(layer.kind.displayName)
+                        Text(layer.fileName).font(.caption2).lineLimit(1).help(layer.fileName)
                     }
-                    .contentShape(Rectangle())
+                    Spacer()
+                    Button { model.inspectionTarget = .layer(layer.id) } label: { Image(systemName: "magnifyingglass") }
+                        .accessibilityLabel("Inspect \(layer.fileName) in 2D")
                 }
-                .buttonStyle(.plain)
-                .help(layer.fileName)
-                .disabled(model.isOpening)
+                .buttonStyle(.plain).disabled(model.isOpening)
+            }
+            if !document.drills.isEmpty {
+                Button("Inspect Drills / Slots in 2D", systemImage: "circle.dotted") { model.inspectionTarget = .drills }
+                    .disabled(model.isOpening)
             }
         }
     }
@@ -826,5 +829,53 @@ private struct ProofMappingView: View {
                 }
             }
         }.frame(idealWidth: 560, idealHeight: 650)
+    }
+}
+
+private struct LayerInspectionView: View {
+    let document: BoardDocument
+    @Binding var target: BoardInspectionTarget?
+    let render: @Sendable (BoardDocument, Set<String>, Bool, Bounds2D?) async throws -> BoardInspectionImage
+    @State private var showDrills = true
+    @State private var output: BoardInspectionImage?
+    @State private var error: String?
+    private struct Request: Equatable { var document: BoardDocument; var target: BoardInspectionTarget?; var drills: Bool }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Picker("Inspect source", selection: $target) {
+                    ForEach(document.layers) { layer in Text(layer.fileName).tag(Optional(BoardInspectionTarget.layer(layer.id))) }
+                    if !document.drills.isEmpty { Text("Drills and slots").tag(Optional(BoardInspectionTarget.drills)) }
+                }
+                Button("Physical Board") { target = nil }
+            }
+            Toggle("Show drill/slot overlay in this 2D view", isOn: $showDrills).disabled(document.drills.isEmpty)
+            ZStack {
+                Color.black
+                if let output { Image(decorative: output.image, scale: 1).resizable().scaledToFit().accessibilityLabel("Selected fabrication source in board coordinates") }
+                else { ProgressView("Drawing source geometry") }
+                if let error { Text(error).foregroundStyle(.orange).padding() }
+            }
+            if let output {
+                Text("Source geometry · \(output.millimetersPerPixel, format: .number.precision(.fractionLength(5))) mm/texel · \(output.image.width) × \(output.image.height) pixels")
+                    .font(.caption.monospacedDigit())
+            }
+            Text("Outline strokes include a visible centerline overlay. Hiding the drill overlay does not change physical holes or source data.")
+                .font(.caption2).foregroundStyle(.secondary)
+        }.padding()
+        .task(id: Request(document: document, target: target, drills: showDrills)) {
+            output = nil; error = nil
+            let ids: Set<String>
+            if case let .layer(id) = target { ids = [id] } else { ids = [] }
+            let task = Task { try await render(document, ids, showDrills, nil) }
+            do {
+                let image = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+                try Task.checkCancellation()
+                output = image
+                error = nil
+            } catch is CancellationError { }
+              catch { self.error = error.localizedDescription }
+        }
     }
 }
