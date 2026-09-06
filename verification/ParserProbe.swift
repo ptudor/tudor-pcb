@@ -21,9 +21,15 @@ import Foundation
                 print("BOUNDS \(bounds.minimum.x) \(bounds.minimum.y) \(bounds.maximum.x) \(bounds.maximum.y)")
                 return
             }
-            if CommandLine.arguments.contains("--package") {
+            if CommandLine.arguments.contains("--package") || CommandLine.arguments.contains("--render-package") {
                 let document = try FabricationPackageLoader().load(from: URL(fileURLWithPath: CommandLine.arguments[2]))
                 print("PACKAGE \(document.layers.count) layers \(document.drills.count) drills \(document.warnings)")
+                if CommandLine.arguments.contains("--render-package") {
+                    let textures = try BoardRasterizer().render(document)
+                    let bytes = textures.boardMask.dataProvider!.data! as Data
+                    let transparent = stride(from: 3, to: bytes.count, by: 4).filter { bytes[$0] == 0 }.count
+                    print("RASTER \(textures.pixelWidth)x\(textures.pixelHeight) transparent=\(transparent)")
+                }
                 return
             }
             let layer = try GerberParser().parse(data: source, fileName: "subprocess.gtl")

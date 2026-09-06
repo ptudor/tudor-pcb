@@ -297,7 +297,7 @@ public struct FabricationPackageLoader: Sendable {
         let safeBounds = bounds.flatMap { $0.width > 0 && $0.height > 0 ? $0 : nil }
             ?? Bounds2D(minimum: .zero, maximum: Point2D(x: 100, y: 60))
 
-        return BoardDocument(
+        var document = BoardDocument(
             name: name,
             layers: layers,
             drills: drills,
@@ -306,6 +306,8 @@ public struct FabricationPackageLoader: Sendable {
             sidePreviews: previews,
             warnings: warnings
         )
+        document.warnings += try BoardOutlineExtractor.topology(in: document).warnings
+        return document
     }
 
     private func filesInDirectory(_ directory: URL, budget: inout ImportBudget) throws -> [ZipEntry] {
