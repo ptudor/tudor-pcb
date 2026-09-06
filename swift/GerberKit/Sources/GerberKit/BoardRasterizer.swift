@@ -205,7 +205,6 @@ public struct BoardRasterizer: Sendable {
             try composite(layer: layer, color: silkColor, context: context, bounds: bounds, scale: scale, canvas: canvas)
         }
 
-        try drawDrills(document.drills, in: context, bounds: bounds, scale: scale)
         guard let image = context.makeImage() else { throw BoardRasterizerError.imageCreation }
         return image
     }
@@ -267,6 +266,8 @@ public struct BoardRasterizer: Sendable {
             context.addPath(try outlinePath(topology.materialContours, bounds: bounds, scale: scale))
             context.fillPath(using: .winding)
         }
+        context.setBlendMode(.clear)
+        try subtractDrills(document.drills, in: context, bounds: bounds, scale: scale)
         guard let image = context.makeImage() else { throw BoardRasterizerError.imageCreation }
         return image
     }
@@ -459,15 +460,15 @@ public struct BoardRasterizer: Sendable {
         }
     }
 
-    private func drawDrills(_ drills: [DrillHit], in context: CGContext, bounds: Bounds2D, scale: Double) throws {
+    private func subtractDrills(_ drills: [DrillHit], in context: CGContext, bounds: Bounds2D, scale: Double) throws {
         for drill in drills {
             try Task.checkCancellation()
             let center = pixel(drill.center, bounds: bounds, scale: scale)
             let end = drill.end.map { pixel($0, bounds: bounds, scale: scale) }
-            let diameter = max(1, drill.diameter * scale)
-            context.setFillColor(red: 0.012, green: 0.014, blue: 0.016, alpha: 1)
+            let diameter = drill.diameter * scale
+            context.setFillColor(gray: 1, alpha: 1)
             if let end {
-                context.setStrokeColor(red: 0.012, green: 0.014, blue: 0.016, alpha: 1)
+                context.setStrokeColor(gray: 1, alpha: 1)
                 context.setLineCap(.round)
                 context.setLineWidth(diameter)
                 context.move(to: center)

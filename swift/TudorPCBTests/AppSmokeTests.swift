@@ -4,6 +4,65 @@ import MetalKit
 @testable import TudorPCB
 
 final class AppSmokeTests: XCTestCase {
+    @MainActor
+    func testMachinedFacesRevealContrastingBackgroundAndHavePhysicalWalls() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let renderer = try BoardRenderer(device: device, colorPixelFormat: .bgra8Unorm_srgb, depthPixelFormat: .depth32Float)
+        let board = BoardDocument(name: "through machining", drills: [
+            DrillHit(center: Point2D(x: 5, y: 5), diameter: 4, plated: true),
+            DrillHit(center: Point2D(x: 2, y: 1), end: Point2D(x: 8, y: 1), diameter: 1, plated: false)
+        ], bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 10, y: 10)), thicknessMillimeters: 1.6)
+        renderer.update(document: board, textures: try BoardRasterizer().render(board, options: .init(maximumTextureDimension: 1024)))
+        XCTAssertNil(renderer.geometryError)
+        let vertexBuffer = try XCTUnwrap(renderer.vertexBuffer)
+        let vertices = Array(UnsafeBufferPointer(start: vertexBuffer.contents().assumingMemoryBound(to: BoardRenderer.BoardVertex.self), count: vertexBuffer.length / MemoryLayout<BoardRenderer.BoardVertex>.stride))
+        XCTAssertTrue(vertices.contains { $0.material == 2 })
+        let barrels = vertices.filter { $0.material == 3 }
+        XCTAssertFalse(barrels.isEmpty)
+        for vertex in barrels {
+            XCTAssertEqual(hypot(vertex.position.x, vertex.position.z) * 10, 2, accuracy: 0.0001)
+            XCTAssertEqual(abs(vertex.position.y) * 10, 0.8, accuracy: 0.0001)
+        }
+        let view = MTKView(frame: CGRect(x: 0, y: 0, width: 256, height: 256), device: device)
+        view.colorPixelFormat = .bgra8Unorm_srgb
+        view.depthStencilPixelFormat = .depth32Float
+        view.framebufferOnly = false
+        view.isPaused = true
+        view.clearColor = MTLClearColor(red: 1, green: 0, blue: 1, alpha: 1)
+        let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = view
+        window.orderFront(nil)
+        defer { window.orderOut(nil) }
+        var slotBoard = board
+        slotBoard.drills = [DrillHit(center: Point2D(x: 2, y: 5), end: Point2D(x: 8, y: 5), diameter: 2, plated: false)]
+        for machiningBoard in [board, slotBoard] {
+        renderer.update(document: machiningBoard, textures: try BoardRasterizer().render(machiningBoard, options: .init(maximumTextureDimension: 1024)))
+        for preset in [CameraPreset.top, .bottom, .perspective] {
+            renderer.apply(preset)
+            if preset == .perspective { renderer.orbit(deltaX: 0, deltaY: 60) }
+            let drawable = try XCTUnwrap(view.currentDrawable)
+            renderer.draw(in: view)
+            let command = try XCTUnwrap(renderer.lastCommandBuffer)
+            command.waitUntilCompleted()
+            XCTAssertEqual(command.status, .completed)
+            let texture = drawable.texture
+            let bytesPerRow = texture.width * 4
+            let output = try XCTUnwrap(device.makeBuffer(length: bytesPerRow * texture.height, options: .storageModeShared))
+            let copy = try XCTUnwrap(device.makeCommandQueue()?.makeCommandBuffer())
+            let blit = try XCTUnwrap(copy.makeBlitCommandEncoder())
+            blit.copy(from: texture, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(), sourceSize: MTLSize(width: texture.width, height: texture.height, depth: 1), to: output, destinationOffset: 0, destinationBytesPerRow: bytesPerRow, destinationBytesPerImage: bytesPerRow * texture.height)
+            blit.endEncoding(); copy.commit(); copy.waitUntilCompleted()
+            XCTAssertEqual(copy.status, .completed)
+            let pixels = output.contents().assumingMemoryBound(to: UInt8.self)
+            let center = (texture.height / 2) * bytesPerRow + (texture.width / 2) * 4
+            XCTAssertEqual(Array(UnsafeBufferPointer(start: pixels + center, count: 4)), [255, 0, 255, 255])
+            // Both a visible face and background must be present in the frame.
+            let nonBackground = stride(from: 0, to: bytesPerRow * texture.height, by: 4).filter { pixels[$0 + 1] > 0 && pixels[$0 + 1] < 250 }
+            XCTAssertGreaterThan(nonBackground.count, 500)
+        }
+        }
+    }
+
     func testHistoryMergePreservesFirstVisitAndIncrementsCount() throws {
         let url = FileManager.default.temporaryDirectory
             .appending(path: "tudor-pcb-history-test-\(UUID().uuidString).gbr")

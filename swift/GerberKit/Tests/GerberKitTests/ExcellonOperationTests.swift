@@ -15,10 +15,8 @@ import Testing
     let bounds = Bounds2D(minimum: .zero, maximum: Point2D(x: 8, y: 4))
     let textures = try BoardRasterizer().render(BoardDocument(name: "slot", drills: slot, bounds: bounds), options: .init(maximumTextureDimension: 256))
     let slotAlpha = try rgba(textures.boardMask, x: 96, y: 64)[3]
-    withKnownIssue("RA6X-026: drilling is still painted on faces instead of removed from the substrate mask") {
-        #expect(slotAlpha == 0)
-    }
-    #expect(try rgba(textures.top, x: 96, y: 64)[0] < 10)
+    #expect(slotAlpha == 0)
+    #expect(try rgba(textures.top, x: 96, y: 64)[3] == 0)
     #expect(try rgba(textures.boardMask, x: 96, y: 32)[3] == 255)
 }
 

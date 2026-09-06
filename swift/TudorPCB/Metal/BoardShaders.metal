@@ -43,8 +43,8 @@ fragment float4 board_fragment(
     texture2d<float> maskTexture [[texture(2)]],
     sampler textureSampler [[sampler(0)]],
     constant BoardUniforms &uniforms [[buffer(0)]]) {
-    if (in.material == 2) {
-        float3 edge = float3(0.18, 0.14, 0.075);
+    if (in.material == 2 || in.material == 3) {
+        float3 edge = in.material == 3 ? float3(0.72, 0.48, 0.18) : float3(0.18, 0.14, 0.075);
         float diffuse = 0.45 + 0.45 * max(0.0, dot(normalize(in.normal), normalize(uniforms.lightDirection.xyz)));
         return float4(edge * diffuse, 1.0);
     }

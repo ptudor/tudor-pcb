@@ -112,3 +112,5 @@ resolve overlapping regions before rasterization. Open, ambiguous or unsupported
 outline paths retain an explicitly warned panel-rail inference; that inference
 cannot override material inside resolved contours. Raster results also expose
 these diagnostics through `BoardTextureSet.warnings`.
+
+Through holes and straight slots remove material from both faces and the board mask. Their 3D walls follow the actual tool diameter and endpoints; plated barrels use a metal finish and NPTH/unknown plating uses substrate. Blind/buried machining is rejected on import because partial-depth geometry is not supported. Closed routed and drilled boundaries are resolved together to avoid walls inside overlapping holes. Open-route panel inference remains explicitly diagnosed.

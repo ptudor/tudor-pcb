@@ -3,6 +3,7 @@ import Foundation
 public struct OutlineMaterialOperation: Sendable {
     public var contours: [[Point2D]]
     public var polarity: GerberPolarity
+    var usesWinding: Bool = false
 }
 
 public struct BoardOutlineTopology: Sendable {

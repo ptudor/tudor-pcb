@@ -22,7 +22,7 @@ enum OutlineMaterialResolver {
         for operation in operations where !operation.contours.isEmpty {
             try Task.checkCancellation()
             _ = try preflight(contours + operation.contours)
-            let incoming = path(operation.contours).normalized(using: .evenOdd)
+            let incoming = path(operation.contours).normalized(using: operation.usesWinding ? .winding : .evenOdd)
             resolved = operation.polarity == .dark ? resolved.union(incoming, using: .winding) : resolved.subtracting(incoming, using: .winding)
             contours = try extract(resolved)
         }

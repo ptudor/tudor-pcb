@@ -299,11 +299,11 @@ final class BoardRenderer {
         let yTop = halfHeight
         let yBottom = -halfHeight
 
-        let edgePaths = try BoardOutlineExtractor.edgePaths(in: document)
+        let wallPaths = try BoardMachiningExtractor.wallPaths(in: document)
         let maximumVertices = GeometryLimits.meshVertices
         var faces = 2
-        for path in edgePaths {
-            let added = max(0, path.count - 1)
+        for path in wallPaths {
+            let added = max(0, path.points.count - 1)
             guard added <= maximumVertices / 4 - faces else { throw RendererError.meshCapacity }
             faces += added
         }
@@ -342,17 +342,18 @@ final class BoardRenderer {
         ])
 
         let edgeUV = Array(repeating: SIMD2<Float>(0.5, 0.5), count: 4)
-        for edgePath in edgePaths where edgePath.count >= 2 {
+        for wallPath in wallPaths where wallPath.points.count >= 2 {
+            let edgePath = wallPath.points
             for index in 0..<(edgePath.count - 1) {
                 let p0 = worldPoint(edgePath[index])
                 let p1 = worldPoint(edgePath[index + 1])
                 let delta = p1 - p0
                 guard simd_length(delta) > 0.000_001 else { continue }
-                let normal = normalize(SIMD3<Float>(delta.z, 0, -delta.x))
+                let normal = normalize(SIMD3<Float>(-delta.z, 0, delta.x))
                 try face([
                     SIMD3(p0.x, yBottom, p0.z), SIMD3(p1.x, yBottom, p1.z),
                     SIMD3(p1.x, yTop, p1.z), SIMD3(p0.x, yTop, p0.z)
-                ], normal: normal, material: 2, uv: edgeUV)
+                ], normal: normal, material: wallPath.plated ? 3 : 2, uv: edgeUV)
             }
         }
 
