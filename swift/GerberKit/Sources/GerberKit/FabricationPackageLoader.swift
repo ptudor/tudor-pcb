@@ -310,17 +310,24 @@ public struct FabricationPackageLoader: Sendable {
 
     private func filesInDirectory(_ directory: URL, budget: inout ImportBudget) throws -> [ZipEntry] {
         let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .fileSizeKey]
+        var traversalErrors: [String] = []
         guard let enumerator = FileManager.default.enumerator(
             at: directory, includingPropertiesForKeys: keys,
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else { return [] }
+            options: [.skipsHiddenFiles, .skipsPackageDescendants],
+            errorHandler: { url, error in
+                traversalErrors.append("\(url.path): \(error.localizedDescription)")
+                return false
+            }
+        ) else { throw FabricationContainerError(path: [directory.path], reason: "Could not enumerate fabrication directory.") }
         var files: [ZipEntry] = []
         for case let fileURL as URL in enumerator {
             try Task.checkCancellation()
             guard enumerator.level <= limits.directoryDepth else {
                 throw ImportLimitError(resource: "directory depth", path: fileURL.path)
             }
-            let values = try fileURL.resourceValues(forKeys: Set(keys))
+            let values: URLResourceValues
+            do { values = try fileURL.resourceValues(forKeys: Set(keys)) }
+            catch { throw FabricationContainerError(path: [fileURL.path], reason: "Could not read fabrication entry metadata: \(error.localizedDescription)") }
             guard values.isRegularFile == true, !isKnownIrrelevant(fileURL) else { continue }
             try budget.file(path: fileURL.path)
             files.append(ZipEntry(
@@ -329,6 +336,9 @@ public struct FabricationPackageLoader: Sendable {
                 name: fileURL.pathComponents.suffix(enumerator.level).joined(separator: "/"),
                 data: try readFile(fileURL, budget: &budget, isArchive: fileURL.pathExtension.lowercased() == "zip")
             ))
+        }
+        if !traversalErrors.isEmpty {
+            throw FabricationContainerError(path: [directory.path], reason: "Directory import is incomplete: " + traversalErrors.joined(separator: "\n"))
         }
         return files
     }

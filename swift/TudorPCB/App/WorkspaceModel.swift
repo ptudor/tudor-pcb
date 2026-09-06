@@ -22,6 +22,20 @@ enum BoardMaskStyle: String, CaseIterable, Identifiable {
     }
 }
 
+enum WorkspaceOperation {
+    case openPackage, selectPackage, attachProof, selectProof, mapProof, renderBoard
+    var failureTitle: String {
+        switch self {
+        case .openPackage: "Couldn’t open fabrication package"
+        case .selectPackage: "Couldn’t select fabrication package"
+        case .attachProof: "Couldn’t attach proof"
+        case .selectProof: "Couldn’t select proof"
+        case .mapProof: "Couldn’t map proof"
+        case .renderBoard: "Couldn’t render board"
+        }
+    }
+}
+
 enum WorkspacePhase: Equatable {
     case idle
     case opening(String)
@@ -38,6 +52,9 @@ final class WorkspaceModel {
     var isOpening: Bool { if case .opening = phase { true } else { false } }
     var pendingFileName: String? { if case let .opening(name) = phase { name } else { nil } }
     var errorMessage: String?
+    private(set) var failedOperation = WorkspaceOperation.openPackage
+    private(set) var failedProofSide = GerberSide.top
+    var errorTitle: String { failedOperation.failureTitle }
     var historyAccessError: String?
     var relinkEntry: PackageHistoryEntry?
     var candidateChoices: [FabricationSelection] = []
@@ -165,9 +182,16 @@ final class WorkspaceModel {
               catch {
                 guard generation == documentGeneration else { return }
                 phase = .idle
-                errorMessage = error.localizedDescription
+                reportFailure(error, operation: .openPackage, source: url.path)
             }
         }
+    }
+
+    func reportFailure(_ error: any Error, operation: WorkspaceOperation, source: String? = nil, side: GerberSide = .top) {
+        if error is CancellationError || (error as? CocoaError)?.code == .userCancelled { return }
+        failedOperation = operation
+        failedProofSide = side
+        errorMessage = (source.map { "\($0): " } ?? "") + error.localizedDescription
     }
 
     func chooseCandidate(_ selection: FabricationSelection) {
@@ -257,7 +281,7 @@ final class WorkspaceModel {
                 guard generation == proofGeneration, documentIdentity == documentGeneration else { return }
                 proofTask = nil
                 phase = .idle
-                errorMessage = error.localizedDescription
+                reportFailure(error, operation: .attachProof, source: url.path, side: side)
             }
         }
     }
@@ -282,7 +306,7 @@ final class WorkspaceModel {
 
     func mapArtwork(_ preview: BoardSidePreview, mapping: BoardArtworkMapping, resetToSupplied: Bool = false) {
         guard !isOpening, document?.sidePreviews.contains(where: { $0.id == preview.id }) == true else { return }
-        do { try mapping.validate() } catch { errorMessage = error.localizedDescription; return }
+        do { try mapping.validate() } catch { reportFailure(error, operation: .mapProof, source: preview.fileName, side: preview.side); return }
         proofTask?.cancel(); proofGeneration += 1
         let generation = proofGeneration, identity = documentGeneration
         phase = .rendering
@@ -305,7 +329,7 @@ final class WorkspaceModel {
             } catch {
                 guard generation == proofGeneration, identity == documentGeneration else { return }
                 proofTask = nil; phase = .idle
-                errorMessage = error.localizedDescription
+                reportFailure(error, operation: .mapProof, source: preview.fileName, side: preview.side)
             }
         }
     }
@@ -345,7 +369,7 @@ final class WorkspaceModel {
               catch {
                 guard generation == renderGeneration else { return }
                 phase = .idle
-                errorMessage = error.localizedDescription
+                reportFailure(error, operation: .renderBoard, source: document.name)
             }
         }
     }

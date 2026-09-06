@@ -146,6 +146,25 @@ private actor DelayedProofReader {
 
 extension AppSmokeTests {
     @MainActor
+    func testProviderCancellationAndOperationErrorsRemainDistinct() {
+        let model = WorkspaceModel(saveHistory: { _ in })
+        model.reportFailure(CocoaError(.userCancelled), operation: .selectPackage)
+        model.reportFailure(CancellationError(), operation: .selectProof)
+        XCTAssertNil(model.errorMessage)
+        model.reportFailure(CocoaError(.fileReadNoPermission), operation: .selectPackage, source: "provider/board.zip")
+        XCTAssertTrue(model.errorTitle.contains("select fabrication"))
+        XCTAssertTrue(model.errorMessage?.contains("provider/board.zip") == true)
+        model.reportFailure(ProofImageError.invalid("bad.png"), operation: .attachProof, source: "bad.png", side: .bottom)
+        XCTAssertTrue(model.errorTitle.contains("attach proof"))
+        XCTAssertEqual(model.failedProofSide, .bottom)
+        XCTAssertTrue(model.errorMessage?.contains("bad.png") == true)
+        model.reportFailure(BoardRasterizerError.contextCreation, operation: .renderBoard, source: "board A")
+        XCTAssertTrue(model.errorTitle.contains("render board"))
+        XCTAssertTrue(model.errorMessage?.contains("board A") == true)
+        XCTAssertTrue(model.errorMessage?.contains("texture canvas") == true)
+    }
+
+    @MainActor
     func testProofValidationPerSideWarningsAndHistoryMetadataStayCurrent() async throws {
         var source = BoardDocument(name: "two encrypted sides", colorSilkscreens: [
             ColorSilkscreenInfo(side: .top, fileName: "empty.FCTS", payload: .encryptedJLC, byteCount: 0),

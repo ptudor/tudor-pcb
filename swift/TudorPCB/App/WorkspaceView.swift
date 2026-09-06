@@ -82,21 +82,30 @@ struct WorkspaceView: View {
             allowedContentTypes: [.zip, .folder, .data],
             allowsMultipleSelection: false
         ) { result in
-            if case let .success(urls) = result, let url = urls.first { model.open(url) }
+            switch result {
+            case let .success(urls): if let url = urls.first { model.open(url) }
+            case let .failure(error): model.reportFailure(error, operation: .selectPackage)
+            }
         }
         .fileImporter(
             isPresented: $isImportingTopProof,
             allowedContentTypes: [.png, .jpeg, .tiff, .heic],
             allowsMultipleSelection: false
         ) { result in
-            if case let .success(urls) = result, let url = urls.first { model.attachColorProof(url, side: .top) }
+            switch result {
+            case let .success(urls): if let url = urls.first { model.attachColorProof(url, side: .top) }
+            case let .failure(error): model.reportFailure(error, operation: .selectProof, side: .top)
+            }
         }
         .fileImporter(
             isPresented: $isImportingBottomProof,
             allowedContentTypes: [.png, .jpeg, .tiff, .heic],
             allowsMultipleSelection: false
         ) { result in
-            if case let .success(urls) = result, let url = urls.first { model.attachColorProof(url, side: .bottom) }
+            switch result {
+            case let .success(urls): if let url = urls.first { model.attachColorProof(url, side: .bottom) }
+            case let .failure(error): model.reportFailure(error, operation: .selectProof, side: .bottom)
+            }
         }
         .focusedSceneValue(\.fabricationWorkspace, model)
         .onOpenURL { model.open($0) }
@@ -125,11 +134,22 @@ struct WorkspaceView: View {
                 Button("Cancel", role: .cancel) { model.cancelCandidateSelection() }
             }.padding().frame(minWidth: 320, idealWidth: 500, minHeight: 240)
         }
-        .alert("Couldn’t open fabrication package", isPresented: Binding(
+        .alert(model.errorTitle, isPresented: Binding(
             get: { model.errorMessage != nil },
             set: { if !$0 { model.errorMessage = nil } }
         )) {
-            Button("OK") { model.errorMessage = nil }
+            switch model.failedOperation {
+            case .openPackage, .selectPackage:
+                Button("Select Package…") { model.isImporting = true }
+            case .attachProof, .selectProof:
+                Button("Select Proof…") {
+                    if model.failedProofSide == .bottom { isImportingBottomProof = true }
+                    else { isImportingTopProof = true }
+                }
+            case .mapProof: Button("Review Proof Mapping") { model.showProofs = true }
+            case .renderBoard: Button("Retry Rendering") { model.rerender() }
+            }
+            Button("Dismiss", role: .cancel) { model.errorMessage = nil }
         } message: {
             Text(model.errorMessage ?? "Unknown error")
         }
@@ -152,7 +172,8 @@ struct WorkspaceView: View {
         .fileImporter(isPresented: $isRelinking, allowedContentTypes: [.zip, .folder, .data]) { result in
             switch result {
             case let .success(url): model.relink(url)
-            case let .failure(error): model.historyAccessError = error.localizedDescription
+            case let .failure(error):
+                if (error as? CocoaError)?.code != .userCancelled && !(error is CancellationError) { model.historyAccessError = error.localizedDescription }
             }
         }
         .sheet(isPresented: $model.showProofs) {
