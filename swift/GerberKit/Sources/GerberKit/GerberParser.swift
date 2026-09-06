@@ -446,7 +446,6 @@ private struct ParserMachine {
         if interpolation != .linear, singleQuadrant { invalidCommand(commandContext, "Unsupported G74 arc; layer rejected."); return }
         let shape = currentAperture.flatMap { apertures[$0] }
         if regionContours == nil, shape == nil { invalidCommand(commandContext, "Draw without a selected aperture."); return }
-        let width = shape.map { max($0.dimensions.width, $0.dimensions.height) } ?? 0
 
         if regionContours != nil {
             if regionContours?.isEmpty == true {
@@ -473,6 +472,21 @@ private struct ParserMachine {
             return
         }
 
+        if case let .rectangle(width, height) = shape, interpolation == .linear {
+            let halfWidth = width / 2, halfHeight = height / 2
+            var corners: [Point2D] = []
+            for center in [currentPoint, target] {
+                corners.append(Point2D(x: center.x - halfWidth, y: center.y - halfHeight))
+                corners.append(Point2D(x: center.x + halfWidth, y: center.y - halfHeight))
+                corners.append(Point2D(x: center.x + halfWidth, y: center.y + halfHeight))
+                corners.append(Point2D(x: center.x - halfWidth, y: center.y + halfHeight))
+            }
+            append(.region(contours: [Self.convexHull(corners)], polarity: polarity))
+            return
+        }
+        guard case let .circle(width) = shape else {
+            invalidCommand(commandContext, "Unsupported draw aperture; only solid circles and linear legacy rectangle sweeps are supported."); return
+        }
         switch interpolation {
         case .linear:
             append(.line(start: currentPoint, end: target, width: width, polarity: polarity))
@@ -486,6 +500,23 @@ private struct ParserMachine {
                 polarity: polarity
             ))
         }
+    }
+
+    private static func convexHull(_ points: [Point2D]) -> [Point2D] {
+        let sorted = Array(Set(points)).sorted { $0.x == $1.x ? $0.y < $1.y : $0.x < $1.x }
+        func half(_ input: [Point2D]) -> [Point2D] {
+            var result: [Point2D] = []
+            for point in input {
+                while result.count >= 2 {
+                    let a = result[result.count - 2], b = result[result.count - 1]
+                    if (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x) > 0 { break }
+                    result.removeLast()
+                }
+                result.append(point)
+            }
+            return result
+        }
+        return Array(half(sorted).dropLast()) + Array(half(sorted.reversed()).dropLast())
     }
 
     mutating func reserveRegionPoints(_ count: Int) -> Bool {
