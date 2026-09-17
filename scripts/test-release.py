@@ -132,6 +132,16 @@ class ReleaseChecks(unittest.TestCase):
         with self.assertRaises(ValueError):
             publish.select_release([draft, dict(draft)], 'v1.0.0')
 
+    def test_fresh_draft_lookup_retries_until_the_listing_catches_up(self):
+        answers = iter([None, None, {'tag_name': 'v1.0.0', 'draft': True}])
+        waits = []
+        found = publish.find_with_retry(lambda: next(answers), attempts=5, sleep=waits.append, interval=5)
+        self.assertEqual(found, {'tag_name': 'v1.0.0', 'draft': True})
+        self.assertEqual(waits, [5, 5])
+        waits.clear()
+        self.assertIsNone(publish.find_with_retry(lambda: None, attempts=3, sleep=waits.append, interval=1))
+        self.assertEqual(waits, [1, 1])
+
     def test_dsym_identity_uses_every_slice(self):
         listing = ('UUID: 7F4FC7AE-6C19-3366-ABBD-6D42EF8367FD (x86_64) /path/Tudor PCB\n'
                    'UUID: 475F0134-541B-36D6-9084-D3E95F53CF49 (arm64) /path/Tudor PCB\n')

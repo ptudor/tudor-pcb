@@ -350,9 +350,13 @@ release test pass.
   rejected build number means App Store Connect already holds that number for
   the version; fix the cause, commit, and tag a new version. Rerunning the
   packaging job produces new bytes, so delete any existing draft release first.
-- **Attestation failure:** the release remains a draft. Rerun the failed
-  `release` job for the same tag; it verifies the existing draft assets before
-  reusing them. Do not manually publish unverified files.
+- **Publish or attestation failure after signing:** the release remains a
+  draft and the signed packages remain on the run. Rerun only the failed job
+  with `gh run rerun RUN_ID --repo ptudor/tudor-pcb --failed`; it resumes the
+  existing draft, verifies any assets already uploaded, and reuses the same
+  signed bytes, so the tag stays where it is. A draft created seconds earlier
+  can be missing from GitHub's release listing for a short time; the publish
+  step waits for it. Do not manually publish unverified files.
 - **Failure after publication:** inspect the public assets. For changed code or
   bytes, issue a new version; do not silently replace files under an existing
   version.

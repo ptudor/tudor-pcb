@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import time
 
 
 def gh(*args):
@@ -26,6 +27,17 @@ def select_release(releases, tag):
 
 def list_releases(repository):
     return json.loads(gh("api", "repos/" + repository + "/releases?per_page=100"))
+
+
+def find_with_retry(lookup, attempts=24, sleep=time.sleep, interval=5):
+    """Call `lookup` until it returns a release; the listing lags a fresh draft by seconds."""
+    for attempt in range(attempts):
+        release = lookup()
+        if release is not None:
+            return release
+        if attempt + 1 < attempts:
+            sleep(interval)
+    return None
 
 
 def main():
@@ -56,9 +68,9 @@ def main():
             if "-" in version:
                 command.append("--prerelease")
             gh(*command)
-            release = select_release(list_releases(repository), args.tag)
+            release = find_with_retry(lambda: select_release(list_releases(repository), args.tag))
             if release is None:
-                raise SystemExit("The draft release was created but does not appear in the release listing")
+                raise SystemExit("The draft release was created but did not appear in the release listing within two minutes")
     except ValueError as error:
         raise SystemExit(str(error)) from None
     if not release["draft"] or release["tag_name"] != args.tag:
@@ -74,7 +86,10 @@ def main():
     final = select_release(list_releases(repository), args.tag)
     if final is None or {asset["name"]: asset.get("digest") for asset in final["assets"]} != {name: "sha256:" + digest for name, digest in hashes.items()}:
         raise SystemExit("Uploaded draft assets do not match the verified bytes")
-    print("Draft assets verified; ready for provenance attestation and publication")
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            output.write("release_id=" + str(final["id"]) + "\n")
+    print("Draft assets verified; ready for provenance attestation and publication (release id " + str(final["id"]) + ")")
 
 
 if __name__ == "__main__":

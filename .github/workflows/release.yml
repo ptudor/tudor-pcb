@@ -130,7 +130,8 @@ jobs:
         with:
           name: tudorpcb-release-macos
           path: dist
-      - name: Verify final bytes and prepare the draft
+      - id: draft
+        name: Verify final bytes and prepare the draft
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -148,5 +149,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release edit "$RELEASE_TAG" --draft=false
+          RELEASE_ID: ${{ steps.draft.outputs.release_id }}
+        run: gh api --method PATCH "repos/$GH_REPO/releases/$RELEASE_ID" -F draft=false --jq .html_url
