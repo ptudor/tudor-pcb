@@ -889,6 +889,45 @@ extension AppSmokeTests {
 
 
 extension AppSmokeTests {
+    /// Polls until the renderer has submitted a frame beyond `count`; fails after `timeout`.
+    @MainActor
+    private func frames(after count: Int, renderer: BoardRenderer, timeout: Duration = .seconds(5)) async throws -> Int {
+        let deadline = ContinuousClock.now + timeout
+        while renderer.renderedFrameCount <= count {
+            if ContinuousClock.now >= deadline {
+                XCTFail("No frame was submitted within \(timeout) after frame \(count)")
+                break
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        return renderer.renderedFrameCount
+    }
+
+    /// Polls until the view is paused and the frame count has stayed unchanged for 300 ms; returns that count.
+    @MainActor
+    private func quiescentFrames(view: MTKView, renderer: BoardRenderer, timeout: Duration = .seconds(5)) async throws -> Int {
+        let deadline = ContinuousClock.now + timeout
+        var stable = renderer.renderedFrameCount
+        var since = ContinuousClock.now
+        while true {
+            try await Task.sleep(for: .milliseconds(20))
+            let current = renderer.renderedFrameCount
+            if current != stable || !view.isPaused {
+                stable = current
+                since = ContinuousClock.now
+            } else if ContinuousClock.now - since >= .milliseconds(300) {
+                return stable
+            }
+            if ContinuousClock.now >= deadline {
+                XCTFail("Rendering did not settle within \(timeout)")
+                return stable
+            }
+        }
+    }
+
+    // AppKit display cycles, window-server occlusion notifications, and the zoom display link
+    // run on their own schedule, so each step waits for an observable condition with a deadline
+    // rather than sampling after a fixed sleep.
     @MainActor
     func testMetalFramesStopWhenEmptySettledHiddenOrInactiveAndResumeUpdates() async throws {
         let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
@@ -903,54 +942,49 @@ extension AppSmokeTests {
         window.contentView = view
         window.orderFrontRegardless()
         defer { window.orderOut(nil) }
-        try await Task.sleep(for: .milliseconds(150))
+        let empty = try await quiescentFrames(view: view, renderer: renderer)
+        XCTAssertEqual(empty, 0)
         XCTAssertTrue(view.isPaused)
-        XCTAssertEqual(renderer.renderedFrameCount, 0)
         let board = BoardDocument(name: "frame test", bounds: Bounds2D(minimum: .zero, maximum: Point2D(x: 20, y: 10)))
         let textures = try BoardRasterizer().render(board, options: .init(maximumTextureDimension: 256))
         renderer.update(document: board, textures: textures)
         coordinator.invalidate()
-        try await Task.sleep(for: .milliseconds(250))
-        let first = renderer.renderedFrameCount
-        XCTAssertGreaterThan(first, 0)
+        let first = try await frames(after: 0, renderer: renderer)
+        let idle = try await quiescentFrames(view: view, renderer: renderer)
         XCTAssertTrue(view.isPaused)
         try await Task.sleep(for: .milliseconds(250))
-        XCTAssertEqual(renderer.renderedFrameCount, first)
+        XCTAssertEqual(renderer.renderedFrameCount, idle)
         coordinator.orbit(deltaX: 30, deltaY: 10)
-        try await Task.sleep(for: .milliseconds(150))
-        XCTAssertGreaterThan(renderer.renderedFrameCount, first)
+        _ = try await frames(after: idle, renderer: renderer)
         coordinator.zoom(delta: -100)
         XCTAssertFalse(view.isPaused)
-        for _ in 0..<40 where !view.isPaused { try await Task.sleep(for: .milliseconds(100)) }
+        let settled = try await quiescentFrames(view: view, renderer: renderer)
         XCTAssertTrue(view.isPaused)
         XCTAssertFalse(renderer.isAnimating)
-        let settled = renderer.renderedFrameCount
         try await Task.sleep(for: .milliseconds(250))
         XCTAssertEqual(renderer.renderedFrameCount, settled)
         window.orderOut(nil)
-        try await Task.sleep(for: .milliseconds(100))
+        let hidden = try await quiescentFrames(view: view, renderer: renderer)
         coordinator.zoom(delta: 100)
         try await Task.sleep(for: .milliseconds(250))
         XCTAssertTrue(view.isPaused)
-        XCTAssertEqual(renderer.renderedFrameCount, settled)
+        XCTAssertEqual(renderer.renderedFrameCount, hidden)
         window.orderFrontRegardless()
-        try await Task.sleep(for: .milliseconds(200))
-        XCTAssertGreaterThan(renderer.renderedFrameCount, settled)
+        _ = try await frames(after: hidden, renderer: renderer)
+        let visible = try await quiescentFrames(view: view, renderer: renderer)
         coordinator.setActive(false)
-        let background = renderer.renderedFrameCount
         coordinator.orbit(deltaX: 20, deltaY: 10)
         try await Task.sleep(for: .milliseconds(250))
-        XCTAssertEqual(renderer.renderedFrameCount, background)
+        XCTAssertEqual(renderer.renderedFrameCount, visible)
         XCTAssertTrue(view.isPaused)
         coordinator.setActive(true)
-        try await Task.sleep(for: .milliseconds(200))
-        XCTAssertGreaterThan(renderer.renderedFrameCount, background)
+        let resumed = try await frames(after: visible, renderer: renderer)
         renderer.update(document: nil, textures: nil)
         coordinator.invalidate()
-        let empty = renderer.renderedFrameCount
+        let cleared = try await quiescentFrames(view: view, renderer: renderer)
         try await Task.sleep(for: .milliseconds(200))
-        XCTAssertEqual(renderer.renderedFrameCount, empty)
+        XCTAssertEqual(renderer.renderedFrameCount, cleared)
         XCTAssertTrue(view.isPaused)
-        print("RA6X-046 frame counts: empty=0, initial=\(first), settled=\(settled), hidden=\(settled), inactive=\(background), final=\(empty)")
+        print("RA6X-046 frame counts: empty=\(empty), initial=\(first), idle=\(idle), settled=\(settled), hidden=\(hidden), visible=\(visible), resumed=\(resumed), cleared=\(cleared)")
     }
 }

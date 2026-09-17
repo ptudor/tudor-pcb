@@ -72,8 +72,16 @@ jobs:
           cd swift
           xcodegen generate
           xcodebuild test -project TudorPCB.xcodeproj -scheme TudorPCBMac -destination 'platform=macOS' \
-            -derivedDataPath build/ci -quiet \
+            -derivedDataPath build/ci -resultBundlePath build/ci/TudorPCBMac.xcresult -quiet \
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER=
+      - name: Save the test result bundle
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: tudorpcb-test-results-${{ matrix.arch }}
+          path: swift/build/ci/TudorPCBMac.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Package a development snapshot
         run: python3 scripts/package.py
       - name: Save downloadable snapshot
