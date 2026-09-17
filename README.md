@@ -79,6 +79,27 @@ swift test
 The generated Xcode project is intentionally ignored. Edit `swift/project.yml`,
 then regenerate it with XcodeGen.
 
+### Packaging and releases
+
+```sh
+python3 scripts/package.py
+open 'dist/Tudor PCB.app'
+```
+
+Packaging archives a universal Release build, records build metadata in the
+bundle, signs the app, and writes an app ZIP, an installer DMG, debug symbols,
+and a SHA-256 manifest to `dist/`. Local snapshots use ad hoc signing. Public
+releases require Developer ID signing and Apple notarization, and the same
+archive can be uploaded to App Store Connect. See
+[builds and releases](docs/releases.md) for installation and verification and
+[RELEASE.md](RELEASE.md) for the maintainer runbook.
+
+## License
+
+Tudor PCB is licensed under [MIT](LICENSE). The license is bundled in the app's
+`Contents/Resources` folder. The Gerber format reference is Ucamco's
+specification, linked above rather than redistributed here.
+
 For zero-width routed outline strokes, raster mask inference uses a 0.7-pixel
 barrier solely to infer board fill. Copper strokes keep their physical width;
 zero-size copper is invisible. The 3D mesh uses the specified board thickness

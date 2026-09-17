@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: version
+        name: Validate tag, release notes, license, and project version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          printf '%s\n' "$RELEASE_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
+          test -s "docs/release-notes/$RELEASE_TAG.md"
+          test -s LICENSE
+          version="${RELEASE_TAG#v}"
+          base="${version%%-*}"
+          grep -Eq "^[[:space:]]*MARKETING_VERSION: \"?${base//./\\.}\"?[[:space:]]*$" swift/project.yml
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+  verify:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  security:
+    uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+
+  signed-packages:
+    name: Sign, notarize, and package
+    needs: [version, verify, security]
+    runs-on: macos-26
+    environment: release
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record platform and toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+      - name: Install checksum-pinned XcodeGen
+        env:
+          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+        run: |
+          curl --fail --location --silent --show-error https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip -o "$RUNNER_TEMP/xcodegen.zip"
+          printf '%s  %s\n' "$XCODEGEN_SHA256" "$RUNNER_TEMP/xcodegen.zip" | shasum -a 256 --check
+          ditto -x -k "$RUNNER_TEMP/xcodegen.zip" "$RUNNER_TEMP"
+          printf '%s\n' "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Set up isolated Apple signing credentials
+        env:
+          DEVELOPER_ID_P12_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          NOTARY_APP_PASSWORD: ${{ secrets.NOTARY_APP_PASSWORD }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_P8_BASE64 }}
+          APP_STORE_UPLOAD: ${{ vars.APP_STORE_UPLOAD }}
+        run: |
+          if [ "$APP_STORE_UPLOAD" = 'true' ]; then
+            python3 scripts/ci-signing.py setup --app-store
+          else
+            python3 scripts/ci-signing.py setup
+          fi
+      - name: Build, sign, notarize, staple, verify, and upload
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -- --version "$RELEASE_VERSION" --release \
+            --sign-identity "$TUDORPCB_SIGN_IDENTITY" --keychain "$TUDORPCB_SIGN_KEYCHAIN" \
+            --notary-profile "$TUDORPCB_NOTARY_PROFILE"
+          if [ -n "${TUDORPCB_ASC_KEY_PATH:-}" ]; then
+            set -- "$@" --app-store-connect-key "$TUDORPCB_ASC_KEY_PATH" \
+              --app-store-connect-key-id "$TUDORPCB_ASC_KEY_ID" \
+              --app-store-connect-issuer-id "$TUDORPCB_ASC_ISSUER_ID"
+          fi
+          python3 scripts/package.py "$@"
+      - name: Save signed release packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: tudorpcb-release-macos
+          path: |
+            dist/*.zip
+            dist/*.dmg
+            dist/*.json
+            dist/checksums.txt
+            dist/app-store-connect-*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Remove temporary signing credentials
+        if: ${{ always() }}
+        run: python3 scripts/ci-signing.py cleanup
+
+  release:
+    needs: [signed-packages]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: tudorpcb-release-macos
+          path: dist
+      - name: Verify final bytes and prepare the draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/publish-release.py --tag "$RELEASE_TAG"
+      - name: Attest the app, symbols, receipts, and checksums
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            dist/*.zip
+            dist/*.dmg
+            dist/*.json
+            dist/checksums.txt
+      - name: Publish the verified release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release edit "$RELEASE_TAG" --draft=false

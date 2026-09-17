@@ -6,3 +6,10 @@ swift/GerberKit/.build/
 swift/TudorPCB.xcodeproj/
 *.xcuserstate
 xcuserdata/
+dist/
+__pycache__/
+*.pyc
+*.p12
+*.p8
+*.keychain-db
+/*.zip
