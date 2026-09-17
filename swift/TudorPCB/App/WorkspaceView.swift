@@ -26,27 +26,27 @@ struct WorkspaceView: View {
                         .background(.background)
                 } else if viewer.use2DFallback, let textures = model.textures {
                     VStack {
-                        Text("2D faces · \(model.document?.name ?? "Board")")
+                        Text(WorkspaceStrings.twoDFaces(model.document?.name ?? String(localized: WorkspaceStrings.untitledBoard)))
                         HStack {
-                            Image(decorative: textures.top, scale: 1).resizable().scaledToFit().accessibilityLabel("Top face")
-                            Image(decorative: textures.bottom, scale: 1).resizable().scaledToFit().accessibilityLabel("Bottom face in board coordinates")
+                            Image(decorative: textures.top, scale: 1).resizable().scaledToFit().accessibilityLabel(WorkspaceStrings.topFace)
+                            Image(decorative: textures.bottom, scale: 1).resizable().scaledToFit().accessibilityLabel(WorkspaceStrings.bottomFaceInBoardCoordinates)
                         }
-                        Button("Retry 3D") { viewer.retryRendering() }
+                        Button(WorkspaceStrings.retry3D) { viewer.retryRendering() }
                     }.padding().background(.background)
                 } else if let error = viewer.rendererError {
                     VStack(spacing: 12) {
-                        Text("3D display unavailable").font(.headline)
-                        Text(model.document?.name ?? "Workspace")
+                        Text(WorkspaceStrings.display3DUnavailable).font(.headline)
+                        Text(model.document?.name ?? String(localized: WorkspaceStrings.workspace))
                         Text(error)
-                        Button("Retry 3D") { viewer.retryRendering() }
-                        if model.textures != nil { Button("Show 2D faces") { viewer.use2DFallback = true } }
+                        Button(WorkspaceStrings.retry3D) { viewer.retryRendering() }
+                        if model.textures != nil { Button(WorkspaceStrings.show2DFaces) { viewer.use2DFallback = true } }
                     }.padding().background(.background, in: RoundedRectangle(cornerRadius: 12))
                 }
                 if model.document == nil { welcomeOverlay }
                 if model.isLoading {
                     VStack {
                         loadingOverlay
-                        if let pending = model.pendingFileName { Text("Opening \(pending)").foregroundStyle(.white) }
+                        if let pending = model.pendingFileName { Text(WorkspaceStrings.opening(pending)).foregroundStyle(.white) }
                     }
                 }
                 if model.document != nil { interactionHint }
@@ -56,35 +56,36 @@ struct WorkspaceView: View {
             .toolbar {
                 packageToolbar
                 ToolbarItemGroup {
-                    Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
+                    Button(WorkspaceStrings.fabricationHistory, systemImage: "clock.arrow.circlepath") {
                         model.isShowingHistory = true
                     }
                     if model.document?.sidePreviews.isEmpty == false {
-                        Button("Color proofs", systemImage: "photo.on.rectangle") { model.showProofs = true }
+                        Button(WorkspaceStrings.colorProofs, systemImage: "photo.on.rectangle") { model.showProofs = true }
+                            .accessibilityIdentifier("color-proofs")
                     }
-                    Button("Perspective", systemImage: "cube.transparent") { viewer.show(.perspective) }
+                    Button(WorkspaceStrings.perspective, systemImage: "cube.transparent") { viewer.show(.perspective) }
                         .disabled(model.document == nil)
-                    Button("Top", systemImage: "square.3.layers.3d.top.filled") { viewer.show(.top) }
+                    Button(WorkspaceStrings.topView, systemImage: "square.3.layers.3d.top.filled") { viewer.show(.top) }
                         .disabled(model.document == nil)
-                    Button("Bottom", systemImage: "square.3.layers.3d.bottom.filled") { viewer.show(.bottom) }
+                    Button(WorkspaceStrings.bottomView, systemImage: "square.3.layers.3d.bottom.filled") { viewer.show(.bottom) }
                         .disabled(model.document == nil)
-                    Button("Fit", systemImage: "arrow.up.left.and.arrow.down.right") { viewer.show(.fit) }
-                        .disabled(model.document == nil)
-
-                    Button("Zoom In", systemImage: "plus.magnifyingglass") { viewer.zoom(by: -75) }
-                        .disabled(model.document == nil)
-                    Button("Zoom Out", systemImage: "minus.magnifyingglass") { viewer.zoom(by: 75) }
+                    Button(WorkspaceStrings.fit, systemImage: "arrow.up.left.and.arrow.down.right") { viewer.show(.fit) }
                         .disabled(model.document == nil)
 
-                    Menu("Board finish", systemImage: "paintpalette") {
+                    Button(CommonStrings.zoomIn, systemImage: "plus.magnifyingglass") { viewer.zoom(by: -75) }
+                        .disabled(model.document == nil)
+                    Button(CommonStrings.zoomOut, systemImage: "minus.magnifyingglass") { viewer.zoom(by: 75) }
+                        .disabled(model.document == nil)
+
+                    Menu(WorkspaceStrings.boardFinish, systemImage: "paintpalette") {
                         ForEach(BoardMaskStyle.allCases) { style in
                             Button {
                                 model.selectMask(style)
                             } label: {
                                 if model.maskStyle == style {
-                                    Label(style.rawValue, systemImage: "checkmark")
+                                    Label(style.displayName, systemImage: "checkmark")
                                 } else {
-                                    Text(style.rawValue)
+                                    Text(style.displayName)
                                 }
                             }
                         }
@@ -132,8 +133,8 @@ struct WorkspaceView: View {
         }
         .sheet(isPresented: Binding(get: { !model.candidateChoices.isEmpty }, set: { if !$0 { model.cancelCandidateSelection() } })) {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Choose fabrication board").font(.title2)
-                Text("This delivery contains several board sets. Choose the source path to inspect.")
+                Text(WorkspaceStrings.chooseFabricationBoard).font(.title2)
+                Text(WorkspaceStrings.severalBoardSets)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(model.candidateChoices) { candidate in
@@ -141,7 +142,7 @@ struct WorkspaceView: View {
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Button("Cancel", role: .cancel) { model.cancelCandidateSelection() }
+                Button(CommonStrings.cancel, role: .cancel) { model.cancelCandidateSelection() }
             }.padding().frame(minWidth: 320, idealWidth: 500, minHeight: 240)
         }
         .alert(model.errorTitle, isPresented: Binding(
@@ -150,34 +151,34 @@ struct WorkspaceView: View {
         )) {
             switch model.failedOperation {
             case .openPackage, .selectPackage:
-                Button("Select Package…") { beginImport(.package) }
+                Button(ErrorStrings.selectPackage) { beginImport(.package) }
             case .attachProof, .selectProof:
-                Button("Select Proof…") {
+                Button(ErrorStrings.selectProof) {
                     if model.failedProofSide == .bottom { beginImport(.proof(.bottom)) }
                     else { beginImport(.proof(.top)) }
                 }
-            case .mapProof: Button("Review Proof Mapping") { model.showProofs = true }
-            case .renderBoard: Button("Retry Rendering") { model.rerender() }
+            case .mapProof: Button(ErrorStrings.reviewProofMapping) { model.showProofs = true }
+            case .renderBoard: Button(ErrorStrings.retryRendering) { model.rerender() }
             }
-            Button("Dismiss", role: .cancel) { model.errorMessage = nil }
+            Button(ErrorStrings.dismiss, role: .cancel) { model.errorMessage = nil }
         } message: {
-            Text(model.errorMessage ?? "Unknown error")
+            Text(model.errorMessage ?? String(localized: ErrorStrings.unknownError))
         }
-        .alert("History needs recovery", isPresented: Binding(
+        .alert(HistoryStrings.historyNeedsRecovery, isPresented: Binding(
             get: { model.historyError != nil },
             set: { if !$0 { model.historyError = nil } }
         )) {
             if model.historyRecovery != nil {
-                Button("Back Up Original and Recover Valid History") { model.recoverHistory() }
+                Button(HistoryStrings.backUpAndRecover) { model.recoverHistory() }
             }
-            Button("Keep Original", role: .cancel) { model.historyError = nil }
+            Button(HistoryStrings.keepOriginal, role: .cancel) { model.historyError = nil }
         } message: { Text(model.historyError ?? "") }
-        .alert("History access needs attention", isPresented: Binding(
+        .alert(HistoryStrings.historyAccessNeedsAttention, isPresented: Binding(
             get: { model.historyAccessError != nil },
             set: { if !$0 { model.historyAccessError = nil } }
         )) {
-            Button("Reselect Source…") { beginImport(.relink) }
-            Button("Later", role: .cancel) { model.historyAccessError = nil }
+            Button(HistoryStrings.reselectSource) { beginImport(.relink) }
+            Button(HistoryStrings.later, role: .cancel) { model.historyAccessError = nil }
         } message: { Text(model.historyAccessError ?? "") }
         .sheet(isPresented: $model.showProofs) {
             if let document = model.document { ProofGalleryView(document: document, onSelect: { model.selectArtwork($0) }, onReset: { model.resetArtwork($0) }, onMap: { model.mapArtwork($0, mapping: $1) }) }
@@ -206,11 +207,11 @@ struct WorkspaceView: View {
     @ToolbarContentBuilder
     private var packageToolbar: some ToolbarContent {
         ToolbarItem(placement: openToolbarPlacement) {
-            Button(model.document == nil ? "Open Package…" : "Replace Package…", systemImage: "folder.badge.plus") {
+            Button(model.document == nil ? WorkspaceStrings.openPackage : WorkspaceStrings.replacePackage, systemImage: "folder.badge.plus") {
                 beginImport(.package)
             }
             .accessibilityIdentifier("open-package")
-            .help("Open or replace the fabrication package")
+            .help(WorkspaceStrings.openOrReplaceHelp)
         }
     }
 
@@ -225,16 +226,17 @@ struct WorkspaceView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Label("FABRICATION REVIEW", systemImage: "cpu")
+                Label(WorkspaceStrings.fabricationReview, systemImage: "cpu")
+                    .textCase(.uppercase)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Button("Fabrication History", systemImage: "clock.arrow.circlepath") {
+                Button(WorkspaceStrings.fabricationHistory, systemImage: "clock.arrow.circlepath") {
                     model.isShowingHistory = true
                 }
                 .labelStyle(.iconOnly)
                 .buttonStyle(.plain)
-                .help("Browse fabrication history")
+                .help(WorkspaceStrings.browseFabricationHistory)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -253,16 +255,16 @@ struct WorkspaceView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("No package open", systemImage: "shippingbox")
+                    Label(WorkspaceStrings.noPackageOpen, systemImage: "shippingbox")
                         .font(.headline)
-                    Text("Open a Gerber ZIP from EasyEDA, Eagle, KiCad, or your manufacturer.")
+                    Text(WorkspaceStrings.openAGerberZip)
                         .font(.callout)
                         .foregroundStyle(.secondary)
 
-                    Button("Open Package…") { beginImport(.package) }
+                    Button(WorkspaceStrings.openPackage) { beginImport(.package) }
                         .buttonStyle(.borderedProminent)
                     if !model.historyEntries.isEmpty {
-                        Button("Browse \(model.historyEntries.count) Recent Package\(model.historyEntries.count == 1 ? "" : "s")") {
+                        Button(WorkspaceStrings.browseRecentPackages(model.historyEntries.count)) {
                             model.isShowingHistory = true
                         }
                         .buttonStyle(.borderless)
@@ -273,7 +275,7 @@ struct WorkspaceView: View {
             }
 
             Divider()
-            Label("Local inspection only", systemImage: "lock.shield")
+            Label(WorkspaceStrings.localInspectionOnly, systemImage: "lock.shield")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .padding(16)
@@ -286,23 +288,23 @@ struct WorkspaceView: View {
             Text(document.name)
                 .font(.headline)
                 .lineLimit(2)
-            Text("\(document.bounds.width, format: .number.precision(.fractionLength(2))) × \(document.bounds.height, format: .number.precision(.fractionLength(2))) mm")
+            Text(CommonStrings.boardDimensions(width: document.bounds.width.formatted(.number.precision(.fractionLength(2))), height: document.bounds.height.formatted(.number.precision(.fractionLength(2)))))
                 .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.secondary)
-            Text("\(document.layers.count) layers · \(document.drills.count) drills · \(document.primitiveCount.formatted()) objects")
+            Text(WorkspaceStrings.summary(String(localized: WorkspaceStrings.layerCount(document.layers.count)), String(localized: WorkspaceStrings.drillCount(document.drills.count)), String(localized: WorkspaceStrings.objectCount(document.primitiveCount))))
                 .font(.caption)
                 .foregroundStyle(.tertiary)
             if document.packageRole == .jlcpcbProduction {
-                Text("JLCPCB engineer production · OK")
+                Text(WorkspaceStrings.jlcpcbEngineerProduction)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.purple)
                 if !document.enclosedSourceArchives.isEmpty {
-                    Text("\(document.enclosedSourceArchives.count) original upload\(document.enclosedSourceArchives.count == 1 ? "" : "s") enclosed")
+                    Text(WorkspaceStrings.originalUploadsEnclosed(document.enclosedSourceArchives.count))
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
             } else if document.packageRole == .nestedArchive {
-                Text("Opened from an enclosed Gerber ZIP")
+                Text(WorkspaceStrings.openedFromEnclosedZip)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -311,48 +313,49 @@ struct WorkspaceView: View {
 
     private func reviewStatus(_ document: BoardDocument) -> some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text("REVIEW STATUS")
+            Text(WorkspaceStrings.reviewStatus)
+                .textCase(.uppercase)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
             statusRow(
                 document.layers.contains { $0.kind == .outline },
-                label: "Board outline",
-                goodDetail: "Loaded · topology is not manufacturing validation",
-                badDetail: "Missing"
+                label: WorkspaceStrings.boardOutline,
+                goodDetail: Text(WorkspaceStrings.outlineLoadedDetail),
+                badDetail: Text(WorkspaceStrings.missing)
             )
-            statusRow(!document.drills.isEmpty, label: "Drill map", goodDetail: "Present · registration unverified", badDetail: "Missing")
+            statusRow(!document.drills.isEmpty, label: WorkspaceStrings.drillMap, goodDetail: Text(WorkspaceStrings.drillPresentDetail), badDetail: Text(WorkspaceStrings.missing))
             if document.packageRole == .jlcpcbProduction {
-                Label("Source folder: ok/ · JLCPCB production data", systemImage: "folder")
+                Label(WorkspaceStrings.jlcpcbSourceFolder, systemImage: "folder")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Text("Inspected source: \(document.name) · \(document.sourceSelection?.displayName ?? "direct input")")
+            Text(WorkspaceStrings.inspectedSource(document.name, document.sourceSelection?.displayName ?? String(localized: WorkspaceStrings.directInput)))
                 .font(.caption).textSelection(.enabled)
-            Label("Review incomplete", systemImage: "exclamationmark.triangle")
+            Label(WorkspaceStrings.reviewIncomplete, systemImage: "exclamationmark.triangle")
                 .font(.caption.weight(.semibold)).foregroundStyle(.orange)
-            Text("Layer completeness, drill registration, and manufacturing suitability have not been verified. Check import warnings and layer display limits.")
+            Text(WorkspaceStrings.reviewIncompleteDetail)
                 .font(.caption).foregroundStyle(.secondary)
             ForEach([GerberSide.top, .bottom], id: \.self) { side in
                 if document.colorSilkscreens.contains(where: { $0.side == side }) || document.sidePreviews.contains(where: { $0.side == side }) {
                     statusRow(document.proofState(for: side) == .mappedArtwork,
-                        label: "\(side.rawValue.capitalized) color",
-                        goodDetail: document.proofState(for: side).label,
-                        badDetail: document.proofState(for: side).label, validated: true)
+                        label: side == .top ? WorkspaceStrings.topColor : WorkspaceStrings.bottomColor,
+                        goodDetail: Text(document.proofState(for: side).label),
+                        badDetail: Text(document.proofState(for: side).label), validated: true)
                 }
             }
             if !document.sidePreviews.isEmpty {
-                Text("Proof validation checks image format and bounded pixel decoding; it does not check artwork registration.")
+                Text(WorkspaceStrings.proofValidationNote)
                     .font(.caption).foregroundStyle(.secondary)
             }
             if !document.colorSilkscreens.isEmpty {
-                Text("Factory payloads present · validity unverified")
+                Text(WorkspaceStrings.factoryPayloadsPresent)
                     .font(.caption).foregroundStyle(.secondary)
             }
-                Menu("Color proof options", systemImage: "photo.on.rectangle.angled") {
-                    Button("Attach top artwork…") { beginImport(.proof(.top)) }
-                    Button("Attach bottom artwork…") { beginImport(.proof(.bottom)) }
+                Menu(WorkspaceStrings.colorProofOptions, systemImage: "photo.on.rectangle.angled") {
+                    Button(WorkspaceStrings.attachTopArtwork) { beginImport(.proof(.top)) }
+                    Button(WorkspaceStrings.attachBottomArtwork) { beginImport(.proof(.bottom)) }
                     if !document.sidePreviews.isEmpty {
                         Divider()
-                        Button("View supplied proofs") { model.showProofs = true }
+                        Button(WorkspaceStrings.viewSuppliedProofs) { model.showProofs = true }
                     }
                 }
                 .font(.callout)
@@ -362,13 +365,13 @@ struct WorkspaceView: View {
         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 12))
     }
 
-    private func statusRow(_ good: Bool, label: String, goodDetail: String, badDetail: String, validated: Bool = false) -> some View {
+    private func statusRow(_ good: Bool, label: LocalizedStringResource, goodDetail: Text, badDetail: Text, validated: Bool = false) -> some View {
         HStack(spacing: 8) {
             Image(systemName: good ? (validated ? "checkmark.circle.fill" : "info.circle") : "exclamationmark.triangle.fill")
                 .foregroundStyle(good ? (validated ? .green : .secondary) : .orange)
             Text(label)
             Spacer()
-            Text(good ? goodDetail : badDetail)
+            (good ? goodDetail : badDetail)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -377,30 +380,31 @@ struct WorkspaceView: View {
 
     private func layerList(_ document: BoardDocument) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("LAYERS")
+            Text(WorkspaceStrings.layers)
+                .textCase(.uppercase)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text("Eyes affect outer copper, mask and silk appearance. Outline and machining always define the physical board; inspect their source overlays in 2D.")
+            Text(WorkspaceStrings.layersNote)
                 .font(.caption2).foregroundStyle(.secondary)
             ForEach(document.layers) { layer in
                 HStack(spacing: 9) {
                     if layer.kind.hasPhysicalAppearanceControl {
                         Button { model.toggleLayer(layer) } label: {
                             Image(systemName: model.visibleLayerIDs.contains(layer.id) ? "eye" : "eye.slash")
-                        }.accessibilityLabel("Toggle physical \(layer.kind.displayName)")
-                    } else { Text("2D").font(.caption2).foregroundStyle(.secondary) }
+                        }.accessibilityLabel(WorkspaceStrings.togglePhysicalLayer(layer.kind.displayName))
+                    } else { Text(WorkspaceStrings.twoD).font(.caption2).foregroundStyle(.secondary) }
                     VStack(alignment: .leading, spacing: 1) {
                         Text(layer.kind.displayName)
                         Text(layer.fileName).font(.caption2).lineLimit(1).help(layer.fileName)
                     }
                     Spacer()
                     Button { model.inspectionTarget = .layer(layer.id) } label: { Image(systemName: "magnifyingglass") }
-                        .accessibilityLabel("Inspect \(layer.fileName) in 2D")
+                        .accessibilityLabel(WorkspaceStrings.inspectIn2D(layer.fileName))
                 }
                 .buttonStyle(.plain).disabled(model.isOpening)
             }
             if !document.drills.isEmpty {
-                Button("Inspect Drills / Slots in 2D", systemImage: "circle.dotted") { model.inspectionTarget = .drills }
+                Button(WorkspaceStrings.inspectDrillsSlotsIn2D, systemImage: "circle.dotted") { model.inspectionTarget = .drills }
                     .disabled(model.isOpening)
             }
         }
@@ -434,17 +438,17 @@ struct WorkspaceView: View {
             Image(systemName: "square.3.layers.3d")
                 .font(.system(size: 58, weight: .thin))
                 .foregroundStyle(.mint)
-            Text("Inspect the board, not a screenshot")
+            Text(WorkspaceStrings.welcomeTitle)
                 .font(.title2.weight(.semibold))
-            Text("Drop a fabrication ZIP here, or open one from the sidebar.")
+            Text(WorkspaceStrings.welcomeSubtitle)
                 .foregroundStyle(.secondary)
-            Button("Choose Gerber Package") {
+            Button(WorkspaceStrings.chooseGerberPackage) {
                 beginImport(.package)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
             if !model.historyEntries.isEmpty {
-                Button("Browse fabrication history") {
+                Button(WorkspaceStrings.browseFabricationHistory) {
                     model.isShowingHistory = true
                 }
                 .buttonStyle(.plain)
@@ -464,7 +468,7 @@ struct WorkspaceView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.large)
-            Text(model.document == nil ? "Reading fabrication package…" : "Rendering layers…")
+            Text(model.document == nil ? WorkspaceStrings.readingPackage : WorkspaceStrings.renderingLayers)
                 .font(.callout.weight(.medium))
         }
         .padding(22)
@@ -474,7 +478,7 @@ struct WorkspaceView: View {
     private var interactionHint: some View {
         VStack {
             Spacer()
-            Text("Drag to orbit · Scroll or pinch to zoom · Double-click to fit")
+            Text(WorkspaceStrings.interactionHint)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
@@ -501,7 +505,7 @@ private struct PackageBrowserView: View {
     private var filteredEntries: [PackageHistoryEntry] {
         guard !searchText.isEmpty else { return entries }
         return entries.filter { entry in
-            [entry.name, entry.sourcePath, entry.formatName, entry.generator ?? ""]
+            [entry.name, entry.sourcePath, entry.formatDisplayName, entry.generator ?? ""]
                 .contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
     }
@@ -516,9 +520,9 @@ private struct PackageBrowserView: View {
             Group {
                 if entries.isEmpty {
                     ContentUnavailableView(
-                        "No Fabrication History",
+                        HistoryStrings.noFabricationHistory,
                         systemImage: "clock.arrow.circlepath",
-                        description: Text("Packages appear here after they have been inspected.")
+                        description: Text(HistoryStrings.packagesAppearAfterInspection)
                     )
                 } else if filteredEntries.isEmpty {
                     ContentUnavailableView.search(text: searchText)
@@ -528,20 +532,20 @@ private struct PackageBrowserView: View {
                             PackageHistoryRow(entry: entry)
                         }
                         .contextMenu {
-                            Button("Relink Source…") { onRelink(entry); dismiss() }
-                            Button("Remove from History", role: .destructive) { onRemove(entry) }
+                            Button(HistoryStrings.relinkSource) { onRelink(entry); dismiss() }
+                            Button(HistoryStrings.removeFromHistory, role: .destructive) { onRemove(entry) }
                         }
                     }
                 }
             }
-            .navigationTitle("Fabrication History")
-            .searchable(text: $searchText, prompt: "Package, format, or path")
+            .navigationTitle(HistoryStrings.fabricationHistoryTitle)
+            .searchable(text: $searchText, prompt: HistoryStrings.searchPrompt)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+                    Button(CommonStrings.done) { dismiss() }.accessibilityIdentifier("done")
                 }
                 ToolbarItem {
-                    Button("Clear History", role: .destructive) { isConfirmingClear = true }
+                    Button(HistoryStrings.clearHistory, role: .destructive) { isConfirmingClear = true }
                         .disabled(entries.isEmpty)
                 }
             }
@@ -554,19 +558,19 @@ private struct PackageBrowserView: View {
                     onRemove(entry)
                 }
             } else {
-                ContentUnavailableView("Select a Package", systemImage: "shippingbox")
+                ContentUnavailableView(HistoryStrings.selectAPackage, systemImage: "shippingbox")
             }
         }
         .onChange(of: filteredEntries.map(\.id), initial: true) { _, ids in
             selection = PackageHistorySelection.reconciled(selection, visibleIDs: ids)
         }
-        .confirmationDialog("Clear all fabrication history?", isPresented: $isConfirmingClear) {
-            Button("Clear History", role: .destructive) {
+        .confirmationDialog(HistoryStrings.clearAllConfirmation, isPresented: $isConfirmingClear) {
+            Button(HistoryStrings.clearHistory, role: .destructive) {
                 onClear()
                 selection = nil
             }
         } message: {
-            Text("This removes the recent-package list. It does not delete any fabrication files.")
+            Text(HistoryStrings.clearAllMessage)
         }
         #if os(macOS)
         .frame(minWidth: 880, minHeight: 580)
@@ -587,21 +591,36 @@ private struct PackageHistoryRow: View {
                 Text(entry.name)
                     .font(.headline)
                     .lineLimit(1)
-                Text("\(entry.formatName) · \(entry.boardWidth, format: .number.precision(.fractionLength(1))) × \(entry.boardHeight, format: .number.precision(.fractionLength(1))) mm")
+                Text(HistoryStrings.rowSummary(format: entry.formatDisplayName, width: entry.boardWidth.formatted(.number.precision(.fractionLength(1))), height: entry.boardHeight.formatted(.number.precision(.fractionLength(1)))))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("Modified \(entry.ageDescription)")
+                Text(HistoryStrings.modified(entry.ageDescription))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
             }
             Spacer(minLength: 4)
             if entry.openedCount > 1 {
-                Text("×\(entry.openedCount)")
+                Text(HistoryStrings.openedTimes(entry.openedCount))
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.tertiary)
             }
         }
         .padding(.vertical, 3)
+    }
+}
+
+/// One labeled value in the history detail panel.
+private struct DetailRow: View {
+    let label: LocalizedStringResource
+    let value: String
+
+    init(_ label: LocalizedStringResource, _ value: String) {
+        self.label = label
+        self.value = value
+    }
+
+    var body: some View {
+        LabeledContent { Text(value) } label: { Text(label) }
     }
 }
 
@@ -633,73 +652,71 @@ private struct PackageHistoryDetail: View {
                     }
                 }
 
-                Button("Open Package", systemImage: "arrow.up.forward.app", action: onOpen)
+                Button(HistoryStrings.openPackage, systemImage: "arrow.up.forward.app", action: onOpen)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
 
-                detailSection("PACKAGE") {
-                    LabeledContent("Format", value: entry.formatName)
-                    LabeledContent("Source", value: entry.sourceKind.displayName)
-                    LabeledContent("Board") {
-                        Text("\(entry.boardWidth, format: .number.precision(.fractionLength(2))) × \(entry.boardHeight, format: .number.precision(.fractionLength(2))) mm")
+                detailSection(HistoryStrings.packageSection) {
+                    DetailRow(HistoryStrings.format, entry.formatDisplayName)
+                    DetailRow(HistoryStrings.source, entry.sourceKind.displayName)
+                    LabeledContent {
+                        Text(CommonStrings.boardDimensions(width: entry.boardWidth.formatted(.number.precision(.fractionLength(2))), height: entry.boardHeight.formatted(.number.precision(.fractionLength(2)))))
                             .monospacedDigit()
-                    }
-                    LabeledContent("Layers", value: entry.layerCount.formatted())
-                    LabeledContent("Drills", value: entry.drillCount.formatted())
-                    LabeledContent("Objects", value: entry.primitiveCount.formatted())
+                    } label: { Text(HistoryStrings.board) }
+                    DetailRow(HistoryStrings.layers, entry.layerCount.formatted())
+                    DetailRow(HistoryStrings.drills, entry.drillCount.formatted())
+                    DetailRow(HistoryStrings.objects, entry.primitiveCount.formatted())
                     if entry.colorSilkscreenSides > 0 {
-                        LabeledContent("Color silkscreen", value: "\(entry.colorSilkscreenSides) side\(entry.colorSilkscreenSides == 1 ? "" : "s")")
+                        DetailRow(HistoryStrings.colorSilkscreen, String(localized: HistoryStrings.sideCount(entry.colorSilkscreenSides)))
                     }
                     if entry.packageRole == .jlcpcbProduction {
-                        LabeledContent("Review set", value: "JLCPCB engineer output (OK)")
+                        DetailRow(HistoryStrings.reviewSet, String(localized: HistoryStrings.jlcpcbEngineerOutput))
                     } else if entry.packageRole == .nestedArchive {
-                        LabeledContent("Container", value: "Nested ZIP")
+                        DetailRow(HistoryStrings.container, String(localized: HistoryStrings.nestedZip))
                     }
                     if let count = entry.enclosedSourceCount, count > 0 {
-                        LabeledContent(
-                            entry.packageRole == .jlcpcbProduction ? "Original uploads" : "Enclosed archives",
-                            value: "\(count) enclosed"
+                        DetailRow(
+                            entry.packageRole == .jlcpcbProduction ? HistoryStrings.originalUploads : HistoryStrings.enclosedArchives,
+                            String(localized: HistoryStrings.enclosedCount(count))
                         )
                     }
                     if let byteCount = entry.byteCount {
-                        LabeledContent("Package size") {
-                            Text(byteCount.formatted(.byteCount(style: .file)))
-                        }
+                        DetailRow(HistoryStrings.packageSize, byteCount.formatted(.byteCount(style: .file)))
                     }
                     if entry.warningCount > 0 {
-                        LabeledContent("Review warnings", value: entry.warningCount.formatted())
+                        DetailRow(HistoryStrings.reviewWarnings, entry.warningCount.formatted())
                     }
                 }
 
-                detailSection("AGE & ACTIVITY") {
-                    LabeledContent("Source age", value: entry.ageDescription)
+                detailSection(HistoryStrings.ageAndActivity) {
+                    DetailRow(HistoryStrings.sourceAge, entry.ageDescription)
                     if let modifiedAt = entry.modifiedAt {
-                        LabeledContent("Modified", value: modifiedAt.formatted(date: .abbreviated, time: .shortened))
+                        DetailRow(HistoryStrings.modifiedLabel, modifiedAt.formatted(date: .abbreviated, time: .shortened))
                     }
                     if let createdAt = entry.createdAt {
-                        LabeledContent("Created", value: createdAt.formatted(date: .abbreviated, time: .shortened))
+                        DetailRow(HistoryStrings.created, createdAt.formatted(date: .abbreviated, time: .shortened))
                     }
-                    LabeledContent("First inspected", value: entry.firstOpenedAt.formatted(date: .abbreviated, time: .shortened))
-                    LabeledContent("Last inspected", value: entry.lastOpenedAt.formatted(date: .abbreviated, time: .shortened))
-                    LabeledContent("Times opened", value: entry.openedCount.formatted())
+                    DetailRow(HistoryStrings.firstInspected, entry.firstOpenedAt.formatted(date: .abbreviated, time: .shortened))
+                    DetailRow(HistoryStrings.lastInspected, entry.lastOpenedAt.formatted(date: .abbreviated, time: .shortened))
+                    DetailRow(HistoryStrings.timesOpened, entry.openedCount.formatted())
                 }
 
                 if let generator = entry.generator {
-                    detailSection("GENERATOR") {
+                    detailSection(HistoryStrings.generator) {
                         Text(generator)
                             .font(.callout.monospaced())
                             .textSelection(.enabled)
                     }
                 }
 
-                detailSection("LOCATION") {
+                detailSection(HistoryStrings.location) {
                     Text(entry.sourcePath)
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
                 }
 
-                Button("Remove from History", role: .destructive, action: onRemove)
+                Button(HistoryStrings.removeFromHistory, role: .destructive, action: onRemove)
             }
             .padding(28)
             .frame(maxWidth: 680, alignment: .leading)
@@ -708,11 +725,12 @@ private struct PackageHistoryDetail: View {
     }
 
     private func detailSection<Content: View>(
-        _ title: String,
+        _ title: LocalizedStringResource,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
+                .textCase(.uppercase)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 9, content: content)
@@ -742,21 +760,21 @@ private struct ProofGalleryView: View {
                                 proofImage(preview).scaledToFit().frame(height: 260)
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }.buttonStyle(.plain)
-                                .accessibilityLabel("Inspect \(preview.side == .top ? "Top" : "Bottom") proof \(preview.fileName)")
-                            Button("Inspect Image…") { inspectingPreview = preview }
-                            Text("\(preview.side == .top ? "Top" : "Bottom") · \(preview.fileName)")
+                                .accessibilityLabel(preview.side == .top ? ProofStrings.inspectTopProof(preview.fileName) : ProofStrings.inspectBottomProof(preview.fileName))
+                            Button(ProofStrings.inspectImage) { inspectingPreview = preview }.accessibilityIdentifier("inspect-image")
+                            Text(preview.side == .top ? ProofStrings.topProofFile(preview.fileName) : ProofStrings.bottomProofFile(preview.fileName))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            Text(preview.provenance == .supplied ? "Supplied with source" : "User attachment")
+                            Text(preview.provenance == .supplied ? ProofStrings.suppliedWithSource : ProofStrings.userAttachment)
                                 .font(.caption2)
                             if preview.purpose == .boardArtwork && preview.mapping != nil {
                                 if document.activeArtwork(for: preview.side)?.id == preview.id {
-                                    Label("Active board artwork", systemImage: "checkmark.circle")
-                                } else { Button("Use as Board Artwork") { onSelect(preview) } }
-                            } else { Text("Unmapped gallery proof · not shown on board").font(.caption) }
-                            Button(preview.mapping == nil ? "Map to Board…" : "Edit Mapping…") { mappingPreview = preview }
+                                    Label(ProofStrings.activeBoardArtwork, systemImage: "checkmark.circle")
+                                } else { Button(ProofStrings.useAsBoardArtwork) { onSelect(preview) } }
+                            } else { Text(ProofStrings.unmappedGalleryProof).font(.caption) }
+                            Button(preview.mapping == nil ? ProofStrings.mapToBoard : ProofStrings.editMapping) { mappingPreview = preview }
                             if let mapping = preview.mapping {
-                                Text("\(mapping.bounds.width, format: .number) × \(mapping.bounds.height, format: .number) mm · \(mapping.orientation == .boardCoordinates ? "Board coordinates" : "Viewed from bottom")")
+                                Text(ProofStrings.mappingSummary(width: mapping.bounds.width.formatted(), height: mapping.bounds.height.formatted(), orientation: String(localized: mapping.orientation == .boardCoordinates ? ProofStrings.orientationBoardCoordinates : ProofStrings.orientationViewedFromBottom)))
                                     .font(.caption2)
                             }
                         }
@@ -765,15 +783,15 @@ private struct ProofGalleryView: View {
                 .padding(16)
             }
             }
-            .navigationTitle("Color proofs")
+            .navigationTitle(ProofStrings.colorProofsTitle)
             .toolbar {
                 ToolbarItemGroup {
-                    Menu("Reset Artwork", systemImage: "arrow.counterclockwise") {
-                        Button("Reset Top to Supplied Artwork") { onReset(.top) }
-                        Button("Reset Bottom to Supplied Artwork") { onReset(.bottom) }
+                    Menu(ProofStrings.resetArtwork, systemImage: "arrow.counterclockwise") {
+                        Button(ProofStrings.resetTopToSupplied) { onReset(.top) }
+                        Button(ProofStrings.resetBottomToSupplied) { onReset(.bottom) }
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button(CommonStrings.done) { dismiss() }.accessibilityIdentifier("done") }
             }
         }
         #if os(macOS)
@@ -807,8 +825,8 @@ private struct ProofInspectionView: View {
             GeometryReader { available in
             ScrollView {
             VStack {
-                Text("\(preview.side == .top ? "Top" : "Bottom") · \(preview.fileName)").font(.caption).textSelection(.enabled)
-                Text(preview.provenance == .supplied ? "Supplied with source" : "User attachment").font(.caption2)
+                Text(preview.side == .top ? ProofStrings.topProofFile(preview.fileName) : ProofStrings.bottomProofFile(preview.fileName)).font(.caption).textSelection(.enabled)
+                Text(preview.provenance == .supplied ? ProofStrings.suppliedWithSource : ProofStrings.userAttachment).font(.caption2)
                 GeometryReader { geometry in
                     BoundedProofImageView(preview: preview).scaledToFit()
                         .frame(width: geometry.size.width, height: geometry.size.height)
@@ -817,7 +835,7 @@ private struct ProofInspectionView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .background(.black).clipped().contentShape(Rectangle())
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Proof image")
+                        .accessibilityLabel(ProofStrings.proofImage)
                         .accessibilityAddTraits(.isImage)
                         .accessibilityIdentifier("proof-inspection-image")
                         .gesture(MagnifyGesture().updating($pinch) { value, state, _ in state = value.magnification }
@@ -831,25 +849,26 @@ private struct ProofInspectionView: View {
                         .onChange(of: offset) { _, _ in constrainOffset(geometry.size) }
                         .onChange(of: geometry.size) { _, size in constrainOffset(size) }
                 }.frame(height: max(200, min(600, available.size.height * 0.6)))
-                Text("Image preview · \(zoom, format: .number.precision(.fractionLength(1)))×").font(.caption.monospacedDigit())
+                Text(ProofStrings.imagePreviewZoom(Double(zoom).formatted(.number.precision(.fractionLength(1))))).font(.caption.monospacedDigit())
                 ScrollView(.horizontal) {
                     HStack {
-                        Button("Zoom In", systemImage: "plus.magnifyingglass") { setZoom(zoom * 2) }
-                        Button("Zoom Out", systemImage: "minus.magnifyingglass") { setZoom(zoom / 2) }
-                        Button("Fit Image") { setZoom(1); offset = .zero }
-                        Menu("Pan", systemImage: "arrow.up.and.down.and.arrow.left.and.right") {
-                            Button("Left") { offset.width += 60 }
-                            Button("Right") { offset.width -= 60 }
-                            Button("Up") { offset.height += 60 }
-                            Button("Down") { offset.height -= 60 }
+                        Button(CommonStrings.zoomIn, systemImage: "plus.magnifyingglass") { setZoom(zoom * 2) }
+                            .accessibilityIdentifier("zoom-in")
+                        Button(CommonStrings.zoomOut, systemImage: "minus.magnifyingglass") { setZoom(zoom / 2) }
+                        Button(ProofStrings.fitImage) { setZoom(1); offset = .zero }.accessibilityIdentifier("fit-image")
+                        Menu(CommonStrings.pan, systemImage: "arrow.up.and.down.and.arrow.left.and.right") {
+                            Button(CommonStrings.left) { offset.width += 60 }
+                            Button(CommonStrings.right) { offset.width -= 60 }
+                            Button(CommonStrings.up) { offset.height += 60 }
+                            Button(CommonStrings.down) { offset.height -= 60 }
                         }
                     }
                 }
             }.padding()
             }
             }
-            .navigationTitle("\(preview.side == .top ? "Top" : "Bottom") proof")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .navigationTitle(preview.side == .top ? ProofStrings.topProof : ProofStrings.bottomProof)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(CommonStrings.done) { dismiss() }.accessibilityIdentifier("done") } }
         }
         #if os(macOS)
         .frame(minWidth: 600, minHeight: 500)
@@ -872,7 +891,7 @@ private struct BoundedProofImageView: View {
         Group {
             if let image { Image(decorative: image.cgImage, scale: 1).resizable() }
             else if let failure { Text(failure).foregroundStyle(.secondary) }
-            else { ProgressView("Loading proof") }
+            else { ProgressView(ProofStrings.loadingProof) }
         }
         .task(id: preview) {
             if let cached = preview.validatedImage { image = cached; return }
@@ -912,24 +931,24 @@ private struct ProofMappingView: View {
             Form {
                 Text(preview.fileName)
                 BoundedProofImageView(preview: preview).scaledToFit().frame(maxHeight: 220)
-                Text("Map the entire image to an axis-aligned rectangle in board millimeters. Initial bounds cover the full fabrication panel, including rails. Enter the artwork’s actual bounds; screenshots with margins need preparation before mapping.")
+                Text(ProofStrings.mappingInstructions)
                     .font(.callout)
-                TextField("Minimum X (mm)", value: $minimumX, format: .number)
-                TextField("Minimum Y (mm)", value: $minimumY, format: .number)
-                TextField("Maximum X (mm)", value: $maximumX, format: .number)
-                TextField("Maximum Y (mm)", value: $maximumY, format: .number)
-                Picker("Image orientation", selection: $orientation) {
-                    Text("Choose orientation").tag(Optional<BoardArtworkMapping.Orientation>.none)
-                    Text("Board coordinates · right is +X, up is +Y").tag(Optional(BoardArtworkMapping.Orientation.boardCoordinates))
-                    Text("Viewed from bottom · mirror image X").tag(Optional(BoardArtworkMapping.Orientation.viewedFromBottom))
+                TextField(ProofStrings.minimumX, value: $minimumX, format: .number)
+                TextField(ProofStrings.minimumY, value: $minimumY, format: .number)
+                TextField(ProofStrings.maximumX, value: $maximumX, format: .number)
+                TextField(ProofStrings.maximumY, value: $maximumY, format: .number)
+                Picker(ProofStrings.imageOrientation, selection: $orientation) {
+                    Text(ProofStrings.chooseOrientation).tag(Optional<BoardArtworkMapping.Orientation>.none)
+                    Text(ProofStrings.orientationBoardCoordinatesDetail).tag(Optional(BoardArtworkMapping.Orientation.boardCoordinates))
+                    Text(ProofStrings.orientationViewedFromBottomDetail).tag(Optional(BoardArtworkMapping.Orientation.viewedFromBottom))
                 }
                 if let error { Text(error).foregroundStyle(.red) }
             }
-            .navigationTitle("Map \(preview.side == .top ? "Top" : "Bottom") Artwork")
+            .navigationTitle(preview.side == .top ? ProofStrings.mapTopArtwork : ProofStrings.mapBottomArtwork)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button(CommonStrings.cancel) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Use Mapping") {
+                    Button(ProofStrings.useMapping) {
                         guard let orientation else { return }
                         let mapping = BoardArtworkMapping(bounds: Bounds2D(minimum: Point2D(x: minimumX, y: minimumY), maximum: Point2D(x: maximumX, y: maximumY)), orientation: orientation)
                         do { try mapping.validate(); onMap(mapping); dismiss() }
@@ -956,23 +975,23 @@ private struct LayerInspectionView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Picker("Inspect source", selection: $target) {
+                Picker(WorkspaceStrings.inspectSource, selection: $target) {
                     ForEach(document.layers) { layer in Text(layer.fileName).tag(Optional(BoardInspectionTarget.layer(layer.id))) }
-                    if !document.drills.isEmpty { Text("Drills and slots").tag(Optional(BoardInspectionTarget.drills)) }
+                    if !document.drills.isEmpty { Text(WorkspaceStrings.drillsAndSlots).tag(Optional(BoardInspectionTarget.drills)) }
                 }
-                Button("Physical Board") { target = nil }
+                Button(WorkspaceStrings.physicalBoard) { target = nil }
             }
-            Toggle("Show drill/slot overlay in this 2D view", isOn: $showDrills).disabled(document.drills.isEmpty)
+            Toggle(WorkspaceStrings.showDrillOverlay, isOn: $showDrills).disabled(document.drills.isEmpty)
             ScrollView(.horizontal) {
                 HStack {
-                    Button("Zoom In", systemImage: "plus.magnifyingglass") { zoom(2) }
-                    Button("Zoom Out", systemImage: "minus.magnifyingglass") { zoom(0.5) }
-                    Button("Fit Source", systemImage: "arrow.up.left.and.arrow.down.right") { viewport = nil }
-                    Menu("Pan", systemImage: "arrow.up.and.down.and.arrow.left.and.right") {
-                        Button("Left") { pan(x: -0.25, y: 0) }
-                        Button("Right") { pan(x: 0.25, y: 0) }
-                        Button("Up") { pan(x: 0, y: 0.25) }
-                        Button("Down") { pan(x: 0, y: -0.25) }
+                    Button(CommonStrings.zoomIn, systemImage: "plus.magnifyingglass") { zoom(2) }
+                    Button(CommonStrings.zoomOut, systemImage: "minus.magnifyingglass") { zoom(0.5) }
+                    Button(WorkspaceStrings.fitSource, systemImage: "arrow.up.left.and.arrow.down.right") { viewport = nil }
+                    Menu(CommonStrings.pan, systemImage: "arrow.up.and.down.and.arrow.left.and.right") {
+                        Button(CommonStrings.left) { pan(x: -0.25, y: 0) }
+                        Button(CommonStrings.right) { pan(x: 0.25, y: 0) }
+                        Button(CommonStrings.up) { pan(x: 0, y: 0.25) }
+                        Button(CommonStrings.down) { pan(x: 0, y: -0.25) }
                     }
                 }
             }.disabled(output == nil)
@@ -982,8 +1001,8 @@ private struct LayerInspectionView: View {
                     if let output {
                         Image(decorative: output.image, scale: 1).resizable().scaledToFit()
                             .scaleEffect(magnification).offset(drag)
-                            .accessibilityLabel("Selected fabrication source in board coordinates")
-                    } else { ProgressView("Drawing source geometry") }
+                            .accessibilityLabel(WorkspaceStrings.selectedSourceAccessibility)
+                    } else { ProgressView(WorkspaceStrings.drawingSourceGeometry) }
                     if let error { Text(error).foregroundStyle(.orange).padding() }
                 }
                 .clipped().contentShape(Rectangle())
@@ -1004,10 +1023,10 @@ private struct LayerInspectionView: View {
                 })
             }
             if let output {
-                Text("\(output.bounds.width, format: .number.precision(.fractionLength(4))) × \(output.bounds.height, format: .number.precision(.fractionLength(4))) mm · \(output.millimetersPerPixel, format: .number.precision(.significantDigits(3))) mm/texel · \(output.image.width) × \(output.image.height) pixels")
+                Text(WorkspaceStrings.inspectionMetrics(width: output.bounds.width.formatted(.number.precision(.fractionLength(4))), height: output.bounds.height.formatted(.number.precision(.fractionLength(4))), millimetersPerPixel: output.millimetersPerPixel.formatted(.number.precision(.significantDigits(3))), pixelWidth: output.image.width, pixelHeight: output.image.height))
                     .font(.caption.monospacedDigit())
             }
-            Text("Drag to pan; pinch or double-tap to focus. Source geometry is redrawn at each zoom. Outline centerlines are emphasized; drill visibility does not alter physical holes.")
+            Text(WorkspaceStrings.inspectionHint)
                 .font(.caption2).foregroundStyle(.secondary)
         }.padding()
         .onChange(of: document) { _, _ in viewport = nil }

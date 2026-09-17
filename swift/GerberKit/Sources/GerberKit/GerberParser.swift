@@ -9,11 +9,11 @@ public enum GerberParseError: Error, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .textEncoding:
-            "The layer is not an ASCII or UTF-8 Gerber file."
+            DiagnosticStrings.notTextGerber
         case let .invalidDefinition(fileName, command, reason), let .invalidCommand(fileName, command, reason):
-            "\(fileName): \(command): \(reason)"
+            DiagnosticStrings.fileCommandReason(fileName, command, reason)
         case let .missingGeometry(fileName):
-            "No drawable Gerber geometry was found in \(fileName)."
+            DiagnosticStrings.noDrawableGeometry(fileName)
         }
     }
 }
@@ -160,7 +160,7 @@ private struct ParserMachine {
                     isExtended = false
                 } else {
                     let pending = cleaned(buffer)
-                    if !pending.isEmpty { invalidCommand(pending, "Missing command delimiter before extended block."); return }
+                    if !pending.isEmpty { invalidCommand(pending, SyntaxStrings.missingDelimiterBeforeExtended); return }
                     buffer.removeAll(keepingCapacity: true)
                     isExtended = true
                 }
@@ -175,9 +175,9 @@ private struct ParserMachine {
 
         guard failure == nil else { return }
         let trailing = cleaned(buffer)
-        guard !isExtended, trailing.isEmpty else { invalidCommand(trailing, "Unterminated command or extended block."); return }
-        guard regionContours == nil, !repeatOpen else { invalidCommand("EOF", "Unterminated region or repeat block."); return }
-        guard terminated else { invalidCommand("EOF", "Missing M02 end-of-file command."); return }
+        guard !isExtended, trailing.isEmpty else { invalidCommand(trailing, SyntaxStrings.unterminatedCommand); return }
+        guard regionContours == nil, !repeatOpen else { invalidCommand("EOF", SyntaxStrings.unterminatedRegionOrRepeat); return }
+        guard terminated else { invalidCommand("EOF", SyntaxStrings.missingM02); return }
     }
 
     mutating func invalidCommand(_ command: String, _ reason: String) {
@@ -185,11 +185,11 @@ private struct ParserMachine {
     }
 
     mutating func consumeExtended(_ block: String) {
-        guard !terminated else { invalidCommand(block, "Data after end-of-file."); return }
-        guard block.hasSuffix("*") else { invalidCommand(block, "Missing extended-command delimiter."); return }
+        guard !terminated else { invalidCommand(block, SyntaxStrings.dataAfterEndOfFile); return }
+        guard block.hasSuffix("*") else { invalidCommand(block, SyntaxStrings.missingExtendedDelimiter); return }
         let commands = block.split(separator: "*", omittingEmptySubsequences: true)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-        guard let first = commands.first else { invalidCommand(block, "Empty extended block."); return }
+        guard let first = commands.first else { invalidCommand(block, SyntaxStrings.emptyExtendedBlock); return }
         if first.hasPrefix("AM") { parseMacro(commands); return }
         for command in commands {
             if failure != nil { return }
@@ -205,17 +205,17 @@ private struct ParserMachine {
             else if ["LMN", "IPPOS", "ASAXBY", "MIA0B0", "OFA0B0", "SFA1B1", "IR0"].contains(command) { continue }
             else if command.hasPrefix("LR"), Self.decimal(String(command.dropFirst(2))) == 0 { continue }
             else if command.hasPrefix("LS"), Self.decimal(String(command.dropFirst(2))) == 1 { continue }
-            else { invalidCommand(command, "Unsupported or malformed geometry command; layer rejected.") }
+            else { invalidCommand(command, SyntaxStrings.unsupportedGeometryCommand) }
         }
     }
 
     mutating func parseFormat(_ command: String) {
         guard command.range(of: #"^FS[LT][AI]X[0-6][0-6]Y[0-6][0-6]$"#, options: .regularExpression) != nil else {
-            invalidCommand(command, "Unsupported or malformed coordinate format."); return
+            invalidCommand(command, SyntaxStrings.unsupportedCoordinateFormat); return
         }
         let chars = Array(command)
         guard chars[5] == chars[8], chars[6] == chars[9], chars[5] != "0" || chars[6] != "0" else {
-            invalidCommand(command, "X/Y precision must match and contain digits."); return
+            invalidCommand(command, SyntaxStrings.precisionMismatch); return
         }
         format.leadingZerosOmitted = chars[2] == "L"
         absoluteCoordinates = chars[3] == "A"
@@ -239,13 +239,13 @@ private struct ParserMachine {
     mutating func parseMacro(_ commands: [String]) {
         guard let first = commands.first else { return }
         let name = String(first.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, macros[name] == nil, commands.count > 1, commands.count <= 10_000 else { invalidDefinition(first, "Empty or oversized macro definition."); return }
+        guard !name.isEmpty, macros[name] == nil, commands.count > 1, commands.count <= 10_000 else { invalidDefinition(first, SyntaxStrings.emptyOrOversizedMacro); return }
         // A literal illegal count is invalid even if the macro is never used.
         // Parameter expressions and geometry are evaluated only at ADD.
         for statement in commands.dropFirst() {
             let fields = statement.split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             if fields.first == "4", fields.count >= 3, let count = Self.decimal(fields[2]) {
-                guard count.rounded() == count, (3.0...5000.0).contains(count) else { invalidDefinition(statement, "Invalid literal macro vertex count."); return }
+                guard count.rounded() == count, (3.0...5000.0).contains(count) else { invalidDefinition(statement, SyntaxStrings.invalidMacroVertexCount); return }
             }
         }
         macros[name] = ApertureMacro(statements: Array(commands.dropFirst()))
@@ -255,16 +255,16 @@ private struct ParserMachine {
         var tail = command.dropFirst(3)
         let codeDigits = tail.prefix(while: \.isNumber)
         guard let code = Int(codeDigits), code >= 10, code <= Int(Int32.max) else {
-            invalidDefinition(command, "Invalid aperture number."); return
+            invalidDefinition(command, SyntaxStrings.invalidApertureNumber); return
         }
         tail = tail.dropFirst(codeDigits.count)
         let pieces = tail.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false)
-        guard let first = pieces.first, !first.isEmpty else { invalidDefinition(command, "Missing aperture template."); return }
+        guard let first = pieces.first, !first.isEmpty else { invalidDefinition(command, SyntaxStrings.missingApertureTemplate); return }
         let shapeName = String(first)
         let texts = pieces.count > 1 ? pieces[1].split(separator: "X", omittingEmptySubsequences: false).map(String.init) : []
         let raw = texts.compactMap(Self.decimal)
         guard raw.count == texts.count, raw.allSatisfy({ ($0 * format.unitScale).isFinite }) else {
-            invalidDefinition(command, "Malformed, nonfinite, or out-of-range modifier."); return
+            invalidDefinition(command, SyntaxStrings.malformedModifier); return
         }
         func dimension(_ index: Int) -> Double { raw[index] * format.unitScale }
         func withHole(_ shape: ApertureShape, at index: Int) -> ApertureShape {
@@ -277,12 +277,12 @@ private struct ParserMachine {
         switch shapeName {
         case "C":
             guard (1...2).contains(raw.count), raw.allSatisfy({ $0 >= 0 }) else {
-                invalidDefinition(command, "Circle requires a nonnegative diameter and optional round hole; legacy rectangular holes are unsupported."); return
+                invalidDefinition(command, SyntaxStrings.circleTemplateInvalid); return
             }
             apertures[code] = withHole(.circle(diameter: dimension(0)), at: 1)
         case "R", "O":
             guard (2...3).contains(raw.count), raw.allSatisfy({ $0 >= 0 }), raw[0] > 0, raw[1] > 0 else {
-                invalidDefinition(command, "Rectangle/obround requires positive width and height and optional round hole; legacy rectangular holes are unsupported."); return
+                invalidDefinition(command, SyntaxStrings.rectangleTemplateInvalid); return
             }
             apertures[code] = withHole(shapeName == "R"
                 ? .rectangle(width: dimension(0), height: dimension(1))
@@ -291,11 +291,11 @@ private struct ParserMachine {
             guard (2...4).contains(raw.count), raw[0] > 0,
                   let vertices = Int(texts[1]), (3...12).contains(vertices),
                   raw.dropFirst(3).allSatisfy({ $0 >= 0 }) else {
-                invalidDefinition(command, "Polygon requires a positive diameter, 3...12 integer vertices, finite rotation and optional round hole; legacy rectangular holes are unsupported."); return
+                invalidDefinition(command, SyntaxStrings.polygonTemplateInvalid); return
             }
             apertures[code] = withHole(.polygon(diameter: dimension(0), vertices: vertices, rotationDegrees: raw.count > 2 ? raw[2] : 0), at: 3)
         default:
-            guard let macro = macros[shapeName] else { invalidDefinition(command, "Undefined aperture macro \(shapeName)."); return }
+            guard let macro = macros[shapeName] else { invalidDefinition(command, SyntaxStrings.undefinedApertureMacro(shapeName)); return }
             do {
                 let shape = try macro.instantiate(parameters: raw, scale: format.unitScale, fileName: fileName, command: command)
                 let cost = try GeometryLimits.shape(shape, context: command)
@@ -310,7 +310,7 @@ private struct ParserMachine {
 
     mutating func parseStepRepeat(_ command: String) {
         if command == "SR" {
-            guard repeatOpen else { invalidCommand(command, "Repeat close without an open block."); return }
+            guard repeatOpen else { invalidCommand(command, SyntaxStrings.repeatCloseWithoutOpen); return }
             // Ucamco copies the complete ordered block along Y, then X.
             for x in 0..<stepRepeat.xCount {
                 for y in 0..<stepRepeat.yCount {
@@ -328,7 +328,7 @@ private struct ParserMachine {
             repeatExpandedCount = 0
             stepRepeat = StepRepeat(); repeatOpen = false; return
         }
-        guard !repeatOpen else { invalidCommand(command, "Nested step-repeat is not supported; layer rejected."); return }
+        guard !repeatOpen else { invalidCommand(command, SyntaxStrings.nestedStepRepeat); return }
         let fields = Self.fields(in: String(command.dropFirst(2)))
         guard let x = Int(fields.firstValue(for: "X") ?? "1"),
               let y = Int(fields.firstValue(for: "Y") ?? "1"), x > 0, y > 0,
@@ -348,22 +348,22 @@ private struct ParserMachine {
     mutating func consumeStandard(_ rawCommand: String) {
         let command = rawCommand.trimmingCharacters(in: .whitespacesAndNewlines)
         commandContext = command
-        guard !terminated else { invalidCommand(command, "Data after end-of-file."); return }
+        guard !terminated else { invalidCommand(command, SyntaxStrings.dataAfterEndOfFile); return }
         if command.hasPrefix("G04") || command.hasPrefix("G4 ") { return }
         if command == "M02" || command == "M00" {
-            guard regionContours == nil, !repeatOpen else { invalidCommand(command, "Unterminated region or repeat block."); return }
+            guard regionContours == nil, !repeatOpen else { invalidCommand(command, SyntaxStrings.unterminatedRegionOrRepeat); return }
             terminated = true; return
         }
         if command == "M01" { return } // Supported deprecated no-op.
         guard command.range(of: #"^(?:[GD][0-9]+|[XYIJ][+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+))+$"#, options: .regularExpression) != nil else {
-            invalidCommand(command, "Malformed coordinate or unsupported standard command."); return
+            invalidCommand(command, SyntaxStrings.malformedStandardCommand); return
         }
         let fields = Self.fields(in: command)
         for key: Character in ["X", "Y", "I", "J", "D"] {
-            guard fields.values(for: key).count <= 1 else { invalidCommand(command, "Repeated field \(key)."); return }
+            guard fields.values(for: key).count <= 1 else { invalidCommand(command, SyntaxStrings.repeatedField(String(key))); return }
         }
         for field in fields where field.key == "G" || field.key == "D" {
-            guard Int(field.value) != nil else { invalidCommand(command, "Out-of-range command number."); return }
+            guard Int(field.value) != nil else { invalidCommand(command, SyntaxStrings.outOfRangeCommandNumber); return }
         }
 
         for gText in fields.values(for: "G") {
@@ -372,11 +372,11 @@ private struct ParserMachine {
             case 2: interpolation = .clockwise
             case 3: interpolation = .counterclockwise
             case 36:
-                guard regionContours == nil else { invalidCommand(command, "Nested region."); return }
+                guard regionContours == nil else { invalidCommand(command, SyntaxStrings.nestedRegion); return }
                 regionContours = []
                 pendingRegionPoints = 0
             case 37:
-                guard regionContours != nil else { invalidCommand(command, "Region end without start."); return }
+                guard regionContours != nil else { invalidCommand(command, SyntaxStrings.regionEndWithoutStart); return }
                 finishRegion()
             case 54, 55: break
             case 70: format.unitScale = 25.4; hasUnits = true
@@ -385,15 +385,15 @@ private struct ParserMachine {
             case 75: singleQuadrant = false
             case 90: absoluteCoordinates = true
             case 91: absoluteCoordinates = false
-            default: invalidCommand(command, "Unsupported G command."); return
+            default: invalidCommand(command, SyntaxStrings.unsupportedGCommand); return
             }
         }
         guard failure == nil else { return }
 
         let dCode = fields.values(for: "D").last.flatMap(Int.init)
-        if let dCode, !(1...3).contains(dCode), dCode < 10 { invalidCommand(command, "Invalid D operation."); return }
+        if let dCode, !(1...3).contains(dCode), dCode < 10 { invalidCommand(command, SyntaxStrings.invalidDOperation); return }
         if let dCode, dCode >= 10 {
-            guard apertures[dCode] != nil else { invalidCommand(command, "Undefined aperture D\(dCode)."); return }
+            guard apertures[dCode] != nil else { invalidCommand(command, SyntaxStrings.undefinedAperture(dCode)); return }
             currentAperture = dCode
             if fields.firstValue(for: "X") == nil, fields.firstValue(for: "Y") == nil { return }
         }
@@ -401,9 +401,9 @@ private struct ParserMachine {
         let hasCoordinate = fields.contains { [Character("X"), "Y", "I", "J"].contains($0.key) }
         let explicitOperation = dCode.map { (1...3).contains($0) } ?? false
         guard hasCoordinate || explicitOperation else { return }
-        guard hasFormat, hasUnits else { invalidCommand(command, "Declare coordinate format and units before operations."); return }
+        guard hasFormat, hasUnits else { invalidCommand(command, SyntaxStrings.formatAndUnitsBeforeOperations); return }
         for field in fields where [Character("X"), "Y", "I", "J"].contains(field.key) {
-            guard format.decode(field.value) != nil else { invalidCommand(command, "Malformed coordinate."); return }
+            guard format.decode(field.value) != nil else { invalidCommand(command, SyntaxStrings.malformedCoordinate); return }
         }
 
         let decodedX = fields.firstValue(for: "X").flatMap(format.decode)
@@ -431,8 +431,8 @@ private struct ParserMachine {
                 regionContours?.append([target])
             }
         case 3:
-            guard regionContours == nil else { invalidCommand(command, "Flash inside region."); return }
-            guard let shape = currentAperture.flatMap({ apertures[$0] }) else { invalidCommand(command, "Flash without a selected aperture."); return }
+            guard regionContours == nil else { invalidCommand(command, SyntaxStrings.flashInsideRegion); return }
+            guard let shape = currentAperture.flatMap({ apertures[$0] }) else { invalidCommand(command, SyntaxStrings.flashWithoutAperture); return }
             append(.flash(center: target, shape: shape, polarity: polarity))
         default:
             break
@@ -443,9 +443,9 @@ private struct ParserMachine {
     }
 
     mutating func draw(to target: Point2D, iOffset: Double, jOffset: Double) {
-        if interpolation != .linear, singleQuadrant { invalidCommand(commandContext, "Unsupported G74 arc; layer rejected."); return }
+        if interpolation != .linear, singleQuadrant { invalidCommand(commandContext, SyntaxStrings.unsupportedG74Arc); return }
         let shape = currentAperture.flatMap { apertures[$0] }
-        if regionContours == nil, shape == nil { invalidCommand(commandContext, "Draw without a selected aperture."); return }
+        if regionContours == nil, shape == nil { invalidCommand(commandContext, SyntaxStrings.drawWithoutAperture); return }
 
         if regionContours != nil {
             if regionContours?.isEmpty == true {
@@ -485,7 +485,7 @@ private struct ParserMachine {
             return
         }
         guard case let .circle(width) = shape else {
-            invalidCommand(commandContext, "Unsupported draw aperture; only solid circles and linear legacy rectangle sweeps are supported."); return
+            invalidCommand(commandContext, SyntaxStrings.unsupportedDrawAperture); return
         }
         switch interpolation {
         case .linear:
@@ -529,7 +529,7 @@ private struct ParserMachine {
 
     mutating func finishRegion() {
         guard let contours = regionContours, !contours.isEmpty, contours.allSatisfy({ $0.count >= 3 }) else {
-            invalidCommand(commandContext, "Region has an empty or incomplete contour."); return
+            invalidCommand(commandContext, SyntaxStrings.regionContourIncomplete); return
         }
         append(.region(contours: contours, polarity: polarity))
         regionContours = nil

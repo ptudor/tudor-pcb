@@ -31,13 +31,13 @@ final class BoardRenderer {
         case commandEncoding
         var errorDescription: String? {
             switch self {
-            case .noDevice: "A Metal graphics device is unavailable."
-            case .noCommandQueue: "Could not create the Metal command queue."
-            case .noShaderLibrary: "Could not load the board shader library."
-            case .noShaderFunction: "The board shader functions are missing."
-            case .bufferAllocation: "Could not allocate the complete board mesh buffers."
-            case .commandEncoding: "Could not encode a Metal frame. Retry the 3D display."
-            case .meshCapacity: "The board mesh exceeds the supported geometry or GPU buffer capacity."
+            case .noDevice: String(localized: ErrorStrings.noMetalDevice)
+            case .noCommandQueue: String(localized: ErrorStrings.noCommandQueue)
+            case .noShaderLibrary: String(localized: ErrorStrings.noShaderLibrary)
+            case .noShaderFunction: String(localized: ErrorStrings.noShaderFunction)
+            case .bufferAllocation: String(localized: ErrorStrings.bufferAllocation)
+            case .commandEncoding: String(localized: ErrorStrings.commandEncoding)
+            case .meshCapacity: String(localized: ErrorStrings.meshCapacity)
             }
         }
     }

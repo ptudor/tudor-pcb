@@ -219,8 +219,8 @@ final class InteractiveMTKView: MTKView, UIGestureRecognizerDelegate {
         addGestureRecognizer(pan)
         isAccessibilityElement = true
         accessibilityIdentifier = "physical-board"
-        accessibilityLabel = "3D fabrication board"
-        accessibilityHint = "Adjust to zoom. Camera controls also provide top, bottom, and fit views."
+        accessibilityLabel = String(localized: WorkspaceStrings.board3DAccessibilityLabel)
+        accessibilityHint = String(localized: WorkspaceStrings.board3DAccessibilityHint)
         accessibilityTraits = .adjustable
     }
 

@@ -1,0 +1,385 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ exceeds the safe in-memory size limit." : {
+      "comment" : "Error shown for a file inside a ZIP archive that is too large to unpack into memory. %@ is the file name."
+    },
+    "%@ failed its ZIP checksum." : {
+      "comment" : "Error shown when a file inside a ZIP archive is corrupt (its stored checksum does not match its contents). %@ is the file name."
+    },
+    "%@ is encrypted at the ZIP level." : {
+      "comment" : "Error shown for a password-protected file inside a ZIP archive. %@ is the file name."
+    },
+    "%@ → %@" : {
+      "comment" : "Joins the names of nested archives or folders, outermost first. %1$@ is the containing archive or folder, %2$@ is the item inside it. The arrow may be replaced with one that reads naturally in your language and writing direction.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "%@: %@" : {
+      "comment" : "Prefixes a message with the file or folder it concerns. %1$@ is a file name or path, %2$@ is the message (a full sentence). Keep the separator between them.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@: %@: %@" : {
+      "comment" : "Locates a syntax problem. %1$@ is a file name, %2$@ is the exact command text quoted from the file (do not translate it), %3$@ is the reason (a full sentence). Keep the separators.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: %2$@: %3$@"
+          }
+        }
+      }
+    },
+    "%@: Excellon syntax conflicts with filename role %@." : {
+      "comment" : "Warning: the file's name suggests one layer type but its contents are drill data. %1$@ is the file name, %2$@ is the layer name the file name suggested (for example 'Top copper'). 'Excellon' is the drill file format; keep it as written.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: Excellon syntax conflicts with filename role %2$@."
+          }
+        }
+      }
+    },
+    "%@: FileFunction overrides conflicting filename role %@." : {
+      "comment" : "Warning: the file's declared layer type disagrees with what its name suggests, and the declaration was used. %1$@ is the file name, %2$@ is the layer name the file name suggested (for example 'Top copper'). 'FileFunction' is a Gerber attribute name; keep it as written.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: FileFunction overrides conflicting filename role %2$@."
+          }
+        }
+      }
+    },
+    "%@: ambiguous nearby routed endpoints were left unjoined." : {
+      "comment" : "Warning: several outline line ends lie close together and the app could not tell which ones connect, so it left them apart. %@ is the file name."
+    },
+    "%@: conflicting FileFunction attributes; layer role is unresolved." : {
+      "comment" : "Warning: the file declares more than one layer type, so the app could not decide which it is. %@ is the file name. 'FileFunction' is a Gerber attribute name; keep it as written."
+    },
+    "%@: degenerate region contour; material topology is unresolved." : {
+      "comment" : "Warning: a filled region in the board outline file has no area (its points lie on a line), so the app cannot tell where board material is. %@ is the file name."
+    },
+    "%@: degenerate routed contour; material topology is unresolved." : {
+      "comment" : "Warning: a closed outline loop has no area, so the app cannot tell where board material is. %@ is the file name."
+    },
+    "%@: flashed outline geometry has no supported routed centerline." : {
+      "comment" : "Warning: the board outline file contains a 'flash' (a stamped shape) instead of drawn lines, which cannot define a cut path. %@ is the file name."
+    },
+    "%@: geometry limit exceeded (%@)." : {
+      "comment" : "Error shown when a file's drawing is too complex to process safely. %1$@ is a file name or command, %2$@ names the limit that was exceeded (a short phrase such as 'number of geometry points').",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: geometry limit exceeded (%2$@)."
+          }
+        }
+      }
+    },
+    "%@: import limit exceeded (%@)." : {
+      "comment" : "Error shown when a package is too large or too deeply nested to import safely. %1$@ is a file name or path, %2$@ names the limit that was exceeded (a short phrase such as 'file size').",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: import limit exceeded (%2$@)."
+          }
+        }
+      }
+    },
+    "%@: inferred a routed endpoint join within %@ mm; verify the source gap." : {
+      "comment" : "Warning: two outline lines did not quite meet, so the app assumed they connect. %1$@ is the file name, %2$@ is the gap distance as a number; 'mm' is millimeters.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: inferred a routed endpoint join within %2$@ mm; verify the source gap."
+          }
+        }
+      }
+    },
+    "%@: nonmanifold routed junction; material topology is unresolved." : {
+      "comment" : "Warning: three or more outline lines meet at one point, so the app cannot tell where board material is. %@ is the file name."
+    },
+    "%@: open routed paths require panel/material inference; inspect their endpoints." : {
+      "comment" : "Warning: the board outline does not close into a loop, so the app had to guess the board shape. %@ is the file name."
+    },
+    "%@: sibling proof could not be read: %@ Select it explicitly with Color proof options." : {
+      "comment" : "Warning shown when a proof image found next to an opened ZIP could not be read. %1$@ is the image file name, %2$@ is the operating system's description of the problem (a full sentence ending with a period). 'Color proof options' is the name of a menu in the app.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: sibling proof could not be read: %2$@ Select it explicitly with Color proof options."
+          }
+        }
+      }
+    },
+    "%@: the proof image format, metadata, or pixel data is invalid or unsupported." : {
+      "comment" : "Error shown when a proof image (a picture of the finished board) cannot be decoded. %@ is the file name."
+    },
+    "%@: unsupported FileFunction %@; layer role is unresolved." : {
+      "comment" : "Warning: the file declares a layer type the app does not know. %1$@ is the file name, %2$@ is the declared value quoted from the file (do not translate it). 'FileFunction' is a Gerber attribute name; keep it as written.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: unsupported FileFunction %2$@; layer role is unresolved."
+          }
+        }
+      }
+    },
+    "Board bounds must be finite and ordered, with each dimension between 0.000001 and 1000000 mm." : {
+      "comment" : "Error shown when the board's overall width or height is missing, not a number, or outside the supported range. 'mm' is millimeters."
+    },
+    "Board thickness must be finite, positive, and at most 1000000 mm." : {
+      "comment" : "Error shown when the board thickness is not a positive number within the supported range. 'mm' is millimeters."
+    },
+    "Choose a fabrication board: %@" : {
+      "comment" : "Error shown when a package holds several boards and the user must pick one. %@ is a comma-separated list of the candidate names."
+    },
+    "Could not allocate the board texture canvas." : {
+      "comment" : "Error shown when the app cannot reserve memory for the image (texture) it paints the board into before displaying it in 3D."
+    },
+    "Could not create the rendered board image." : {
+      "comment" : "Error shown when the painted board image could not be turned into a displayable picture."
+    },
+    "Could not decompress %@ (zlib %lld)." : {
+      "comment" : "Error shown when a file inside a ZIP archive fails to decompress. %1$@ is the file name, %2$lld is the error code from the zlib library; keep 'zlib' as written.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not decompress %1$@ (zlib %2$lld)."
+          }
+        }
+      }
+    },
+    "Could not enumerate fabrication directory." : {
+      "comment" : "Error shown when the app cannot list the contents of a folder the user opened."
+    },
+    "Could not read fabrication entry metadata: %@" : {
+      "comment" : "Error shown when a file's size or type could not be read from disk. %@ is the operating system's description of the problem (a full sentence)."
+    },
+    "Directory import is incomplete: %@" : {
+      "comment" : "Error shown when some files in a folder could not be read. %@ lists the affected paths and problems, one per line."
+    },
+    "Duplicate archive entry %@; a unique source path is required." : {
+      "comment" : "Error shown when a ZIP archive lists the same file path twice. %@ is the repeated path."
+    },
+    "No Gerber or Excellon layers were found in this package." : {
+      "comment" : "Error shown when a ZIP or folder contains no board files. 'Gerber' is the file format for board layers and 'Excellon' the file format for drill data; keep both names as written."
+    },
+    "No drawable Gerber geometry was found in %@." : {
+      "comment" : "Error shown when a Gerber file parses but draws nothing. %@ is the file name."
+    },
+    "Separate board sets require selection: %@." : {
+      "comment" : "Error shown when a package holds several complete boards and the user must pick one. %@ is a comma-separated list of the board set names."
+    },
+    "Several equally likely fabrication packages were found: %@." : {
+      "comment" : "Error shown when a package holds several ZIP archives that could each be the board and the user must pick one. %@ is a comma-separated list of archive names."
+    },
+    "Sibling proofs could not be inspected: %@ Use Color proof options to select a proof explicitly, or open its containing folder." : {
+      "comment" : "Warning shown when the folder next to an opened ZIP could not be listed for proof images. %@ is the operating system's description of the problem (a full sentence ending with a period). 'Color proof options' is the name of a menu in the app."
+    },
+    "Split ZIP archives are not supported." : {
+      "comment" : "Error shown for a ZIP archive that was divided into several files (multi-part archive)."
+    },
+    "The ZIP central directory is missing or damaged." : {
+      "comment" : "Error shown for a ZIP file whose table of contents (the 'central directory') cannot be read."
+    },
+    "The layer is not an ASCII or UTF-8 Gerber file." : {
+      "comment" : "Error shown when a file expected to be a Gerber board layer is not plain text. 'ASCII' and 'UTF-8' are text encodings; keep them as written."
+    },
+    "The nested fabrication archives exceed the safe expansion limit." : {
+      "comment" : "Error shown when ZIP archives inside the package contain too many further archives to unpack safely."
+    },
+    "The selected archive is no longer present." : {
+      "comment" : "Error shown when reopening a board from history and the ZIP archive that was chosen inside the package has since been removed."
+    },
+    "The selected board set is no longer present: %@" : {
+      "comment" : "Error shown when reopening a board from history and the board set that was chosen inside the package has since been removed. %@ is the board set name."
+    },
+    "ZIP compression method %lld is not supported." : {
+      "comment" : "Error shown for a ZIP entry compressed with a method the app cannot decompress. %lld is the method's numeric code from the ZIP specification."
+    },
+    "ZIP64 archives are not supported." : {
+      "comment" : "Error shown for a ZIP file that uses the ZIP64 large-archive extension. Keep 'ZIP64' as written."
+    },
+    "[Color proof] %@: factory payload is empty; validity has not been established." : {
+      "comment" : "Warning about the manufacturer's encrypted color silkscreen data: the file is empty, so it cannot be checked. %@ is the file name. Keep the bracketed tag at the start; it marks warnings about color proofs."
+    },
+    "[Color proof] Bottom: a validated gallery proof is available but unmapped; exact board colors remain unavailable." : {
+      "comment" : "Warning for the bottom face: a proof picture was accepted but has not been positioned on the board, so the 3D view cannot show true colors. Keep the bracketed tag at the start; it marks warnings about color proofs."
+    },
+    "[Color proof] Bottom: factory payload present, validity unverified; exact colors are unavailable without a validated proof." : {
+      "comment" : "Warning for the bottom face: the manufacturer's encrypted color data exists but cannot be checked, and no proof picture has been accepted, so the 3D view cannot show true colors. Keep the bracketed tag at the start; it marks warnings about color proofs."
+    },
+    "[Color proof] Top: a validated gallery proof is available but unmapped; exact board colors remain unavailable." : {
+      "comment" : "Warning for the top face: a proof picture was accepted but has not been positioned on the board, so the 3D view cannot show true colors. Keep the bracketed tag at the start; it marks warnings about color proofs."
+    },
+    "[Color proof] Top: factory payload present, validity unverified; exact colors are unavailable without a validated proof." : {
+      "comment" : "Warning for the top face: the manufacturer's encrypted color data exists but cannot be checked, and no proof picture has been accepted, so the 3D view cannot show true colors. Keep the bracketed tag at the start; it marks warnings about color proofs."
+    },
+    "aperture macro expression length" : {
+      "comment" : "Name of a limit: how long an arithmetic expression inside an aperture macro (a parameterized Gerber shape definition) may be. Shown inside parentheses after 'limit exceeded'."
+    },
+    "aperture macro expression nesting" : {
+      "comment" : "Name of a limit: how deeply parentheses may nest in an arithmetic expression inside an aperture macro (a parameterized Gerber shape definition). Shown inside parentheses after 'limit exceeded'."
+    },
+    "aperture macro geometry" : {
+      "comment" : "Name of a limit: how many shapes an aperture macro (a parameterized Gerber shape definition) may produce. Shown inside parentheses after 'limit exceeded'."
+    },
+    "aperture macro geometry points" : {
+      "comment" : "Name of a limit: how many coordinate points an aperture macro (a parameterized Gerber shape definition) may produce. Shown inside parentheses after 'limit exceeded'."
+    },
+    "aperture macro parameters" : {
+      "comment" : "Name of a limit: how many parameters an aperture macro (a parameterized Gerber shape definition) may take. Shown inside parentheses after 'limit exceeded'."
+    },
+    "aperture nesting depth" : {
+      "comment" : "Name of a limit: how many levels of shapes-inside-shapes an aperture (a Gerber drawing tool shape) may have. Shown inside parentheses after 'limit exceeded'."
+    },
+    "aperture points" : {
+      "comment" : "Name of a limit: how many coordinate points one aperture (a Gerber drawing tool shape) may add up to. Shown inside parentheses after 'limit exceeded'."
+    },
+    "aperture sub-shapes" : {
+      "comment" : "Name of a limit: how many smaller shapes one compound aperture (a Gerber drawing tool shape) may be built from. Shown inside parentheses after 'limit exceeded'."
+    },
+    "arc radius and endpoints" : {
+      "comment" : "Name of a limit violation: an arc's radius and end points do not describe a valid arc. Shown inside parentheses after 'limit exceeded'."
+    },
+    "archive nesting depth" : {
+      "comment" : "Name of a limit: how many levels of ZIP-inside-ZIP are followed. Shown inside parentheses after 'limit exceeded'."
+    },
+    "artwork mapping dimensions" : {
+      "comment" : "Name of a limit violation: the rectangle a proof image is mapped onto must have positive width and height. Shown inside parentheses after 'limit exceeded'."
+    },
+    "compressed size" : {
+      "comment" : "Name of a limit: the compressed size of ZIP archive contents. Shown inside parentheses after 'limit exceeded'."
+    },
+    "coordinates" : {
+      "comment" : "Name of a limit violation: a coordinate is not a number or lies outside the supported range. Shown inside parentheses after 'limit exceeded'."
+    },
+    "custom aperture vertex count" : {
+      "comment" : "Name of a limit: how many corner points a user-defined aperture (a Gerber drawing tool shape) may have. Shown inside parentheses after 'limit exceeded'."
+    },
+    "decoded data size" : {
+      "comment" : "Name of a limit: the size of text or image data after decoding. Shown inside parentheses after 'limit exceeded'."
+    },
+    "decompressed size" : {
+      "comment" : "Name of a limit: the size of ZIP archive contents after decompression. Shown inside parentheses after 'limit exceeded'."
+    },
+    "dimension" : {
+      "comment" : "Name of a limit violation: a width, height, or diameter is not a number or lies outside the supported range. Shown inside parentheses after 'limit exceeded'."
+    },
+    "drill wall points" : {
+      "comment" : "Name of a limit: how many points are used to draw the inside walls of drilled holes in 3D. Shown inside parentheses after 'limit exceeded'."
+    },
+    "drill wall processing" : {
+      "comment" : "Name of a limit: how much work cutting drilled holes out of the board model may take. Shown inside parentheses after 'limit exceeded'."
+    },
+    "drill wall segments" : {
+      "comment" : "Name of a limit: how many segments the inside wall of one drilled hole is divided into for 3D drawing. Shown inside parentheses after 'limit exceeded'."
+    },
+    "drilled wall mesh size" : {
+      "comment" : "Name of a limit: the size of the 3D mesh built for all drilled and routed walls. Shown inside parentheses after 'limit exceeded'."
+    },
+    "file changed while it was being read" : {
+      "comment" : "Name of a limit violation: a file grew or changed on disk while the app was reading it. Shown inside parentheses after 'limit exceeded'."
+    },
+    "file size" : {
+      "comment" : "Name of a limit: the size of one file. Shown inside parentheses after 'limit exceeded'."
+    },
+    "folder nesting depth" : {
+      "comment" : "Name of a limit: how many levels of subfolders are followed when a folder is opened. Shown inside parentheses after 'limit exceeded'."
+    },
+    "image changed while it was being read" : {
+      "comment" : "Name of a limit violation: an image file changed on disk while the app was reading it. Shown inside parentheses after 'limit exceeded'."
+    },
+    "image dimensions" : {
+      "comment" : "Name of a limit: the width and height of a proof image. Shown inside parentheses after 'limit exceeded'."
+    },
+    "image file size" : {
+      "comment" : "Name of a limit: the size of one proof image file. Shown inside parentheses after 'limit exceeded'."
+    },
+    "image frame count" : {
+      "comment" : "Name of a limit: how many frames (pages or animation frames) a proof image may contain. Shown inside parentheses after 'limit exceeded'."
+    },
+    "image pixel count" : {
+      "comment" : "Name of a limit: the total number of pixels in a proof image. Shown inside parentheses after 'limit exceeded'."
+    },
+    "memory needed to process the package" : {
+      "comment" : "Name of a limit: the total memory the import would need. Shown inside parentheses after 'limit exceeded'."
+    },
+    "number of drawing objects in the board" : {
+      "comment" : "Name of a limit: how many drawn shapes the whole board may hold when it is painted. Shown inside parentheses after 'limit exceeded'."
+    },
+    "number of drill hits" : {
+      "comment" : "Name of a limit: how many drilled holes and slots the board may hold. Shown inside parentheses after 'limit exceeded'."
+    },
+    "number of files" : {
+      "comment" : "Name of a limit: how many files one package may contain. Shown inside parentheses after 'limit exceeded'."
+    },
+    "number of geometry objects" : {
+      "comment" : "Name of a limit: how many drawn shapes (lines, arcs, flashes, regions) the import may hold. Shown inside parentheses after 'limit exceeded'."
+    },
+    "number of geometry points" : {
+      "comment" : "Name of a limit: how many coordinate points the drawn shapes may add up to. Shown inside parentheses after 'limit exceeded'."
+    },
+    "number of nested archives" : {
+      "comment" : "Name of a limit: how many ZIP archives inside other archives one package may contain. Shown inside parentheses after 'limit exceeded'."
+    },
+    "number of points and segments in the board" : {
+      "comment" : "Name of a limit: how many coordinate points and line segments the whole board may hold when it is painted. Shown inside parentheses after 'limit exceeded'."
+    },
+    "outline endpoint tolerance" : {
+      "comment" : "Name of a limit violation: the distance allowed between outline line ends that should meet is not usable. Shown inside parentheses after 'limit exceeded'."
+    },
+    "outline intersection processing" : {
+      "comment" : "Name of a limit: how much work finding crossings between outline shapes may take. Shown inside parentheses after 'limit exceeded'."
+    },
+    "outline intersection results" : {
+      "comment" : "Name of a limit: how many crossings between outline shapes may be produced. Shown inside parentheses after 'limit exceeded'."
+    },
+    "outline points" : {
+      "comment" : "Name of a limit: how many points the board outline may have after analysis. Shown inside parentheses after 'limit exceeded'."
+    },
+    "outline segments" : {
+      "comment" : "Name of a limit: how many straight segments the board outline may have after analysis. Shown inside parentheses after 'limit exceeded'."
+    },
+    "points in one contour" : {
+      "comment" : "Name of a limit: how many points one closed outline (contour) may have. Shown inside parentheses after 'limit exceeded'."
+    },
+    "polygon vertex count and rotation" : {
+      "comment" : "Name of a limit: the number of corners and the rotation angle of a polygon aperture (a Gerber drawing tool shape). Shown inside parentheses after 'limit exceeded'."
+    },
+    "segments per arc" : {
+      "comment" : "Name of a limit: how many straight segments one arc may be divided into for drawing. Shown inside parentheses after 'limit exceeded'."
+    },
+    "step-and-repeat count and spacing" : {
+      "comment" : "Name of a limit: the number of copies and the spacing of a Gerber step-and-repeat block (a pattern repeated in a grid). Shown inside parentheses after 'limit exceeded'."
+    },
+    "total input size" : {
+      "comment" : "Name of a limit: the combined size of all files read during one import. Shown inside parentheses after 'limit exceeded'."
+    },
+    "unconnected outline endpoints in one area" : {
+      "comment" : "Name of a limit: how many unconnected outline line ends may lie close together. Shown inside parentheses after 'limit exceeded'."
+    }
+  },
+  "version" : "1.0"
+}

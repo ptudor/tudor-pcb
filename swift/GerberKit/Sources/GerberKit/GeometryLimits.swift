@@ -3,7 +3,7 @@ import Foundation
 public struct GeometryLimitError: Error, LocalizedError, Sendable, Equatable {
     public let resource: String
     public let context: String
-    public var errorDescription: String? { "\(context): geometry limit exceeded (\(resource))." }
+    public var errorDescription: String? { DiagnosticStrings.geometryLimitExceeded(context: context, resource: DiagnosticStrings.limitResource(resource)) }
 }
 
 /// Supported geometry keeps the existing 0.1 mm outline / 0.15 mm region

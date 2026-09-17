@@ -171,7 +171,6 @@ extension AppSmokeTests {
             ColorSilkscreenInfo(side: .top, fileName: "empty.FCTS", payload: .encryptedJLC, byteCount: 0),
             ColorSilkscreenInfo(side: .bottom, fileName: "bottom.FCBS", payload: .encryptedJLC, byteCount: 20)
         ])
-        source.refreshProofWarnings()
         let initial = source
         let data = NSMutableData()
         let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil))
@@ -211,7 +210,6 @@ extension AppSmokeTests {
         XCTAssertEqual(owner.entries[0].warningCount, model.document?.warnings.count)
         var gallery = BoardDocument(name: "gallery", sidePreviews: [BoardSidePreview(side: .top, fileName: "valid.png", imageData: valid, validatedImage: try ProofImageDecoder.decode(valid, name: "valid.png"), purpose: .galleryProof)])
         gallery.colorSilkscreens = source.colorSilkscreens
-        gallery.refreshProofWarnings()
         XCTAssertEqual(gallery.proofState(for: .top), .galleryOnly)
         XCTAssertTrue(gallery.warnings.contains { $0.contains("unmapped") })
     }

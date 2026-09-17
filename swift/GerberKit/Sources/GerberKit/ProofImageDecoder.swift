@@ -11,7 +11,7 @@ public struct ProofImage: @unchecked Sendable {
 public enum ProofImageError: Error, LocalizedError, Sendable {
     case invalid(String)
     public var errorDescription: String? {
-        switch self { case let .invalid(name): "\(name): the proof image format, metadata, or pixel data is invalid or unsupported." }
+        switch self { case let .invalid(name): DiagnosticStrings.proofImageInvalid(name) }
     }
 }
 

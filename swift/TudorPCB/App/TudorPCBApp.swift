@@ -20,14 +20,14 @@ private struct GerberCommands: Commands {
     @FocusedValue(\.fabricationWorkspace) private var workspace
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button("Open Fabrication Package…") {
+            Button(WorkspaceStrings.openFabricationPackageCommand) {
                 workspace?.isImporting = true
             }
             .keyboardShortcut("o")
             .disabled(workspace == nil)
         }
         CommandGroup(after: .newItem) {
-            Button("Fabrication History…") {
+            Button(WorkspaceStrings.fabricationHistoryCommand) {
                 workspace?.isShowingHistory = true
             }.disabled(workspace == nil)
         }

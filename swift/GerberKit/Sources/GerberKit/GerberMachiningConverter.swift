@@ -10,9 +10,9 @@ struct MachiningMetadata {
         guard let fields = functions.first(where: { ["plated", "nonplated"].contains($0.first ?? "") }) else { return }
         func error(_ reason: String) -> ExcellonParseError { .init(fileName: fileName, command: "FileFunction," + fields.joined(separator: ","), reason: reason) }
         guard functions.allSatisfy({ $0 == fields }), (4...5).contains(fields.count),
-              let start = Int(fields[1]), let end = Int(fields[2]), (1...256).contains(start), (1...256).contains(end), start != end else { throw error("Invalid or conflicting drill layer span.") }
-        guard fields[3] == (fields[0] == "plated" ? "pth" : "npth") else { throw error("Blind/buried or unknown drill spans cannot be rendered as through holes.") }
-        if fields.count == 5, !["drill", "rout", "mixed"].contains(fields[4]) { throw error("Unsupported machining label.") }
+              let start = Int(fields[1]), let end = Int(fields[2]), (1...256).contains(start), (1...256).contains(end), start != end else { throw error(SyntaxStrings.invalidDrillLayerSpan) }
+        guard fields[3] == (fields[0] == "plated" ? "pth" : "npth") else { throw error(SyntaxStrings.blindBuriedSpanUnsupported) }
+        if fields.count == 5, !["drill", "rout", "mixed"].contains(fields[4]) { throw error(SyntaxStrings.unsupportedMachiningLabel) }
         self.plated = fields[0] == "plated"
         span = DrillLayerSpan(start: min(start, end), end: max(start, end))
     }
@@ -27,7 +27,7 @@ enum GerberMachiningConverter {
         func error(_ reason: String) -> ExcellonParseError { .init(fileName: layer.fileName, command: "Gerber machining geometry", reason: reason) }
         for primitive in layer.primitives {
             try Task.checkCancellation()
-            guard primitive.polarity == .dark else { throw error("Clear machining operations are unsupported; the entire drill layer was rejected.") }
+            guard primitive.polarity == .dark else { throw error(SyntaxStrings.clearMachiningUnsupported) }
             let center: Point2D, end: Point2D?, diameter: Double
             switch primitive {
             case let .flash(point, .circle(size), _):
@@ -39,9 +39,9 @@ enum GerberMachiningConverter {
                 end = point + offset
             case let .line(start, finish, width, _):
                 center = start; end = finish; diameter = width
-            default: throw error("Unsupported machining shape or curved route; the entire drill layer was rejected.")
+            default: throw error(SyntaxStrings.unsupportedMachiningShape)
             }
-            guard diameter > 0 else { throw error("Machining diameter must be positive.") }
+            guard diameter > 0 else { throw error(SyntaxStrings.machiningDiameterNotPositive) }
             try budget.charge("geometry objects", 1, maximum: budget.limits.geometryObjects, path: layer.fileName)
             try budget.charge("geometry points", end == nil ? 1 : 2, maximum: budget.limits.geometryPoints, path: layer.fileName)
             try budget.charge("allocations", 128, maximum: budget.limits.allocationBytes, path: layer.fileName)

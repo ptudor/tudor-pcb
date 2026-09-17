@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "GerberKit",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
         .iOS(.v17)
@@ -13,6 +14,7 @@ let package = Package(
     targets: [
         .target(
             name: "GerberKit",
+            resources: [.process("Resources")],
             linkerSettings: [.linkedLibrary("z")]
         ),
         .testTarget(name: "GerberKitTests", dependencies: ["GerberKit"], resources: [.copy("Fixtures")])

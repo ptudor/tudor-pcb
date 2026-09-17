@@ -26,7 +26,7 @@ public struct ImportLimits: Sendable {
 public struct ImportLimitError: Error, LocalizedError, Sendable, Equatable {
     public let resource: String
     public let path: String
-    public var errorDescription: String? { "\(path): import limit exceeded (\(resource))." }
+    public var errorDescription: String? { DiagnosticStrings.importLimitExceeded(path: path, resource: DiagnosticStrings.limitResource(resource)) }
 }
 
 struct ImportBudget {

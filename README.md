@@ -94,6 +94,55 @@ archive can be uploaded to App Store Connect. See
 [builds and releases](docs/releases.md) for installation and verification and
 [RELEASE.md](RELEASE.md) for the maintainer runbook.
 
+## Localization
+
+Every piece of user-facing text is an English key in a String Catalog, and the
+catalogs are the source of truth for translations:
+
+| Catalog | Contents |
+|---|---|
+| `swift/TudorPCB/Localization/Common.xcstrings` | Shared controls: Done, Cancel, zoom and pan, board dimensions |
+| `swift/TudorPCB/Localization/Workspace.xcstrings` | Menu commands, toolbar, sidebar, welcome and loading overlays, the 3D and 2D views |
+| `swift/TudorPCB/Localization/History.xcstrings` | Fabrication history, its detail panel, access and recovery messages |
+| `swift/TudorPCB/Localization/Proofs.xcstrings` | Color proof gallery, image inspector, and mapping sheet |
+| `swift/TudorPCB/Localization/Errors.xcstrings` | Failure alerts and 3D renderer errors |
+| `swift/TudorPCB/Localization/InfoPlist.xcstrings` | Document type names and the copyright line |
+| `swift/GerberKit/Sources/GerberKit/Resources/Board.xcstrings` | Layer names and proof states |
+| `swift/GerberKit/Sources/GerberKit/Resources/Diagnostics.xcstrings` | Import warnings and errors |
+| `swift/GerberKit/Sources/GerberKit/Resources/Syntax.xcstrings` | Reasons a Gerber or Excellon command was rejected |
+
+There is deliberately no `Localizable.xcstrings`. Every string is declared in
+one of the `*Strings.swift` files (`swift/TudorPCB/Strings/`,
+`swift/GerberKit/Sources/GerberKit/Strings/`) as a `LocalizedStringResource`
+or `String(localized:)` that names its table and carries a translator comment,
+so nothing ever lands in a default table. GerberKit localizes its own resource
+bundle, so its diagnostics read correctly in any host.
+
+Xcode's string extraction is off (`SWIFT_EMIT_LOC_STRINGS` and
+`LOCALIZED_STRING_SWIFTUI_SUPPORT` in `swift/project.yml`): a build never
+rewrites a catalog. To add a string, declare it in the matching
+`*Strings.swift` file with a comment, then insert the key into that catalog by
+hand as `"Key" : { "comment" : "…" }` at its sorted position; give a key with a
+count plural `variations` under `en`. `LocalizationCatalogTests` fails the
+build when a key in code is missing from its catalog (or the reverse), when a
+key has no comment, when a catalog is named `Localizable`, or when a catalog
+carries the app's name. Translations arrive as edits to the same catalogs.
+
+To cross-check the catalogs against the compiler once, build with the
+extractor on and merge its output, then discard everything but genuinely new
+or removed keys:
+
+```sh
+cd swift
+xcodebuild build -project TudorPCB.xcodeproj -scheme TudorPCBMac -destination 'platform=macOS' \
+  -derivedDataPath build/extract SWIFT_EMIT_LOC_STRINGS=YES
+xcrun xcstringstool sync TudorPCB/Localization/{Common,Workspace,History,Proofs,Errors}.xcstrings \
+  --stringsdata $(find build/extract -path '*TudorPCBMac.build*' -name '*.stringsdata')
+xcrun xcstringstool sync GerberKit/Sources/GerberKit/Resources/*.xcstrings \
+  --stringsdata $(find build/extract -path '*GerberKit.build*' -name '*.stringsdata')
+git diff --stat -- '*.xcstrings'
+```
+
 ## License
 
 Tudor PCB is licensed under [MIT](LICENSE). The license is bundled in the app's

@@ -73,8 +73,8 @@ public enum BoardRasterizerError: Error, LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .contextCreation: "Could not allocate the board texture canvas."
-        case .imageCreation: "Could not create the rendered board image."
+        case .contextCreation: DiagnosticStrings.textureCanvasAllocationFailed
+        case .imageCreation: DiagnosticStrings.renderedImageCreationFailed
         }
     }
 }
@@ -119,7 +119,7 @@ public struct BoardRasterizer: Sendable {
                 if let end = drill.end { return .line(start: drill.center, end: end, width: drill.diameter, polarity: .dark) }
                 return .flash(center: drill.center, shape: .circle(diameter: drill.diameter), polarity: .dark)
             }
-            try composite(layer: GerberLayer(fileName: "Drill overlay", kind: .drill(plated: nil), primitives: primitives),
+            try composite(layer: GerberLayer(fileName: BoardStrings.drillOverlay, kind: .drill(plated: nil), primitives: primitives),
                           color: RGBAColor(red: 1, green: 0.65, blue: 0.15), context: context, bounds: bounds, scale: scale, canvas: canvas)
         }
         guard let image = context.makeImage() else { throw BoardRasterizerError.imageCreation }

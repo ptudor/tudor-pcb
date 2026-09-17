@@ -1,0 +1,291 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Ambiguous integer coordinates: declare precision using FILE_FORMAT or a units format, or export explicit decimals." : {
+      "comment" : "A drill file writes coordinates without decimal points and never says how many decimal digits they have, so they cannot be read. Keep 'FILE_FORMAT' as written; it is a comment keyword in the file."
+    },
+    "Ambiguous zero convention: declare retained LZ/TZ or export explicit decimals." : {
+      "comment" : "A drill file writes shortened coordinates without saying whether leading or trailing zeros were dropped. 'LZ' and 'TZ' are the file keywords for leading zeros and trailing zeros; keep them as written."
+    },
+    "Blind/buried or unknown drill spans cannot be rendered as through holes." : {
+      "comment" : "A Gerber drill file describes holes that do not go all the way through the board (blind or buried holes), which the app cannot show."
+    },
+    "Circle macro requires exposure, diameter, center and optional rotation." : {
+      "comment" : "A circle inside an aperture macro has the wrong number of parameters. The listed words name the expected parameters in order."
+    },
+    "Circle requires a nonnegative diameter and optional round hole; legacy rectangular holes are unsupported." : {
+      "comment" : "A circle aperture in a Gerber file has a negative diameter, or uses the old-style rectangular center hole the app does not implement."
+    },
+    "Clear machining operations are unsupported; the entire drill layer was rejected." : {
+      "comment" : "A Gerber drill file uses 'clear' polarity (erasing) for a hole, which has no meaning for drilling, so the whole layer is skipped."
+    },
+    "Conflicting coordinate format declarations." : {
+      "comment" : "A drill file declares its coordinate digit format twice with different values."
+    },
+    "Conflicting zero conventions." : {
+      "comment" : "A drill file says both that leading zeros and that trailing zeros are omitted from numbers."
+    },
+    "Coordinate exceeds declared precision." : {
+      "comment" : "A drill file coordinate has more digits than the file's declared digit format allows."
+    },
+    "Data after drill end-of-program." : {
+      "comment" : "A drill file contains commands after the end-of-program command."
+    },
+    "Data after end-of-file." : {
+      "comment" : "A Gerber file contains commands after the end-of-file command."
+    },
+    "Declare coordinate format and units before operations." : {
+      "comment" : "A Gerber file draws something before declaring how its coordinates are written and whether they are metric or inch."
+    },
+    "Declare drill units before coordinates/tools." : {
+      "comment" : "A drill file uses coordinates or defines tools before saying whether its numbers are metric or inch."
+    },
+    "Draw without a selected aperture." : {
+      "comment" : "A Gerber file draws a line or arc before any aperture (drawing tool shape) has been selected."
+    },
+    "Drill mode while routing." : {
+      "comment" : "A drill file switches back to drilling mode while the drill bit is still lowered and cutting a slot."
+    },
+    "Empty extended block." : {
+      "comment" : "An extended command block in a Gerber file (one enclosed in percent signs) contains nothing."
+    },
+    "Empty or oversized macro definition." : {
+      "comment" : "An aperture macro definition in a Gerber file has no name, no body, redefines an existing name, or is far too long."
+    },
+    "Flash inside region." : {
+      "comment" : "A Gerber file stamps an aperture (a flash) while a filled region is open, which the format does not allow."
+    },
+    "Flash without a selected aperture." : {
+      "comment" : "A Gerber file stamps an aperture (a flash) before any aperture has been selected."
+    },
+    "G85 during a tool-down route." : {
+      "comment" : "A drill file starts a G85 slot (a straight slot given by its two ends) while the drill bit is already lowered. Keep 'G85' as written."
+    },
+    "Incomplete outline coordinates/rotation." : {
+      "comment" : "An outline inside an aperture macro declares more points than it lists, or is missing its rotation."
+    },
+    "Incomplete outline macro." : {
+      "comment" : "An outline (polygon drawn point by point) inside an aperture macro is missing its parameters."
+    },
+    "Incomplete polygon macro." : {
+      "comment" : "A regular polygon inside an aperture macro has the wrong number of parameters."
+    },
+    "Incomplete rectangle macro." : {
+      "comment" : "A rectangle inside an aperture macro has the wrong number of parameters."
+    },
+    "Incomplete vector-line macro." : {
+      "comment" : "A vector line (a straight line with width, drawn between two points) inside an aperture macro has the wrong number of parameters."
+    },
+    "Invalid D operation." : {
+      "comment" : "A Gerber file uses a D-code between 4 and 9, which the format does not define (1 to 3 are drawing operations, 10 and above select apertures). Keep 'D' as written."
+    },
+    "Invalid aperture number." : {
+      "comment" : "A Gerber file defines an aperture with a D-code number that is out of range (D-codes 10 and above are allowed)."
+    },
+    "Invalid literal macro vertex count." : {
+      "comment" : "An outline inside an aperture macro states a number of points that is not a whole number or is out of range."
+    },
+    "Invalid macro dimension." : {
+      "comment" : "An aperture macro size (diameter, width, or height) is negative, not a number, or too large."
+    },
+    "Invalid macro integer/count." : {
+      "comment" : "An aperture macro parameter that must be a whole number (such as a vertex count) is not one, or is out of range."
+    },
+    "Invalid or conflicting drill layer span." : {
+      "comment" : "A Gerber drill file's FileFunction attribute names the copper layers a hole passes through, and the numbers are missing, out of range, equal, or declared twice."
+    },
+    "Invalid or redefined macro variable." : {
+      "comment" : "An aperture macro assigns a variable that is malformed or has already been given a value."
+    },
+    "Invalid or unsupported drill repeat." : {
+      "comment" : "A drill file's repeat command (R followed by a count, which drills a row of holes) has an unusable count or appears where it is not allowed."
+    },
+    "Invalid route tool-down state." : {
+      "comment" : "A drill file lowers the drill bit to cut a slot while it is in drilling mode or already lowered."
+    },
+    "Invalid thermal dimensions/gap." : {
+      "comment" : "A thermal relief (a ring with gaps, used around pads connected to large copper areas) inside an aperture macro has an impossible size or gap."
+    },
+    "Invalid tool definition or undeclared units." : {
+      "comment" : "A drill file defines a drill bit without a valid positive diameter, or before saying whether its numbers are metric or inch."
+    },
+    "Invalid tool number." : {
+      "comment" : "A drill file's tool command (T followed by a number) has a number that cannot be read."
+    },
+    "Invalid vector-line endpoints." : {
+      "comment" : "The two end points of a vector line inside an aperture macro are not valid numbers."
+    },
+    "Invalid, nonfinite, or division-by-zero macro expression." : {
+      "comment" : "An arithmetic expression inside an aperture macro could not be evaluated: it is malformed, produces an infinite or undefined number, or divides by zero."
+    },
+    "Machining diameter must be positive." : {
+      "comment" : "A Gerber drill file gives a hole or slot a zero or negative diameter."
+    },
+    "Machining requires a defined selected tool." : {
+      "comment" : "A drill file drills or cuts before any drill bit has been selected."
+    },
+    "Macro contains no geometry." : {
+      "comment" : "An aperture macro defines no shapes at all."
+    },
+    "Macro outline is not closed." : {
+      "comment" : "An outline inside an aperture macro must end at the point where it started, and does not."
+    },
+    "Malformed FILE_FORMAT declaration." : {
+      "comment" : "A drill file's FILE_FORMAT comment (which states digits before and after the decimal point) is not in the expected form. Keep 'FILE_FORMAT' as written."
+    },
+    "Malformed FORMAT comment." : {
+      "comment" : "A drill file's FORMAT comment (which states precision, units, and zero handling) is not in the expected form. Keep 'FORMAT' as written."
+    },
+    "Malformed FORMAT precision." : {
+      "comment" : "The digit-count part of a drill file's FORMAT comment is not two numbers separated by a colon. Keep 'FORMAT' as written."
+    },
+    "Malformed G command." : {
+      "comment" : "A drill file's G command (a machine mode command, written as G followed by a number) has no readable number. Keep 'G' as written."
+    },
+    "Malformed G85 slot." : {
+      "comment" : "A drill file's G85 slot command does not give a valid end point. Keep 'G85' as written."
+    },
+    "Malformed coordinate or unsupported standard command." : {
+      "comment" : "A line in a Gerber file is neither readable coordinates nor a command the app knows."
+    },
+    "Malformed coordinate." : {
+      "comment" : "A coordinate value is not a valid number. Used for both Gerber and drill files."
+    },
+    "Malformed coordinates or unsupported Excellon command." : {
+      "comment" : "A line in a drill file is neither readable coordinates nor a command the app knows. 'Excellon' is the drill file format; keep it as written."
+    },
+    "Malformed incremental mode declaration." : {
+      "comment" : "A drill file's ICI command (which switches between absolute and incremental coordinates) is not in the expected form."
+    },
+    "Malformed macro primitive." : {
+      "comment" : "A line inside an aperture macro does not start with a valid shape code number."
+    },
+    "Malformed, nonfinite, or out-of-range modifier." : {
+      "comment" : "A size parameter in a Gerber aperture definition is not a valid number or is too large."
+    },
+    "Missing M02 end-of-file command." : {
+      "comment" : "A Gerber file ends without the M02 command that marks the end of the file, so it may be truncated. Keep 'M02' as written."
+    },
+    "Missing aperture template." : {
+      "comment" : "A Gerber file defines an aperture without naming its shape (circle, rectangle, obround, polygon, or a macro)."
+    },
+    "Missing command delimiter before extended block." : {
+      "comment" : "A Gerber file starts an extended command (one enclosed in percent signs) without finishing the previous command with an asterisk."
+    },
+    "Missing drill end-of-program command." : {
+      "comment" : "A drill file ends without the M30 command that marks the end of the program, so it may be truncated."
+    },
+    "Missing extended-command delimiter." : {
+      "comment" : "An extended command block in a Gerber file (one enclosed in percent signs) does not end with an asterisk."
+    },
+    "Nested region." : {
+      "comment" : "A Gerber file starts a filled region while another region is still open."
+    },
+    "Nested step-repeat is not supported; layer rejected." : {
+      "comment" : "A Gerber file starts a step-and-repeat block inside another one, which the app does not implement, so the whole layer is skipped."
+    },
+    "Nonfinite or out-of-range coordinate." : {
+      "comment" : "A drill file coordinate is infinite, not a number, or beyond the supported range."
+    },
+    "Out-of-range command number." : {
+      "comment" : "A number after a command letter in a Gerber file is too large to read."
+    },
+    "Polygon requires a positive diameter, 3...12 integer vertices, finite rotation and optional round hole; legacy rectangular holes are unsupported." : {
+      "comment" : "A regular polygon aperture in a Gerber file has an invalid diameter, a vertex count outside 3 to 12, a bad rotation, or uses the old-style rectangular center hole the app does not implement."
+    },
+    "Rapid positioning with tool down is unsupported." : {
+      "comment" : "A drill file asks the machine to move quickly to a new position while the drill bit is still lowered."
+    },
+    "Rectangle/obround requires positive width and height and optional round hole; legacy rectangular holes are unsupported." : {
+      "comment" : "A rectangle or obround (rounded-end rectangle) aperture in a Gerber file has a zero or negative side, or uses the old-style rectangular center hole the app does not implement."
+    },
+    "Redefined tool T%lld." : {
+      "comment" : "A drill file defines the same drill bit twice. %lld is the tool number; keep the letter T before it as written."
+    },
+    "Region end without start." : {
+      "comment" : "A Gerber file ends a filled region that was never started."
+    },
+    "Region has an empty or incomplete contour." : {
+      "comment" : "A filled region in a Gerber file has an outline with too few points to enclose an area."
+    },
+    "Repeat close without an open block." : {
+      "comment" : "A Gerber file ends a step-and-repeat block that was never started."
+    },
+    "Repeated coordinate/modifier %@." : {
+      "comment" : "A drill file line gives the same coordinate letter twice, for example two X values. %@ is the repeated letter."
+    },
+    "Repeated field %@." : {
+      "comment" : "A Gerber command gives the same letter field twice, for example two X coordinates. %@ is the repeated letter."
+    },
+    "Tool change while routing." : {
+      "comment" : "A drill file switches to another drill bit while the current bit is lowered and cutting."
+    },
+    "Undefined aperture D%lld." : {
+      "comment" : "A Gerber file selects an aperture (drawing tool shape) that was never defined. %lld is the D-code number; keep the letter D before it as written."
+    },
+    "Undefined aperture macro %@." : {
+      "comment" : "A Gerber file defines an aperture from a macro that was never defined. %@ is the macro name quoted from the file."
+    },
+    "Undefined tool T%lld." : {
+      "comment" : "A drill file selects a drill bit that was never defined. %lld is the tool number; keep the letter T before it as written."
+    },
+    "Unrecognized drill syntax." : {
+      "comment" : "A file named like a drill file is neither Gerber nor Excellon drill data."
+    },
+    "Unsupported Excellon G command." : {
+      "comment" : "A drill file uses a G command (a machine mode command) the app does not implement. 'Excellon' is the drill file format; keep it and 'G' as written."
+    },
+    "Unsupported FORMAT mode/units." : {
+      "comment" : "A drill file's FORMAT comment names a coordinate mode or unit the app does not recognize (expected absolute or incremental, and metric or inch). Keep 'FORMAT' as written."
+    },
+    "Unsupported FORMAT zero convention." : {
+      "comment" : "A drill file's FORMAT comment names a way of omitting zeros from numbers that the app does not recognize. Keep 'FORMAT' as written."
+    },
+    "Unsupported G command." : {
+      "comment" : "A Gerber file uses a G command (a drawing mode command, written as G followed by a number) the app does not implement. Keep 'G' as written."
+    },
+    "Unsupported G74 arc; layer rejected." : {
+      "comment" : "A Gerber file draws an arc in single-quadrant mode (the deprecated G74 command), which the app does not implement, so the whole layer is skipped. Keep 'G74' as written."
+    },
+    "Unsupported arc route; drill layer rejected." : {
+      "comment" : "A drill file cuts a curved slot, which the app does not implement, so the whole drill layer is skipped."
+    },
+    "Unsupported coordinate precision." : {
+      "comment" : "A drill file declares more integer or decimal digits per coordinate than the app supports."
+    },
+    "Unsupported draw aperture; only solid circles and linear legacy rectangle sweeps are supported." : {
+      "comment" : "A Gerber file draws a line with an aperture (drawing tool shape) that cannot be used as a pen: only round pens, and rectangular pens on straight lines, are supported."
+    },
+    "Unsupported machining label." : {
+      "comment" : "A Gerber drill file's FileFunction attribute ends with a label the app does not recognize (expected drill, rout, or mixed)."
+    },
+    "Unsupported machining shape or curved route; the entire drill layer was rejected." : {
+      "comment" : "A Gerber drill file draws a hole or slot with a shape the app cannot turn into a drill operation (only round holes and straight slots are supported), so the whole layer is skipped."
+    },
+    "Unsupported macro primitive %lld; layer rejected." : {
+      "comment" : "An aperture macro uses a shape code the app does not implement, so the whole layer is skipped. %lld is the numeric shape code from the file."
+    },
+    "Unsupported or malformed coordinate format." : {
+      "comment" : "A Gerber file's FS command (which declares how coordinates are written) cannot be read or asks for an unsupported form."
+    },
+    "Unsupported or malformed geometry command; layer rejected." : {
+      "comment" : "A Gerber file uses a drawing command the app does not implement or cannot read (for example a deprecated command), so the whole layer is skipped."
+    },
+    "Unsupported units/format declaration." : {
+      "comment" : "A drill file's units line (METRIC or INCH) carries a digit-format field the app cannot read."
+    },
+    "Unterminated command or extended block." : {
+      "comment" : "A Gerber file ends in the middle of a command or of an extended command block (one enclosed in percent signs)."
+    },
+    "Unterminated region or repeat block." : {
+      "comment" : "A Gerber file ends, or starts an extended command, while a filled region or a step-and-repeat block is still open."
+    },
+    "Unterminated tool-down route." : {
+      "comment" : "A drill file ends while the drill bit is still lowered in the middle of cutting a slot."
+    },
+    "X/Y precision must match and contain digits." : {
+      "comment" : "A Gerber file's FS command declares different digit counts for X and Y coordinates, or none at all."
+    }
+  },
+  "version" : "1.0"
+}

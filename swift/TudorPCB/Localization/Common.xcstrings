@@ -1,0 +1,44 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ × %@ mm" : {
+      "comment" : "The size of a circuit board. %1$@ is the width and %2$@ the height, both already formatted numbers; 'mm' is millimeters. Keep the multiplication sign between them.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "comment" : "Button that closes a sheet or dialog without applying anything."
+    },
+    "Done" : {
+      "comment" : "Button that closes a sheet when the user has finished with it."
+    },
+    "Down" : {
+      "comment" : "Button in the Pan menu that moves the view one step down."
+    },
+    "Left" : {
+      "comment" : "Button in the Pan menu that moves the view one step to the left."
+    },
+    "Pan" : {
+      "comment" : "Menu holding the four buttons that move a magnified 2D view or proof image a fixed step in one direction."
+    },
+    "Right" : {
+      "comment" : "Button in the Pan menu that moves the view one step to the right."
+    },
+    "Up" : {
+      "comment" : "Button in the Pan menu that moves the view one step up."
+    },
+    "Zoom In" : {
+      "comment" : "Button that magnifies the 3D board, a 2D layer view, or a proof image."
+    },
+    "Zoom Out" : {
+      "comment" : "Button that shrinks the 3D board, a 2D layer view, or a proof image."
+    }
+  },
+  "version" : "1.0"
+}

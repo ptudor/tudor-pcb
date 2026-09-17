@@ -63,7 +63,7 @@ final class WorkspaceUITests: XCTestCase {
     func testProofGalleryFitsLargeTextAndRotatesWithReachableImageInspection() throws {
         let app = XCUIApplication(bundleIdentifier: "net.ptudor.tudorpcb")
         func visibleDone() -> XCUIElement {
-            app.buttons.matching(identifier: "Done").allElementsBoundByIndex.first(where: \.isHittable) ?? app.buttons["Done"].firstMatch
+            app.buttons.matching(identifier: "done").allElementsBoundByIndex.first(where: \.isHittable) ?? app.buttons["done"].firstMatch
         }
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "boardA", withExtension: "gko", subdirectory: "Fixtures"))
         let folder = FileManager.default.temporaryDirectory.appending(path: "gallery-" + UUID().uuidString)
@@ -80,16 +80,16 @@ final class WorkspaceUITests: XCTestCase {
         app.launch()
         defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
         XCTAssertTrue(app.navigationBars[folder.lastPathComponent].waitForExistence(timeout: 30))
-        if !app.buttons["Color proofs"].firstMatch.exists { app.buttons["OverflowBarButtonItem"].tap() }
-        app.buttons["Color proofs"].firstMatch.tap()
+        if !app.buttons["color-proofs"].firstMatch.exists { app.buttons["OverflowBarButtonItem"].tap() }
+        app.buttons["color-proofs"].firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Color proofs"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(visibleDone().isHittable, app.debugDescription)
-        let inspect = app.buttons["Inspect Image…"].firstMatch
+        let inspect = app.buttons["inspect-image"].firstMatch
         for _ in 0..<5 where !inspect.isHittable { app.swipeUp() }
         XCTAssertTrue(inspect.isHittable, app.debugDescription)
         inspect.tap()
-        XCTAssertTrue(app.buttons["Fit Image"].waitForExistence(timeout: 10), app.debugDescription)
-        app.buttons["Zoom In"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["fit-image"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["zoom-in"].firstMatch.tap()
         let proof = app.descendants(matching: .any)["proof-inspection-image"].firstMatch
         XCTAssertTrue(proof.exists, app.debugDescription)
         proof.swipeLeft()

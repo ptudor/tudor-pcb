@@ -11,6 +11,16 @@ enum BoardMaskStyle: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
+    var displayName: LocalizedStringResource {
+        switch self {
+        case .green: WorkspaceStrings.finishGreen
+        case .black: WorkspaceStrings.finishBlack
+        case .blue: WorkspaceStrings.finishBlue
+        case .red: WorkspaceStrings.finishRed
+        case .white: WorkspaceStrings.finishWhite
+        }
+    }
+
     nonisolated var color: RGBAColor {
         switch self {
         case .green: .greenMask
@@ -28,12 +38,12 @@ enum WorkspaceOperation {
     case openPackage, selectPackage, attachProof, selectProof, mapProof, renderBoard
     var failureTitle: String {
         switch self {
-        case .openPackage: "Couldn’t open fabrication package"
-        case .selectPackage: "Couldn’t select fabrication package"
-        case .attachProof: "Couldn’t attach proof"
-        case .selectProof: "Couldn’t select proof"
-        case .mapProof: "Couldn’t map proof"
-        case .renderBoard: "Couldn’t render board"
+        case .openPackage: String(localized: ErrorStrings.couldNotOpenPackage)
+        case .selectPackage: String(localized: ErrorStrings.couldNotSelectPackage)
+        case .attachProof: String(localized: ErrorStrings.couldNotAttachProof)
+        case .selectProof: String(localized: ErrorStrings.couldNotSelectProof)
+        case .mapProof: String(localized: ErrorStrings.couldNotMapProof)
+        case .renderBoard: String(localized: ErrorStrings.couldNotRenderBoard)
         }
     }
 }
@@ -163,7 +173,7 @@ final class WorkspaceModel {
                     historyAccessError = nil
                     relinkEntry = nil
                 } catch {
-                    historyAccessError = "The package opened, but persistent access could not be saved: \(error.localizedDescription) Reselect the source to retry."
+                    historyAccessError = String(localized: HistoryStrings.persistentAccessNotSaved(error.localizedDescription))
                     relinkEntry = fromHistory ?? relinking ?? historyEntry
                 }
                 document = next
@@ -197,7 +207,7 @@ final class WorkspaceModel {
         if error is CancellationError || (error as? CocoaError)?.code == .userCancelled { return }
         failedOperation = operation
         failedProofSide = side
-        errorMessage = (source.map { "\($0): " } ?? "") + error.localizedDescription
+        errorMessage = source.map { String(localized: ErrorStrings.sourceFailure($0, error.localizedDescription)) } ?? error.localizedDescription
     }
 
     func chooseCandidate(_ selection: FabricationSelection) {
@@ -226,7 +236,7 @@ final class WorkspaceModel {
                 guard revision == historyResolutionRevision else { return }
                 phase = .idle
                 relinkEntry = entry
-                historyAccessError = "Could not restore access to \(entry.sourcePath): \(error.localizedDescription) Reselect the source to relink it."
+                historyAccessError = String(localized: HistoryStrings.couldNotRestoreAccess(entry.sourcePath, error.localizedDescription))
             }
         }
     }
@@ -302,9 +312,7 @@ final class WorkspaceModel {
         return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
     }
 
-    private func publishProofDocument(_ source: BoardDocument) {
-        var document = source
-        document.refreshProofWarnings()
+    private func publishProofDocument(_ document: BoardDocument) {
         self.document = document
         if let id = currentHistoryEntryID { history.updateInspection(id, document: document) }
         rerender()

@@ -1,0 +1,74 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@: %@" : {
+      "comment" : "Alert body naming what failed. %1$@ is a file name or path, %2$@ is the description of the problem (a full sentence). Keep the separator between them.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "A Metal graphics device is unavailable." : {
+      "comment" : "3D display error: no graphics processor supporting Apple's Metal graphics technology was found. 'Metal' is Apple's product name; keep it as written."
+    },
+    "Could not allocate the complete board mesh buffers." : {
+      "comment" : "3D display error: the graphics processor ran out of memory for the board's 3D model."
+    },
+    "Could not create the Metal command queue." : {
+      "comment" : "3D display error: setting up the graphics processor failed. 'Metal' is Apple's graphics technology; keep it as written."
+    },
+    "Could not encode a Metal frame. Retry the 3D display." : {
+      "comment" : "3D display error: drawing one frame failed; the user can press Retry. 'Metal' is Apple's graphics technology; keep it as written."
+    },
+    "Could not load the board shader library." : {
+      "comment" : "3D display error: the app's compiled graphics programs (shaders) are missing from the app bundle."
+    },
+    "Couldn’t attach proof" : {
+      "comment" : "Alert title when a proof image (a picture of the finished board) could not be read or decoded."
+    },
+    "Couldn’t map proof" : {
+      "comment" : "Alert title when positioning a proof image on the board failed (for example, an empty rectangle)."
+    },
+    "Couldn’t open fabrication package" : {
+      "comment" : "Alert title when reading a fabrication package (a Gerber ZIP or folder) failed."
+    },
+    "Couldn’t render board" : {
+      "comment" : "Alert title when painting the board's layers for display failed."
+    },
+    "Couldn’t select fabrication package" : {
+      "comment" : "Alert title when the file picker for a fabrication package failed."
+    },
+    "Couldn’t select proof" : {
+      "comment" : "Alert title when the file picker for a proof image failed."
+    },
+    "Dismiss" : {
+      "comment" : "Alert button that closes the failure alert."
+    },
+    "Retry Rendering" : {
+      "comment" : "Alert button, after painting the board failed, that tries again."
+    },
+    "Review Proof Mapping" : {
+      "comment" : "Alert button, after mapping a proof failed, that opens the proof gallery so the mapping can be corrected."
+    },
+    "Select Package…" : {
+      "comment" : "Alert button, after a package failed to open, that shows the file picker to choose another. Ends with an ellipsis because a dialog follows."
+    },
+    "Select Proof…" : {
+      "comment" : "Alert button, after a proof image failed, that shows the file picker to choose another. Ends with an ellipsis because a dialog follows."
+    },
+    "The board mesh exceeds the supported geometry or GPU buffer capacity." : {
+      "comment" : "3D display error: the board's 3D model has more vertices than the graphics processor ('GPU') can hold."
+    },
+    "The board shader functions are missing." : {
+      "comment" : "3D display error: the app's compiled graphics programs (shaders) do not contain the expected functions."
+    },
+    "Unknown error" : {
+      "comment" : "Alert body used when an operation failed without any description of the problem."
+    }
+  },
+  "version" : "1.0"
+}

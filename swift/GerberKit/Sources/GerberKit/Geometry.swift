@@ -77,8 +77,8 @@ public enum BoardGeometryError: Error, LocalizedError, Sendable {
     case invalidThickness
     public var errorDescription: String? {
         switch self {
-        case .invalidBounds: "Board bounds must be finite and ordered, with each dimension between 0.000001 and 1000000 mm."
-        case .invalidThickness: "Board thickness must be finite, positive, and at most 1000000 mm."
+        case .invalidBounds: DiagnosticStrings.boardBoundsInvalid
+        case .invalidThickness: DiagnosticStrings.boardThicknessInvalid
         }
     }
 }

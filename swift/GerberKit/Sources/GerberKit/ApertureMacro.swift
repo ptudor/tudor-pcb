@@ -11,12 +11,12 @@ struct ApertureMacro {
         var points = 0
         func invalid(_ reason: String) -> GerberParseError { .invalidDefinition(fileName: fileName, command: command, reason: reason) }
         func integer(_ value: Double, range: ClosedRange<Int>) throws -> Int {
-            guard value.isFinite, value.rounded() == value, value >= Double(range.lowerBound), value <= Double(range.upperBound) else { throw invalid("Invalid macro integer/count.") }
+            guard value.isFinite, value.rounded() == value, value >= Double(range.lowerBound), value <= Double(range.upperBound) else { throw invalid(SyntaxStrings.invalidMacroInteger) }
             return Int(value)
         }
         func length(_ value: Double, positive: Bool = false) throws -> Double {
             let result = value * scale
-            guard result.isFinite, result >= 0, !positive || result > 0 else { throw invalid("Invalid macro dimension.") }
+            guard result.isFinite, result >= 0, !positive || result > 0 else { throw invalid(SyntaxStrings.invalidMacroDimension) }
             try GeometryLimits.length(result, context: command)
             return result
         }
@@ -36,58 +36,58 @@ struct ApertureMacro {
             if text.hasPrefix("$") {
                 let pair = text.split(separator: "=", omittingEmptySubsequences: false)
                 guard pair.count == 2, let id = Int(pair[0].dropFirst()), (1...10_000).contains(id), variables[id] == nil else {
-                    throw invalid("Invalid or redefined macro variable.")
+                    throw invalid(SyntaxStrings.invalidMacroVariable)
                 }
                 variables[id] = try MacroExpression(String(pair[1]), variables: variables).evaluate()
                 continue
             }
             let fields = text.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
-            guard let first = fields.first, let code = Int(first.trimmingCharacters(in: .whitespacesAndNewlines)) else { throw invalid("Malformed macro primitive.") }
+            guard let first = fields.first, let code = Int(first.trimmingCharacters(in: .whitespacesAndNewlines)) else { throw invalid(SyntaxStrings.malformedMacroPrimitive) }
             if code == 0 { continue }
             let v = try fields.dropFirst().map { try MacroExpression($0, variables: variables).evaluate() }
             let primitive: GerberPrimitive
             switch code {
             case 1:
-                guard (4...5).contains(v.count) else { throw invalid("Circle macro requires exposure, diameter, center and optional rotation.") }
+                guard (4...5).contains(v.count) else { throw invalid(SyntaxStrings.circleMacroFields) }
                 let exposure = try integer(v[0], range: 0...1)
                 let center = try rotated(Point2D(x: v[2], y: v[3]), by: v.count == 5 ? v[4] : 0)
                 primitive = .flash(center: center, shape: .circle(diameter: try length(v[1])), polarity: exposure == 1 ? .dark : .clear)
             case 4:
-                guard v.count >= 2 else { throw invalid("Incomplete outline macro.") }
+                guard v.count >= 2 else { throw invalid(SyntaxStrings.incompleteOutlineMacro) }
                 let exposure = try integer(v[0], range: 0...1)
                 let count = try integer(v[1], range: 3...5000)
-                guard v.count == 5 + 2 * count else { throw invalid("Incomplete outline coordinates/rotation.") }
+                guard v.count == 5 + 2 * count else { throw invalid(SyntaxStrings.incompleteOutlineCoordinates) }
                 var contour: [Point2D] = []
                 for i in 0...count { contour.append(Point2D(x: v[2 + i * 2], y: v[3 + i * 2])) }
-                guard contour.first == contour.last else { throw invalid("Macro outline is not closed.") }
+                guard contour.first == contour.last else { throw invalid(SyntaxStrings.macroOutlineNotClosed) }
                 primitive = .flash(center: .zero, shape: try polygon(Array(contour.dropLast()), rotation: v.last!), polarity: exposure == 1 ? .dark : .clear)
             case 5:
-                guard v.count == 6 else { throw invalid("Incomplete polygon macro.") }
+                guard v.count == 6 else { throw invalid(SyntaxStrings.incompletePolygonMacro) }
                 let exposure = try integer(v[0], range: 0...1)
                 let count = try integer(v[1], range: 3...12)
                 primitive = .flash(center: try rotated(Point2D(x: v[2], y: v[3]), by: v[5]),
                     shape: .polygon(diameter: try length(v[4]), vertices: count, rotationDegrees: v[5].truncatingRemainder(dividingBy: 360)), polarity: exposure == 1 ? .dark : .clear)
             case 20, 2:
-                guard v.count == 7 else { throw invalid("Incomplete vector-line macro.") }
+                guard v.count == 7 else { throw invalid(SyntaxStrings.incompleteVectorLineMacro) }
                 let exposure = try integer(v[0], range: 0...1)
                 _ = try length(v[1])
                 let dx = v[4] - v[2], dy = v[5] - v[3]
                 let span = hypot(dx, dy)
-                guard span.isFinite else { throw invalid("Invalid vector-line endpoints.") }
+                guard span.isFinite else { throw invalid(SyntaxStrings.invalidVectorLineEndpoints) }
                 let divisor = span == 0 ? 1 : span
                 let nx = -dy / divisor * v[1] / 2, ny = dx / divisor * v[1] / 2
                 let contour = [Point2D(x: v[2] + nx, y: v[3] + ny), Point2D(x: v[4] + nx, y: v[5] + ny),
                     Point2D(x: v[4] - nx, y: v[5] - ny), Point2D(x: v[2] - nx, y: v[3] - ny)]
                 primitive = .flash(center: .zero, shape: try polygon(contour, rotation: v[6]), polarity: exposure == 1 ? .dark : .clear)
             case 21, 22:
-                guard v.count == 6 else { throw invalid("Incomplete rectangle macro.") }
+                guard v.count == 6 else { throw invalid(SyntaxStrings.incompleteRectangleMacro) }
                 let exposure = try integer(v[0], range: 0...1)
                 _ = try length(v[1]); _ = try length(v[2])
                 let x = v[3] - (code == 21 ? v[1] / 2 : 0), y = v[4] - (code == 21 ? v[2] / 2 : 0)
                 let contour = [Point2D(x: x, y: y), Point2D(x: x + v[1], y: y), Point2D(x: x + v[1], y: y + v[2]), Point2D(x: x, y: y + v[2])]
                 primitive = .flash(center: .zero, shape: try polygon(contour, rotation: v[5]), polarity: exposure == 1 ? .dark : .clear)
             case 7:
-                guard v.count == 6, v[2] > v[3], v[4] >= 0, v[4] < v[2] / sqrt(2) else { throw invalid("Invalid thermal dimensions/gap.") }
+                guard v.count == 6, v[2] > v[3], v[4] >= 0, v[4] < v[2] / sqrt(2) else { throw invalid(SyntaxStrings.invalidThermalDimensions) }
                 let outer = try length(v[2]), inner = try length(v[3]), gap = try length(v[4])
                 let a = v[5].truncatingRemainder(dividingBy: 360) * .pi / 180
                 func gapRectangle(_ width: Double, _ height: Double) -> ApertureShape {
@@ -105,14 +105,14 @@ struct ApertureMacro {
                     .flash(center: .zero, shape: gapRectangle(gap, outer), polarity: .clear)
                 ])
                 primitive = .flash(center: try rotated(Point2D(x: v[0], y: v[1]), by: v[5]), shape: thermal, polarity: .dark)
-            default: throw invalid("Unsupported macro primitive \\(code); layer rejected.")
+            default: throw invalid(SyntaxStrings.unsupportedMacroPrimitive(code))
             }
             let added = try GeometryLimits.cost(primitive, context: command)
             try GeometryLimits.require(added <= GeometryLimits.points - points && objects.count < 5000, "macro geometry", command)
             points += added
             objects.append(primitive)
         }
-        guard !objects.isEmpty else { throw invalid("Macro contains no geometry.") }
+        guard !objects.isEmpty else { throw invalid(SyntaxStrings.macroWithoutGeometry) }
         return .compound(primitives: objects)
     }
 }
@@ -185,5 +185,5 @@ private struct MacroExpression {
 
 private enum MacroEvaluationError: Error, LocalizedError {
     case invalidExpression
-    var errorDescription: String? { "Invalid, nonfinite, or division-by-zero macro expression." }
+    var errorDescription: String? { SyntaxStrings.invalidMacroExpression }
 }

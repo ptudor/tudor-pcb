@@ -26,7 +26,7 @@ public struct ExcellonParser: Sendable {
             try Task.checkCancellation()
             try machine.consume(sourceLine.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(), budget: &budget)
         }
-        guard machine.terminated else { throw machine.format.error("EOF", "Missing drill end-of-program command.") }
+        guard machine.terminated else { throw machine.format.error("EOF", SyntaxStrings.missingEndOfProgram) }
         return machine.result
     }
 }
@@ -55,37 +55,37 @@ private struct ExcellonMachine {
             if !terminated { _ = try format.declaration(source) }
             return
         }
-        guard !terminated else { throw format.error(source, "Data after drill end-of-program.") }
+        guard !terminated else { throw format.error(source, SyntaxStrings.dataAfterEndOfProgram) }
         if try format.declaration(source) { return }
         if ["M48", "M95", "%", "FMAT,2", "VER,1"].contains(source) { return }
         if source.hasPrefix("M47,") { return }
         if source == "M30" || source == "M00" {
-            guard !toolDown else { throw format.error(source, "Unterminated tool-down route.") }
+            guard !toolDown else { throw format.error(source, SyntaxStrings.unterminatedToolDownRoute) }
             terminated = true; return
         }
         if source == "M15" {
             _ = try diameter(source)
-            guard mode != .drill, !toolDown else { throw format.error(source, "Invalid route tool-down state.") }
+            guard mode != .drill, !toolDown else { throw format.error(source, SyntaxStrings.invalidRouteToolDownState) }
             toolDown = true; canRepeat = false; return
         }
         if source == "M16" || source == "M17" { toolDown = false; return }
         if source.hasPrefix("T") {
-            guard !toolDown else { throw format.error(source, "Tool change while routing.") }
+            guard !toolDown else { throw format.error(source, SyntaxStrings.toolChangeWhileRouting) }
             let digits = source.dropFirst().prefix(while: \.isNumber)
-            guard let tool = Int(digits), tool <= Int(Int32.max) else { throw format.error(source, "Invalid tool number.") }
+            guard let tool = Int(digits), tool <= Int(Int32.max) else { throw format.error(source, SyntaxStrings.invalidToolNumber) }
             let suffix = String(source.dropFirst(1 + digits.count))
             if suffix.isEmpty {
                 if tool == 0 { selectedTool = nil }
                 else {
-                    guard tools[tool] != nil else { throw format.error(source, "Undefined tool T\(tool).") }
+                    guard tools[tool] != nil else { throw format.error(source, SyntaxStrings.undefinedTool(tool)) }
                     selectedTool = tool
                 }
             } else {
                 let fields = try numericFields(suffix, allowed: "CFSBH", line: source)
                 guard tool > 0, let text = fields["C"], let scale = format.unitScale,
                       let value = Double(text), value.isFinite, value > 0,
-                      value * scale <= GeometryLimits.coordinateMagnitude else { throw format.error(source, "Invalid tool definition or undeclared units.") }
-                guard tools[tool] == nil else { throw format.error(source, "Redefined tool T\(tool).") }
+                      value * scale <= GeometryLimits.coordinateMagnitude else { throw format.error(source, SyntaxStrings.invalidToolDefinition) }
+                guard tools[tool] == nil else { throw format.error(source, SyntaxStrings.redefinedTool(tool)) }
                 tools[tool] = value * scale
             }
             canRepeat = false; return
@@ -93,27 +93,27 @@ private struct ExcellonMachine {
         var line = source
         while line.hasPrefix("G") && !line.hasPrefix("G85") {
             let digits = line.dropFirst().prefix(while: \.isNumber)
-            guard let code = Int(digits) else { throw format.error(source, "Malformed G command.") }
+            guard let code = Int(digits) else { throw format.error(source, SyntaxStrings.malformedGCommand) }
             line.removeFirst(1 + digits.count)
             switch code {
             case 90: format.absolute = true
             case 91: format.absolute = false
             case 0:
-                guard !toolDown else { throw format.error(source, "Rapid positioning with tool down is unsupported.") }
+                guard !toolDown else { throw format.error(source, SyntaxStrings.rapidWithToolDown) }
                 mode = .rapid; canRepeat = false
             case 1: mode = .linear; canRepeat = false
             case 5:
-                guard !toolDown else { throw format.error(source, "Drill mode while routing.") }
+                guard !toolDown else { throw format.error(source, SyntaxStrings.drillModeWhileRouting) }
                 mode = .drill
-            case 2, 3: throw format.error(source, "Unsupported arc route; drill layer rejected.")
-            default: throw format.error(source, "Unsupported Excellon G command.")
+            case 2, 3: throw format.error(source, SyntaxStrings.unsupportedArcRoute)
+            default: throw format.error(source, SyntaxStrings.unsupportedExcellonGCommand)
             }
         }
         if line.isEmpty { return }
         if line.contains("G85") {
-            guard !toolDown else { throw format.error(source, "G85 during a tool-down route.") }
+            guard !toolDown else { throw format.error(source, SyntaxStrings.g85DuringToolDown) }
             let parts = line.components(separatedBy: "G85")
-            guard parts.count == 2, !parts[1].isEmpty else { throw format.error(source, "Malformed G85 slot.") }
+            guard parts.count == 2, !parts[1].isEmpty else { throw format.error(source, SyntaxStrings.malformedG85Slot) }
             let start = parts[0].isEmpty ? current : try target(parts[0], from: current, line: source)
             let end = try target(parts[1], from: start, line: source)
             try append(start, end: end, line: source, budget: &budget)
@@ -122,7 +122,7 @@ private struct ExcellonMachine {
         if line.hasPrefix("R") {
             let digits = line.dropFirst().prefix(while: \.isNumber)
             guard mode == .drill, canRepeat, let count = Int(digits), count > 0,
-                  count <= GeometryLimits.repeats else { throw format.error(source, "Invalid or unsupported drill repeat.") }
+                  count <= GeometryLimits.repeats else { throw format.error(source, SyntaxStrings.invalidDrillRepeat) }
             let fields = try numericFields(String(line.dropFirst(1 + digits.count)), allowed: "XY", line: source)
             let dx = try fields["X"].map { try format.decode($0, line: source) } ?? 0
             let dy = try fields["Y"].map { try format.decode($0, line: source) } ?? 0
@@ -150,20 +150,20 @@ private struct ExcellonMachine {
     }
 
     func diameter(_ line: String) throws -> Double {
-        guard let selectedTool, let value = tools[selectedTool] else { throw format.error(line, "Machining requires a defined selected tool.") }
+        guard let selectedTool, let value = tools[selectedTool] else { throw format.error(line, SyntaxStrings.machiningRequiresTool) }
         return value
     }
     func numericFields(_ text: String, allowed: String, line: String) throws -> [Character: String] {
         let number = #"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)"#
         guard !text.isEmpty, text.range(of: "^(?:[" + allowed + "]" + number + ")+$", options: .regularExpression) != nil else {
-            throw format.error(line, "Malformed coordinates or unsupported Excellon command.")
+            throw format.error(line, SyntaxStrings.malformedExcellonCommand)
         }
         var fields: [Character: String] = [:]
         var rest = text[...]
         while let key = rest.first {
             rest.removeFirst()
             let value = rest.prefix { !$0.isLetter }
-            guard fields[key] == nil else { throw format.error(line, "Repeated coordinate/modifier \(key).") }
+            guard fields[key] == nil else { throw format.error(line, SyntaxStrings.repeatedModifier(String(key))) }
             fields[key] = String(value)
             rest.removeFirst(value.count)
         }

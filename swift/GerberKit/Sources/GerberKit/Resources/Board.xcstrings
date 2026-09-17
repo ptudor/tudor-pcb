@@ -1,0 +1,69 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Board outline" : {
+      "comment" : "Layer name: the layer that draws the physical edge (cut line) of the circuit board."
+    },
+    "Bottom copper" : {
+      "comment" : "Layer name: the copper (conductive traces) layer on the bottom face of the circuit board."
+    },
+    "Bottom paste" : {
+      "comment" : "Layer name: the solder paste stencil layer for the bottom face (where paste is applied before components are placed)."
+    },
+    "Bottom silkscreen" : {
+      "comment" : "Layer name: the silkscreen (printed component labels and markings) on the bottom face of the board."
+    },
+    "Bottom solder mask" : {
+      "comment" : "Layer name: the solder mask (the colored insulating coating, usually green) on the bottom face of the board."
+    },
+    "Documentation" : {
+      "comment" : "Layer name: a drawing that documents the board (assembly or fabrication notes) and is not part of the physical board."
+    },
+    "Drill overlay" : {
+      "comment" : "Name of the layer the app synthesizes to draw drilled holes over the board; it can appear in limit errors in place of a file name."
+    },
+    "Drills" : {
+      "comment" : "Layer name: drilled holes when the file does not say whether they are plated."
+    },
+    "EasyEDA color · bottom" : {
+      "comment" : "Layer name: the full-color silkscreen artwork for the bottom face exported by the EasyEDA design tool. Keep the product name 'EasyEDA' as written. The middle dot is a separator."
+    },
+    "EasyEDA color · top" : {
+      "comment" : "Layer name: the full-color silkscreen artwork for the top face exported by the EasyEDA design tool. Keep the product name 'EasyEDA' as written. The middle dot is a separator."
+    },
+    "Inner copper %lld" : {
+      "comment" : "Layer name for one internal copper layer of a multilayer board. %lld is the layer's number counted from the top face (1, 2, 3, …)."
+    },
+    "No validated proof" : {
+      "comment" : "Status of one board face's color proof: no proof image has been checked and accepted. A proof is a picture of the finished board supplied by the manufacturer or attached by the user."
+    },
+    "Non-plated drills" : {
+      "comment" : "Layer name: drilled holes without copper plating, such as mounting holes."
+    },
+    "Other" : {
+      "comment" : "Layer name used when the layer's purpose could not be identified."
+    },
+    "Plated drills" : {
+      "comment" : "Layer name: drilled holes whose walls are plated with copper so they conduct between layers."
+    },
+    "Top copper" : {
+      "comment" : "Layer name: the copper (conductive traces) layer on the top face of the circuit board."
+    },
+    "Top paste" : {
+      "comment" : "Layer name: the solder paste stencil layer for the top face (where paste is applied before components are placed)."
+    },
+    "Top silkscreen" : {
+      "comment" : "Layer name: the silkscreen (printed component labels and markings) on the top face of the board."
+    },
+    "Top solder mask" : {
+      "comment" : "Layer name: the solder mask (the colored insulating coating, usually green) on the top face of the board."
+    },
+    "Validated gallery proof · unmapped" : {
+      "comment" : "Status of one board face's color proof: a proof image was checked and accepted but has not been mapped (positioned) onto the board, so it is only shown in the proof gallery. The middle dot is a separator."
+    },
+    "Validated mapped artwork" : {
+      "comment" : "Status of one board face's color proof: a proof image was checked, accepted, and mapped onto the board, so it is drawn on the 3D board."
+    }
+  },
+  "version" : "1.0"
+}

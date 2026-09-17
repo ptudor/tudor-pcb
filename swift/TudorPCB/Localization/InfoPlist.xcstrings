@@ -1,0 +1,26 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Excellon drill file" : {
+      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a drill file. Excellon is the file format; keep it as written."
+    },
+    "Gerber fabrication layer" : {
+      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a single Gerber layer file. Gerber is the file format; keep it as written."
+    },
+    "NSHumanReadableCopyright" : {
+      "comment" : "Copyright line shown in the About window. Keep the name 'Patrick Tudor' and 'MIT' as written; render 'Copyright' and 'License' as is customary in your language.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT License."
+          }
+        }
+      }
+    },
+    "ZIP fabrication package" : {
+      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a ZIP archive of board files that the app can open."
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,315 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ %@ %@" : {
+      "comment" : "Joins three complete sentences into one message. Use whatever separates sentences in your language (a space in most languages, nothing in Chinese or Japanese).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@ %3$@"
+          }
+        }
+      }
+    },
+    "%@ (the file identity changed)" : {
+      "comment" : "Used as the path in the 'Persistent access' message when the file at that path is a different file from the one recorded (it was replaced). %@ is the path."
+    },
+    "%@ · %@ × %@ mm" : {
+      "comment" : "Second line of a history list row. %1$@ is the package format (for example 'KiCad'), %2$@ and %3$@ are the board's width and height as formatted numbers; 'mm' is millimeters. Keep the multiplication sign; the middle dot is a separator.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ × %3$@ mm"
+          }
+        }
+      }
+    },
+    "%lld enclosed" : {
+      "comment" : "Detail row value: how many archives are enclosed in the package. %lld is the count."
+    },
+    "%lld history records could not be read." : {
+      "comment" : "First sentence of the history recovery message. %lld is how many saved records are damaged (plural forms are provided).",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld history record could not be read."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld history records could not be read."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sides" : {
+      "comment" : "Detail row value for color silkscreen. %lld is the number of board faces (1 or 2) that carry it (plural forms are provided).",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld side"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sides"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld valid records are recoverable." : {
+      "comment" : "Second sentence of the history recovery message. %lld is how many saved records are intact (plural forms are provided).",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld valid record is recoverable."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld valid records are recoverable."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Age & activity" : {
+      "comment" : "Heading of the detail panel section with dates; displayed in capital letters."
+    },
+    "Altium" : {
+      "comment" : "Package format: exported by the Altium circuit design program. Keep the product name as written."
+    },
+    "Autodesk Eagle" : {
+      "comment" : "Package format: exported by the Autodesk Eagle circuit design program. Keep the product name as written."
+    },
+    "Back Up Original and Recover Valid History" : {
+      "comment" : "Alert button that keeps a copy of the damaged history and continues with the records that could be read."
+    },
+    "Board" : {
+      "comment" : "Detail row label: the board's width and height."
+    },
+    "Checking source access…" : {
+      "comment" : "Status shown in the history detail panel while the app checks whether the original file or folder can still be read."
+    },
+    "Clear History" : {
+      "comment" : "Button that deletes every entry from the history list; also the confirming button in the dialog that follows."
+    },
+    "Clear all fabrication history?" : {
+      "comment" : "Title of the confirmation dialog before deleting every history entry."
+    },
+    "Color silkscreen" : {
+      "comment" : "Detail row label: how many board faces carry full-color silkscreen artwork."
+    },
+    "Container" : {
+      "comment" : "Detail row label shown when the board was found inside a nested archive."
+    },
+    "Could not restore access to %@: %@ Reselect the source to relink it." : {
+      "comment" : "Message shown when reopening a package from history fails. %1$@ is the file or folder path, %2$@ is the operating system's description of the problem (a full sentence ending with a period).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not restore access to %1$@: %2$@ Reselect the source to relink it."
+          }
+        }
+      }
+    },
+    "Created" : {
+      "comment" : "Detail row label: the date the package file was created."
+    },
+    "Drills" : {
+      "comment" : "Detail row label: the number of drilled holes and slots."
+    },
+    "Duplicate history identity." : {
+      "comment" : "Reason a saved history record was rejected: two records share the same identifier."
+    },
+    "EasyEDA Pro" : {
+      "comment" : "Package format: exported by the EasyEDA Pro circuit design program. Keep the product name as written."
+    },
+    "Enclosed archives" : {
+      "comment" : "Detail row label: ZIP archives found inside the opened package."
+    },
+    "Fabrication History" : {
+      "comment" : "Window title of the list of packages inspected before."
+    },
+    "Fabrication folder" : {
+      "comment" : "Kind of source a history entry was opened from: a folder of Gerber files."
+    },
+    "First inspected" : {
+      "comment" : "Detail row label: the date the package was first opened in this app."
+    },
+    "Format" : {
+      "comment" : "Detail row label: the package format, for example 'KiCad'."
+    },
+    "Generator" : {
+      "comment" : "Heading of the detail panel section showing the name of the program that wrote the Gerber files; displayed in capital letters."
+    },
+    "Gerber ZIP" : {
+      "comment" : "Kind of source a history entry was opened from: a ZIP archive of Gerber files."
+    },
+    "Gerber layer" : {
+      "comment" : "Kind of source a history entry was opened from: a single Gerber layer file."
+    },
+    "History access needs attention" : {
+      "comment" : "Title of the alert shown when a package in history can no longer be read."
+    },
+    "History changed during recovery. Reload it before choosing recovery again." : {
+      "comment" : "Error shown when the saved history was modified (for example by another window) between reading it and repairing it."
+    },
+    "History contains invalid activity or board statistics." : {
+      "comment" : "Reason a saved history record was rejected: its dates, counts, or board size are impossible values."
+    },
+    "History could not be read: %@ Original data is preserved; saving is paused until you choose recovery." : {
+      "comment" : "History recovery message when the whole saved history is unreadable. %@ is the description of the problem (a full sentence ending with a period)."
+    },
+    "History needs recovery" : {
+      "comment" : "Title of the alert shown when the saved history is damaged."
+    },
+    "History was not saved: %@" : {
+      "comment" : "Error shown when the history could not be written to disk. %@ is the description of the problem (a full sentence)."
+    },
+    "JLCPCB engineer output (OK)" : {
+      "comment" : "Detail row value: the package is production data reviewed by JLCPCB's engineers, taken from their folder named 'ok'. Keep 'JLCPCB' and 'OK' as written."
+    },
+    "JLCPCB production" : {
+      "comment" : "Package format: production data reviewed by the manufacturer JLCPCB. Keep 'JLCPCB' as written."
+    },
+    "Keep Original" : {
+      "comment" : "Alert button that leaves the damaged history untouched (the app will not save history until it is repaired)."
+    },
+    "KiCad" : {
+      "comment" : "Package format: exported by the KiCad circuit design program. Keep the product name as written."
+    },
+    "Last inspected" : {
+      "comment" : "Detail row label: the date the package was most recently opened in this app."
+    },
+    "Later" : {
+      "comment" : "Alert button that dismisses the access problem without choosing the file now."
+    },
+    "Layers" : {
+      "comment" : "Detail row label: the number of Gerber layer files."
+    },
+    "Location" : {
+      "comment" : "Heading of the detail panel section showing the package's path on disk; displayed in capital letters."
+    },
+    "Modified" : {
+      "comment" : "Detail row label: the date the package files were last changed."
+    },
+    "Modified %@" : {
+      "comment" : "Third line of a history list row. %@ is a relative time such as '2 days ago'."
+    },
+    "Nested ZIP" : {
+      "comment" : "Detail row value: the board was found inside a ZIP archive that was itself inside the opened package."
+    },
+    "No Fabrication History" : {
+      "comment" : "Placeholder title shown when no package has been inspected yet."
+    },
+    "Objects" : {
+      "comment" : "Detail row label: the number of drawn shapes across all layers."
+    },
+    "Open Package" : {
+      "comment" : "Large button in the history detail panel that opens the selected package."
+    },
+    "Original data is preserved; saving is paused until you choose recovery." : {
+      "comment" : "Last sentence of the history recovery message: nothing is overwritten until the user decides."
+    },
+    "Original uploads" : {
+      "comment" : "Detail row label for JLCPCB reviewed packages: the designer's original ZIP files enclosed with the review."
+    },
+    "Package" : {
+      "comment" : "Heading of the detail panel section describing the package; displayed in capital letters."
+    },
+    "Package size" : {
+      "comment" : "Detail row label: the size of the package file on disk."
+    },
+    "Package, format, or path" : {
+      "comment" : "Placeholder text in the history search field, naming what can be searched for."
+    },
+    "Packages appear here after they have been inspected." : {
+      "comment" : "Placeholder explanation shown when no package has been inspected yet."
+    },
+    "Persistent access to %@ is unavailable. Reselect the original file or folder to relink it." : {
+      "comment" : "Message shown when the app's saved permission to read a file from history no longer works. %@ is the file or folder path."
+    },
+    "RS-274X" : {
+      "comment" : "Package format: generic Gerber files whose design program is unknown. RS-274X is the name of the Gerber standard; keep it as written."
+    },
+    "Relink Source…" : {
+      "comment" : "Context menu command that shows the file picker so the user can choose the package again. Ends with an ellipsis because a dialog follows."
+    },
+    "Remove from History" : {
+      "comment" : "Command that deletes one entry from the history list (the package's files are not touched)."
+    },
+    "Reselect Source…" : {
+      "comment" : "Alert button that shows the file picker so the user can choose the package again. Ends with an ellipsis because a dialog follows."
+    },
+    "Review set" : {
+      "comment" : "Detail row label shown for JLCPCB reviewed packages."
+    },
+    "Review warnings" : {
+      "comment" : "Detail row label: how many warnings the import produced."
+    },
+    "Select a Package" : {
+      "comment" : "Placeholder shown in the detail panel when no history entry is selected."
+    },
+    "Source" : {
+      "comment" : "Detail row label: what kind of source the package was opened from (ZIP, folder, or single layer)."
+    },
+    "Source age" : {
+      "comment" : "Detail row label: how long ago the package files were last changed, as a relative time."
+    },
+    "Source available" : {
+      "comment" : "Status in the history detail panel: the original file or folder can be read."
+    },
+    "Source inaccessible · relink required" : {
+      "comment" : "Status in the history detail panel: the app is no longer allowed to read the original file or folder, and the user must choose it again. The middle dot is a separator."
+    },
+    "Source missing" : {
+      "comment" : "Status in the history detail panel: the original file or folder no longer exists."
+    },
+    "Source moved · bookmark resolves" : {
+      "comment" : "Status in the history detail panel: the original file or folder was moved, but the app's saved reference still finds it. The middle dot is a separator."
+    },
+    "The package opened, but persistent access could not be saved: %@ Reselect the source to retry." : {
+      "comment" : "Message shown when a package opened but the app could not save permission to reopen it later from history. %@ is the operating system's description of the problem (a full sentence ending with a period)."
+    },
+    "This removes the recent-package list. It does not delete any fabrication files." : {
+      "comment" : "Explanation in the confirmation dialog before deleting every history entry."
+    },
+    "Times opened" : {
+      "comment" : "Detail row label: how many times the package has been opened in this app."
+    },
+    "Unsupported history format/version." : {
+      "comment" : "Reason the saved history could not be read: it was written in a format this version of the app does not understand."
+    },
+    "×%lld" : {
+      "comment" : "Small badge at the right of a history list row showing how many times the package was opened. %lld is the count; the multiplication sign means 'times'."
+    }
+  },
+  "version" : "1.0"
+}

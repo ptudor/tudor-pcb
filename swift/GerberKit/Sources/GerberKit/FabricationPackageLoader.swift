@@ -10,15 +10,15 @@ public enum FabricationPackageError: Error, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .noSupportedLayers:
-            "No Gerber or Excellon layers were found in this package."
+            DiagnosticStrings.noSupportedLayers
         case .nestedArchiveLimit:
-            "The nested fabrication archives exceed the safe expansion limit."
+            DiagnosticStrings.nestedArchiveLimit
         case let .duplicateEntry(path):
-            "Duplicate archive entry \(path); a unique source path is required."
+            DiagnosticStrings.duplicateEntry(path)
         case let .ambiguousBoardSets(names):
-            "Separate board sets require selection: \(names.joined(separator: ", "))."
+            DiagnosticStrings.ambiguousBoardSets(names)
         case let .ambiguousNestedArchives(names):
-            "Several equally likely fabrication packages were found: \(names.joined(separator: ", "))."
+            DiagnosticStrings.ambiguousNestedArchives(names)
         }
     }
 }
@@ -43,7 +43,7 @@ public struct FabricationPackageLoader: Sendable {
             files = [ZipEntry(name: url.lastPathComponent, data: try readFile(url, budget: &budget))]
         }
         var document = try loadContainer(files: files, name: url.deletingPathExtension().lastPathComponent, depth: 0, path: [], selection: selection, budget: &budget)
-        document.warnings += sidecarWarnings
+        document.importWarnings += sidecarWarnings
         return document
     }
 
@@ -75,12 +75,12 @@ public struct FabricationPackageLoader: Sendable {
     ) throws -> BoardDocument {
         var names = Set<String>()
         for file in files {
-            guard names.insert(file.name).inserted else { throw FabricationPackageError.duplicateEntry((path + [file.name]).joined(separator: " → ")) }
+            guard names.insert(file.name).inserted else { throw FabricationPackageError.duplicateEntry(DiagnosticStrings.joinedPath(path + [file.name])) }
         }
         if let selection, path.count < selection.containers.count {
             let requested = selection.containers[path.count]
             guard let archive = files.first(where: { $0.name == requested && $0.name.lowercased().hasSuffix(".zip") }) else {
-                throw FabricationContainerError(path: path + [requested], reason: "The selected archive is no longer present.")
+                throw FabricationContainerError(path: path + [requested], reason: DiagnosticStrings.selectedArchiveMissing)
             }
             return try loadNested(archive, depth: depth, path: path, selection: selection, budget: &budget)
         }
@@ -88,7 +88,7 @@ public struct FabricationPackageLoader: Sendable {
         var flatFiles = files
         if let selectedGroup = selection?.group {
             guard let group = groups.first(where: { $0.name == selectedGroup }) else {
-                throw FabricationContainerError(path: path, reason: "The selected board set is no longer present: " + selectedGroup)
+                throw FabricationContainerError(path: path, reason: DiagnosticStrings.selectedBoardSetMissing(selectedGroup))
             }
             flatFiles = group.files
         } else if groups.count > 1 {
@@ -124,7 +124,7 @@ public struct FabricationPackageLoader: Sendable {
 
     private func loadNested(_ archive: ZipEntry, depth: Int, path: [String], selection: FabricationSelection?, budget: inout ImportBudget) throws -> BoardDocument {
         let nextPath = path + [archive.name]
-        let context = nextPath.joined(separator: " → ")
+        let context = DiagnosticStrings.joinedPath(nextPath)
         guard depth < limits.archiveDepth else { throw ImportLimitError(resource: "archive depth", path: context) }
         try budget.charge("nested archives", 1, maximum: limits.archives, path: context)
         do {
@@ -135,9 +135,9 @@ public struct FabricationPackageLoader: Sendable {
             if document.packageRole == .nestedArchive, !document.enclosedSourceArchives.contains(archive.name) { document.enclosedSourceArchives.append(archive.name) }
             return document
         } catch let error as ImportLimitError {
-            throw ImportLimitError(resource: error.resource, path: error.path.hasPrefix(context) ? error.path : context + " → " + error.path)
+            throw ImportLimitError(resource: error.resource, path: error.path.hasPrefix(context) ? error.path : DiagnosticStrings.nestedPath(context, error.path))
         } catch let error as GeometryLimitError {
-            throw GeometryLimitError(resource: error.resource, context: context + " → " + error.context)
+            throw GeometryLimitError(resource: error.resource, context: DiagnosticStrings.nestedPath(context, error.context))
         }
           catch let error as FabricationSelectionRequired { throw error }
           catch let error as FabricationContainerError {
@@ -226,7 +226,7 @@ public struct FabricationPackageLoader: Sendable {
                   catch let error as GeometryLimitError { throw error }
                   catch is CancellationError { throw CancellationError() }
                   catch {
-                    warnings.append("\(file.name): \(error.localizedDescription)")
+                    warnings.append(DiagnosticStrings.subjectMessage(file.name, error.localizedDescription))
                 }
                 continue
             }
@@ -249,13 +249,13 @@ public struct FabricationPackageLoader: Sendable {
                     case .excellon:
                         drills += try drillParser.parse(data: file.data, fileName: file.name, budget: &budget)
                     case .unknown:
-                        throw ExcellonParseError(fileName: file.name, command: "header", reason: "Unrecognized drill syntax.")
+                        throw ExcellonParseError(fileName: file.name, command: "header", reason: SyntaxStrings.unrecognizedDrillSyntax)
                     }
                 } catch let error as ImportLimitError { throw error }
                   catch let error as GeometryLimitError { throw error }
                   catch is CancellationError { throw CancellationError() }
                   catch {
-                    warnings.append("\(file.name): \(error.localizedDescription)")
+                    warnings.append(DiagnosticStrings.subjectMessage(file.name, error.localizedDescription))
                 }
             default:
                 if let side = previewSide(for: file.name), isImage(file.name) {
@@ -270,7 +270,7 @@ public struct FabricationPackageLoader: Sendable {
                       catch let error as GeometryLimitError { throw error }
                   catch is CancellationError { throw CancellationError() }
                       catch {
-                        warnings.append("\(file.name): \(error.localizedDescription)")
+                        warnings.append(DiagnosticStrings.subjectMessage(file.name, error.localizedDescription))
                     }
                 }
             }
@@ -301,10 +301,9 @@ public struct FabricationPackageLoader: Sendable {
             bounds: safeBounds,
             colorSilkscreens: colorful,
             sidePreviews: previews,
-            warnings: warnings
+            importWarnings: warnings
         )
-        document.warnings += try BoardOutlineExtractor.topology(in: document).warnings
-        document.refreshProofWarnings()
+        document.importWarnings += try BoardOutlineExtractor.topology(in: document).warnings
         return document
     }
 
@@ -315,10 +314,10 @@ public struct FabricationPackageLoader: Sendable {
             at: directory, includingPropertiesForKeys: keys,
             options: [.skipsHiddenFiles, .skipsPackageDescendants],
             errorHandler: { url, error in
-                traversalErrors.append("\(url.path): \(error.localizedDescription)")
+                traversalErrors.append(DiagnosticStrings.subjectMessage(url.path, error.localizedDescription))
                 return false
             }
-        ) else { throw FabricationContainerError(path: [directory.path], reason: "Could not enumerate fabrication directory.") }
+        ) else { throw FabricationContainerError(path: [directory.path], reason: DiagnosticStrings.directoryEnumerationFailed) }
         var files: [ZipEntry] = []
         for case let fileURL as URL in enumerator {
             try Task.checkCancellation()
@@ -327,7 +326,7 @@ public struct FabricationPackageLoader: Sendable {
             }
             let values: URLResourceValues
             do { values = try fileURL.resourceValues(forKeys: Set(keys)) }
-            catch { throw FabricationContainerError(path: [fileURL.path], reason: "Could not read fabrication entry metadata: \(error.localizedDescription)") }
+            catch { throw FabricationContainerError(path: [fileURL.path], reason: DiagnosticStrings.entryMetadataUnreadable(error.localizedDescription)) }
             guard values.isRegularFile == true, !isKnownIrrelevant(fileURL) else { continue }
             try budget.file(path: fileURL.path)
             files.append(ZipEntry(
@@ -338,7 +337,7 @@ public struct FabricationPackageLoader: Sendable {
             ))
         }
         if !traversalErrors.isEmpty {
-            throw FabricationContainerError(path: [directory.path], reason: "Directory import is incomplete: " + traversalErrors.joined(separator: "\n"))
+            throw FabricationContainerError(path: [directory.path], reason: DiagnosticStrings.directoryImportIncomplete(traversalErrors.joined(separator: "\n")))
         }
         return files
     }
@@ -354,7 +353,7 @@ public struct FabricationPackageLoader: Sendable {
         do {
             candidates = try FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey], options: [.skipsHiddenFiles])
         } catch {
-            warnings.append("Sibling proofs could not be inspected: \(error.localizedDescription) Use Color proof options to select a proof explicitly, or open its containing folder.")
+            warnings.append(DiagnosticStrings.sidecarProofsUninspectable(error.localizedDescription))
             return []
         }
         var result: [ZipEntry] = []
@@ -367,7 +366,7 @@ public struct FabricationPackageLoader: Sendable {
                 result.append(ZipEntry(name: name, data: try readFile(candidate, budget: &budget)))
             } catch let error as ImportLimitError { throw error }
               catch is CancellationError { throw CancellationError() }
-              catch { warnings.append("\(name): sibling proof could not be read: \(error.localizedDescription) Select it explicitly with Color proof options.") }
+              catch { warnings.append(DiagnosticStrings.sidecarProofUnreadable(name, error.localizedDescription)) }
         }
         return result
     }

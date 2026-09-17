@@ -30,22 +30,22 @@ public enum GerberLayerKind: Sendable, Hashable, Codable {
     public var displayName: String {
         switch self {
         case let .copper(side, index):
-            if let index { return "Inner copper \(index)" }
-            return side == .top ? "Top copper" : "Bottom copper"
-        case let .solderMask(side): return side == .top ? "Top solder mask" : "Bottom solder mask"
-        case let .silkscreen(side): return side == .top ? "Top silkscreen" : "Bottom silkscreen"
-        case let .paste(side): return side == .top ? "Top paste" : "Bottom paste"
-        case .outline: return "Board outline"
+            if let index { return BoardStrings.innerCopper(index) }
+            return side == .top ? BoardStrings.topCopper : BoardStrings.bottomCopper
+        case let .solderMask(side): return side == .top ? BoardStrings.topSolderMask : BoardStrings.bottomSolderMask
+        case let .silkscreen(side): return side == .top ? BoardStrings.topSilkscreen : BoardStrings.bottomSilkscreen
+        case let .paste(side): return side == .top ? BoardStrings.topPaste : BoardStrings.bottomPaste
+        case .outline: return BoardStrings.boardOutline
         case let .drill(plated):
             switch plated {
-            case true: return "Plated drills"
-            case false: return "Non-plated drills"
-            case nil: return "Drills"
+            case true: return BoardStrings.platedDrills
+            case false: return BoardStrings.nonPlatedDrills
+            case nil: return BoardStrings.drills
             }
         case let .colorfulSilkscreen(side):
-            return side == .top ? "EasyEDA color · top" : "EasyEDA color · bottom"
-        case .documentation: return "Documentation"
-        case .other: return "Other"
+            return side == .top ? BoardStrings.easyEDAColorTop : BoardStrings.easyEDAColorBottom
+        case .documentation: return BoardStrings.documentation
+        case .other: return BoardStrings.other
         }
     }
 }

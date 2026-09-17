@@ -41,9 +41,9 @@ public enum BoardProofState: String, Sendable, Codable {
     case missing, galleryOnly, mappedArtwork
     public var label: String {
         switch self {
-        case .missing: "No validated proof"
-        case .galleryOnly: "Validated gallery proof · unmapped"
-        case .mappedArtwork: "Validated mapped artwork"
+        case .missing: BoardStrings.noValidatedProof
+        case .galleryOnly: BoardStrings.validatedGalleryProofUnmapped
+        case .mappedArtwork: BoardStrings.validatedMappedArtwork
         }
     }
 }
@@ -91,7 +91,8 @@ public struct BoardDocument: Sendable, Equatable {
     public var thicknessMillimeters: Double
     public var colorSilkscreens: [ColorSilkscreenInfo]
     public var sidePreviews: [BoardSidePreview]
-    public var warnings: [String]
+    /// Problems found while reading and analysing the package, in the order found.
+    public var importWarnings: [String]
     public var packageRole: FabricationPackageRole
     public var enclosedSourceArchives: [String]
     public var sourceSelection: FabricationSelection? = nil
@@ -116,7 +117,7 @@ public struct BoardDocument: Sendable, Equatable {
         thicknessMillimeters: Double = 1.6,
         colorSilkscreens: [ColorSilkscreenInfo] = [],
         sidePreviews: [BoardSidePreview] = [],
-        warnings: [String] = [],
+        importWarnings: [String] = [],
         packageRole: FabricationPackageRole = .direct,
         enclosedSourceArchives: [String] = []
     ) {
@@ -127,7 +128,7 @@ public struct BoardDocument: Sendable, Equatable {
         self.thicknessMillimeters = thicknessMillimeters
         self.colorSilkscreens = colorSilkscreens
         self.sidePreviews = sidePreviews
-        self.warnings = warnings
+        self.importWarnings = importWarnings
         self.packageRole = packageRole
         self.enclosedSourceArchives = enclosedSourceArchives
     }
@@ -137,20 +138,28 @@ public struct BoardDocument: Sendable, Equatable {
         return sidePreviews.contains { $0.side == side && $0.validatedImage != nil } ? .galleryOnly : .missing
     }
 
-    public mutating func refreshProofWarnings() {
-        warnings.removeAll { $0.hasPrefix("[Color proof]") }
+    /// Every warning the app should show: import problems followed by the
+    /// current color-proof status.
+    public var warnings: [String] { importWarnings + proofWarnings }
+
+    /// Warnings about the manufacturer's color silkscreen data, derived from
+    /// `colorSilkscreens`, `sidePreviews`, and `activeArtworkIDs` so they are
+    /// always current after a proof is attached, mapped, or reset.
+    public var proofWarnings: [String] {
+        var warnings: [String] = []
         for payload in colorSilkscreens where payload.payload == .encryptedJLC && payload.byteCount == 0 {
-            warnings.append("[Color proof] \(payload.fileName): factory payload is empty; validity has not been established.")
+            warnings.append(DiagnosticStrings.colorProofPayloadEmpty(payload.fileName))
         }
         for side in [GerberSide.top, .bottom] where colorSilkscreens.contains(where: { $0.side == side && $0.payload == .encryptedJLC }) {
             switch proofState(for: side) {
             case .mappedArtwork: break
             case .galleryOnly:
-                warnings.append("[Color proof] \(side.rawValue.capitalized): a validated gallery proof is available but unmapped; exact board colors remain unavailable.")
+                warnings.append(side == .top ? DiagnosticStrings.colorProofGalleryOnlyTop : DiagnosticStrings.colorProofGalleryOnlyBottom)
             case .missing:
-                warnings.append("[Color proof] \(side.rawValue.capitalized): factory payload present, validity unverified; exact colors are unavailable without a validated proof.")
+                warnings.append(side == .top ? DiagnosticStrings.colorProofUnverifiedTop : DiagnosticStrings.colorProofUnverifiedBottom)
             }
         }
+        return warnings
     }
 
     public var isEasyEDA: Bool {

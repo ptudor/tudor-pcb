@@ -16,20 +16,20 @@ public enum LayerClassifier {
         guard let first = functions.first else {
             if syntax(contents: source) == .excellon {
                 if case .drill = inferred { return (inferred, []) }
-                let warning = inferred == .other ? [] : ["\(fileName): Excellon syntax conflicts with filename role \(inferred.displayName)."]
+                let warning = inferred == .other ? [] : [DiagnosticStrings.excellonSyntaxConflictsRole(fileName, role: inferred.displayName)]
                 return (.drill(plated: nil), warning)
             }
             return (inferred, [])
         }
         guard functions.allSatisfy({ $0 == first }) else {
-            return (.other, ["\(fileName): conflicting FileFunction attributes; layer role is unresolved."])
+            return (.other, [DiagnosticStrings.conflictingFileFunctions(fileName)])
         }
         guard let explicit = attributeKind(first) else {
-            return (.other, ["\(fileName): unsupported FileFunction \(first.joined(separator: ",")); layer role is unresolved."])
+            return (.other, [DiagnosticStrings.unsupportedFileFunction(fileName, attribute: first.joined(separator: ","))])
         }
         var warnings: [String] = []
         if inferred != .other && !compatible(inferred, explicit) {
-            warnings.append("\(fileName): FileFunction overrides conflicting filename role \(inferred.displayName).")
+            warnings.append(DiagnosticStrings.fileFunctionOverridesRole(fileName, role: inferred.displayName))
         }
         return (explicit, warnings)
     }

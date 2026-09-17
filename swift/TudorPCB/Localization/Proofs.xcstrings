@@ -1,0 +1,125 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ × %@ mm · %@" : {
+      "comment" : "Caption describing a proof's mapping. %1$@ and %2$@ are the mapped area's width and height as formatted numbers ('mm' is millimeters), %3$@ is the orientation ('Board coordinates' or 'Viewed from bottom'). Keep the multiplication sign; the middle dot is a separator.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm · %3$@"
+          }
+        }
+      }
+    },
+    "Active board artwork" : {
+      "comment" : "Label (with a check mark) on the proof currently drawn on the 3D board for its face."
+    },
+    "Board coordinates" : {
+      "comment" : "Mapping orientation: the image is drawn as seen from above the board, with +X to the right and +Y up."
+    },
+    "Board coordinates · right is +X, up is +Y" : {
+      "comment" : "Orientation menu item: the image is drawn as seen from above the board, with +X to the right and +Y up. The middle dot is a separator."
+    },
+    "Bottom proof" : {
+      "comment" : "Title of the image inspector when showing a proof of the board's bottom face."
+    },
+    "Bottom · %@" : {
+      "comment" : "Caption under a proof of the board's bottom face. %@ is the image file name. The middle dot is a separator."
+    },
+    "Choose orientation" : {
+      "comment" : "Placeholder item in the orientation menu before the user has chosen one."
+    },
+    "Color proofs" : {
+      "comment" : "Title of the sheet that lists the proof images for the board."
+    },
+    "Edit Mapping…" : {
+      "comment" : "Button that opens the sheet to change how an already mapped proof image is positioned on the board. Ends with an ellipsis because a sheet follows."
+    },
+    "Fit Image" : {
+      "comment" : "Button in the image inspector that resets zoom so the whole proof image is visible."
+    },
+    "Image orientation" : {
+      "comment" : "Label of the pop-up menu choosing how the proof image faces relative to the board."
+    },
+    "Image preview · %@×" : {
+      "comment" : "Caption under the image inspector showing the magnification. %@ is the zoom factor as a formatted number, followed by a multiplication sign meaning 'times'. The middle dot is a separator."
+    },
+    "Inspect Image…" : {
+      "comment" : "Gallery button that opens one proof image in the zoomable inspector. Ends with an ellipsis because a sheet follows."
+    },
+    "Inspect bottom proof %@" : {
+      "comment" : "Accessibility name of a gallery thumbnail for the board's bottom face; activating it opens the image inspector. %@ is the image file name."
+    },
+    "Inspect top proof %@" : {
+      "comment" : "Accessibility name of a gallery thumbnail for the board's top face; activating it opens the image inspector. %@ is the image file name."
+    },
+    "Loading proof" : {
+      "comment" : "Progress text while a proof image is being decoded for display."
+    },
+    "Map Bottom Artwork" : {
+      "comment" : "Title of the sheet for positioning a proof image on the board's bottom face."
+    },
+    "Map Top Artwork" : {
+      "comment" : "Title of the sheet for positioning a proof image on the board's top face."
+    },
+    "Map the entire image to an axis-aligned rectangle in board millimeters. Initial bounds cover the full fabrication panel, including rails. Enter the artwork’s actual bounds; screenshots with margins need preparation before mapping." : {
+      "comment" : "Instructions at the top of the mapping sheet. The user types the rectangle, in millimeters of board space, that the whole image should cover. 'Rails' are the strips of extra board material around a panel of boards."
+    },
+    "Map to Board…" : {
+      "comment" : "Button that opens the sheet for positioning a proof image on the board. Ends with an ellipsis because a sheet follows."
+    },
+    "Maximum X (mm)" : {
+      "comment" : "Text field label: the right edge of the mapped rectangle in millimeters ('mm')."
+    },
+    "Maximum Y (mm)" : {
+      "comment" : "Text field label: the top edge of the mapped rectangle in millimeters ('mm')."
+    },
+    "Minimum X (mm)" : {
+      "comment" : "Text field label: the left edge of the mapped rectangle in millimeters ('mm')."
+    },
+    "Minimum Y (mm)" : {
+      "comment" : "Text field label: the bottom edge of the mapped rectangle in millimeters ('mm')."
+    },
+    "Proof image" : {
+      "comment" : "Accessibility description of the picture in the image inspector."
+    },
+    "Reset Artwork" : {
+      "comment" : "Toolbar menu with commands that discard the user's chosen artwork and return to the proof supplied with the package."
+    },
+    "Reset Bottom to Supplied Artwork" : {
+      "comment" : "Menu command that returns the bottom face to the proof image supplied with the package."
+    },
+    "Reset Top to Supplied Artwork" : {
+      "comment" : "Menu command that returns the top face to the proof image supplied with the package."
+    },
+    "Supplied with source" : {
+      "comment" : "Caption noting that the proof image came with the package (from the manufacturer or design program)."
+    },
+    "Top proof" : {
+      "comment" : "Title of the image inspector when showing a proof of the board's top face."
+    },
+    "Top · %@" : {
+      "comment" : "Caption under a proof of the board's top face. %@ is the image file name. The middle dot is a separator."
+    },
+    "Unmapped gallery proof · not shown on board" : {
+      "comment" : "Caption on a proof that has not been positioned on the board, so it only appears in this gallery. The middle dot is a separator."
+    },
+    "Use Mapping" : {
+      "comment" : "Button that applies the entered rectangle and orientation and closes the mapping sheet."
+    },
+    "Use as Board Artwork" : {
+      "comment" : "Button that makes this mapped proof the one drawn on the 3D board for its face."
+    },
+    "User attachment" : {
+      "comment" : "Caption noting that the proof image was attached by the user."
+    },
+    "Viewed from bottom" : {
+      "comment" : "Mapping orientation: the image shows the bottom face as a viewer would see it from below, so it is mirrored left-to-right when placed on the board."
+    },
+    "Viewed from bottom · mirror image X" : {
+      "comment" : "Orientation menu item: the image shows the bottom face as seen from below, so it is mirrored left-to-right when placed on the board. The middle dot is a separator."
+    }
+  },
+  "version" : "1.0"
+}

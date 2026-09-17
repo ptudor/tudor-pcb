@@ -13,14 +13,14 @@ public enum ZipArchiveError: Error, LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .unsupportedZIP64: "ZIP64 archives are not supported."
-        case .unsupportedSplitArchive: "Split ZIP archives are not supported."
-        case .invalidArchive: "The ZIP central directory is missing or damaged."
-        case let .unsupportedCompression(method): "ZIP compression method \(method) is not supported."
-        case let .encryptedEntry(name): "\(name) is encrypted at the ZIP level."
-        case let .unsafeSize(name): "\(name) exceeds the safe in-memory size limit."
-        case let .decompressionFailed(name, code): "Could not decompress \(name) (zlib \(code))."
-        case let .checksumMismatch(name): "\(name) failed its ZIP checksum."
+        case .unsupportedZIP64: DiagnosticStrings.zipUnsupportedZIP64
+        case .unsupportedSplitArchive: DiagnosticStrings.zipUnsupportedSplitArchive
+        case .invalidArchive: DiagnosticStrings.zipInvalidArchive
+        case let .unsupportedCompression(method): DiagnosticStrings.zipUnsupportedCompression(method)
+        case let .encryptedEntry(name): DiagnosticStrings.zipEncryptedEntry(name)
+        case let .unsafeSize(name): DiagnosticStrings.zipUnsafeSize(name)
+        case let .decompressionFailed(name, code): DiagnosticStrings.zipDecompressionFailed(name, code: code)
+        case let .checksumMismatch(name): DiagnosticStrings.zipChecksumMismatch(name)
         }
     }
 }

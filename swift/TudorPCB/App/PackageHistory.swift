@@ -9,9 +9,9 @@ nonisolated enum FabricationSourceKind: String, Codable, Sendable {
 
     var displayName: String {
         switch self {
-        case .archive: "Gerber ZIP"
-        case .folder: "Fabrication folder"
-        case .layer: "Gerber layer"
+        case .archive: String(localized: HistoryStrings.sourceKindArchive)
+        case .folder: String(localized: HistoryStrings.sourceKindFolder)
+        case .layer: String(localized: HistoryStrings.sourceKindLayer)
         }
     }
 
@@ -51,6 +51,20 @@ nonisolated struct PackageHistoryEntry: Codable, Identifiable, Hashable, Sendabl
     var fileSystemIdentity: String? = nil
     var topProofState: BoardProofState? = nil
     var bottomProofState: BoardProofState? = nil
+
+    /// `formatName` is a stable identifier persisted with the entry; this is
+    /// its localized presentation.
+    var formatDisplayName: String {
+        switch formatName {
+        case "JLCPCB production": String(localized: HistoryStrings.formatJLCPCBProduction)
+        case "EasyEDA Pro": String(localized: HistoryStrings.formatEasyEDAPro)
+        case "Autodesk Eagle": String(localized: HistoryStrings.formatAutodeskEagle)
+        case "KiCad": String(localized: HistoryStrings.formatKiCad)
+        case "Altium": String(localized: HistoryStrings.formatAltium)
+        case "RS-274X": String(localized: HistoryStrings.formatRS274X)
+        default: formatName
+        }
+    }
 
     var ageDate: Date { modifiedAt ?? createdAt ?? firstOpenedAt }
     var ageDescription: String {
@@ -149,7 +163,7 @@ nonisolated enum PackageHistoryStore {
         guard let data = defaults.data(forKey: defaultsKey) else { return PackageHistoryLoad(entries: [], recovery: nil) }
         do {
             guard let records = try JSONSerialization.jsonObject(with: data) as? [Any] else {
-                throw HistoryStorageError.invalid("Unsupported history format/version.")
+                throw HistoryStorageError.invalid(String(localized: HistoryStrings.unsupportedHistoryFormat))
             }
             var entries: [PackageHistoryEntry] = [], invalid = 0
             var identities: Set<UUID> = []
@@ -158,16 +172,19 @@ nonisolated enum PackageHistoryStore {
                     let bytes = try JSONSerialization.data(withJSONObject: record, options: .fragmentsAllowed)
                     let entry = try JSONDecoder().decode(PackageHistoryEntry.self, from: bytes)
                     try validate(entry)
-                    guard identities.insert(entry.id).inserted else { throw HistoryStorageError.invalid("Duplicate history identity.") }
+                    guard identities.insert(entry.id).inserted else { throw HistoryStorageError.invalid(String(localized: HistoryStrings.duplicateHistoryIdentity)) }
                     entries.append(entry)
                 } catch { invalid += 1 }
             }
             entries = ordered(entries)
             return PackageHistoryLoad(entries: entries, recovery: invalid == 0 ? nil : HistoryRecovery(original: data,
-                message: "\(invalid) history record(s) could not be read. \(entries.count) valid record(s) are recoverable. Original data is preserved; saving is paused until you choose recovery."))
+                message: String(localized: HistoryStrings.sentences(
+                    String(localized: HistoryStrings.unreadableRecords(invalid)),
+                    String(localized: HistoryStrings.recoverableRecords(entries.count)),
+                    String(localized: HistoryStrings.savingPausedNote)))))
         } catch {
             return PackageHistoryLoad(entries: [], recovery: HistoryRecovery(original: data,
-                message: "History could not be read: \(error.localizedDescription) Original data is preserved; saving is paused until you choose recovery."))
+                message: String(localized: HistoryStrings.historyUnreadable(error.localizedDescription))))
         }
     }
 
@@ -180,7 +197,7 @@ nonisolated enum PackageHistoryStore {
     @discardableResult
     static func recover(_ entries: [PackageHistoryEntry], original: Data, defaults: UserDefaults = .standard) throws -> String {
         guard defaults.data(forKey: defaultsKey) == original else {
-            throw HistoryStorageError.invalid("History changed during recovery. Reload it before choosing recovery again.")
+            throw HistoryStorageError.invalid(String(localized: HistoryStrings.historyChangedDuringRecovery))
         }
         let data = try encoded(entries)
         let backupKey = defaultsKey + ".recovery." + UUID().uuidString
@@ -205,7 +222,7 @@ nonisolated enum PackageHistoryStore {
               entry.lastOpenedAt.timeIntervalSince1970.isFinite,
               entry.openedCount > 0, entry.layerCount >= 0, entry.drillCount >= 0,
               entry.primitiveCount >= 0, entry.warningCount >= 0 else {
-            throw HistoryStorageError.invalid("History contains invalid activity or board statistics.")
+            throw HistoryStorageError.invalid(String(localized: HistoryStrings.invalidHistoryStatistics))
         }
     }
 
@@ -268,7 +285,7 @@ nonisolated enum PackageHistoryStore {
     static func validateResolvedIdentity(_ entry: PackageHistoryEntry, at url: URL) throws {
         if let expected = entry.fileSystemIdentity,
            PackageHistoryEntry.fileSystemIdentity(for: url) != expected {
-            throw HistoryAccessError.reselectRequired("\(url.path) (the file identity changed)")
+            throw HistoryAccessError.reselectRequired(String(localized: HistoryStrings.fileIdentityChanged(url.path)))
         }
     }
 
@@ -297,7 +314,7 @@ nonisolated enum PackageHistoryStore {
 nonisolated enum HistoryAccessError: Error, LocalizedError {
     case reselectRequired(String)
     var errorDescription: String? {
-        switch self { case let .reselectRequired(path): "Persistent access to \(path) is unavailable. Reselect the original file or folder to relink it." }
+        switch self { case let .reselectRequired(path): String(localized: HistoryStrings.persistentAccessUnavailable(path)) }
     }
 }
 
@@ -357,7 +374,7 @@ final class PackageHistoryOwner {
             if let recovery { throw HistoryStorageError.invalid(recovery.message) }
             try writer(entries)
             error = nil
-        } catch { self.error = "History was not saved: \(error.localizedDescription)" }
+        } catch { self.error = String(localized: HistoryStrings.historyNotSaved(error.localizedDescription)) }
     }
 
     func recover() {
@@ -379,11 +396,11 @@ nonisolated enum HistorySourceAvailability: Sendable {
     var accessible: Bool { self == .available || self == .moved }
     var label: String {
         switch self {
-        case .checking: "Checking source access…"
-        case .available: "Source available"
-        case .moved: "Source moved · bookmark resolves"
-        case .missing: "Source missing"
-        case .inaccessible: "Source inaccessible · relink required"
+        case .checking: String(localized: HistoryStrings.checkingSourceAccess)
+        case .available: String(localized: HistoryStrings.sourceAvailable)
+        case .moved: String(localized: HistoryStrings.sourceMoved)
+        case .missing: String(localized: HistoryStrings.sourceMissing)
+        case .inaccessible: String(localized: HistoryStrings.sourceInaccessible)
         }
     }
 }

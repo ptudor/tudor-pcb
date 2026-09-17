@@ -67,13 +67,13 @@ public enum BoardOutlineExtractor {
                             region.append(canonical(closed, closed: true))
                         } else {
                             result.ambiguousPaths.append(canonical(closed, closed: false))
-                            result.warnings.append("\(layer.fileName): degenerate region contour; material topology is unresolved.")
+                            result.warnings.append(DiagnosticStrings.degenerateRegionContour(layer.fileName))
                         }
                     }
                     result.closedContours += region
                     result.materialOperations.append(.init(contours: region, polarity: polarity))
                 case .flash:
-                    result.warnings.append("\(layer.fileName): flashed outline geometry has no supported routed centerline.")
+                    result.warnings.append(DiagnosticStrings.flashedOutlineUnsupported(layer.fileName))
                 }
             }
             try flush()
@@ -120,9 +120,9 @@ public enum BoardOutlineExtractor {
         for id in orphans {
             if let near = neighbors[id], near.count == 1, neighbors[near[0]]?.count == 1 {
                 representative[id] = min(id, near[0])
-                result.warnings.append("\(source): inferred a routed endpoint join within \(tolerance) mm; verify the source gap.")
+                result.warnings.append(DiagnosticStrings.inferredEndpointJoin(source, tolerance: tolerance.formatted()))
             } else if (neighbors[id]?.count ?? 0) > 1 {
-                result.warnings.append("\(source): ambiguous nearby routed endpoints were left unjoined.")
+                result.warnings.append(DiagnosticStrings.ambiguousEndpointsUnjoined(source))
             }
         }
         var edges = input
@@ -152,7 +152,7 @@ public enum BoardOutlineExtractor {
             visited.formUnion(componentEdges)
             if componentNodes.contains(where: { adjacency[$0]!.count > 2 }) {
                 result.ambiguousPaths += componentEdges.map { canonical(edges[$0], closed: false) }
-                result.warnings.append("\(source): nonmanifold routed junction; material topology is unresolved.")
+                result.warnings.append(DiagnosticStrings.nonmanifoldJunction(source))
                 continue
             }
             let openEnds = componentNodes.filter { adjacency[$0]!.count == 1 }.sorted()
@@ -169,10 +169,10 @@ public enum BoardOutlineExtractor {
                 result.closedContours.append(canonical(path, closed: true))
             } else if !openEnds.isEmpty {
                 result.openPaths.append(canonical(path, closed: false))
-                result.warnings.append("\(source): open routed paths require panel/material inference; inspect their endpoints.")
+                result.warnings.append(DiagnosticStrings.openRoutedPaths(source))
             } else {
                 result.ambiguousPaths.append(canonical(path, closed: false))
-                result.warnings.append("\(source): degenerate routed contour; material topology is unresolved.")
+                result.warnings.append(DiagnosticStrings.degenerateRoutedContour(source))
             }
         }
     }
