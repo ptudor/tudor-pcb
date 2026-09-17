@@ -17,6 +17,7 @@ def module(name, filename):
 
 package = module("package", "package.py")
 verify = module("verify_release", "verify-release.py")
+publish = module("publish_release", "publish-release.py")
 
 
 class ReleaseChecks(unittest.TestCase):
@@ -120,6 +121,16 @@ class ReleaseChecks(unittest.TestCase):
         with zipfile.ZipFile(stream) as archive:
             with self.assertRaises(ValueError):
                 verify.check_zip_paths(archive, 'Tudor PCB.app')
+
+    def test_draft_release_is_found_through_the_listing(self):
+        draft = {'tag_name': 'v1.0.0', 'draft': True, 'assets': []}
+        published = {'tag_name': 'v0.9.0', 'draft': False, 'assets': []}
+        self.assertEqual(publish.select_release([published, draft], 'v1.0.0'), draft)
+        self.assertEqual(publish.select_release([published, draft], 'v0.9.0'), published)
+        self.assertIsNone(publish.select_release([published], 'v1.0.0'))
+        self.assertIsNone(publish.select_release([], 'v1.0.0'))
+        with self.assertRaises(ValueError):
+            publish.select_release([draft, dict(draft)], 'v1.0.0')
 
     def test_dsym_identity_uses_every_slice(self):
         listing = ('UUID: 7F4FC7AE-6C19-3366-ABBD-6D42EF8367FD (x86_64) /path/Tudor PCB\n'
