@@ -2,10 +2,1010 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Excellon drill file" : {
-      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a drill file. Excellon is the file format; keep it as written."
+      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a drill file. Excellon is the file format; keep it as written.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon boorlêer"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ድሪል ፋይል"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ملف حفر Excellon"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon qazma faylı"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл свідравання Excellon"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon файл за пробиване"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ড্রিল ফাইল"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitxer de perforació Excellon"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon soubor vrtáku"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ffeil drilio Excellon"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon borfil"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon Bohrdatei"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon Bohrdatei"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon Bohrdatei"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon αρχείο διάτρησης"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon drill file"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon drill file"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon drill file"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivo de perforación Excellon"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon archivo de taladros"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivo de perforación Excellon"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon puurifail"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon zulatzeko fitxategia"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فایل مته Excellon"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon poratiedosto"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon drill file"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon fichier de perçage"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fichier de forage Excellon"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comhad druileála Excellon"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ficheiro de broca Excellon"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ડ્રિલ ફાઇલ"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובץ קידוח Excellon"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ड्रिल फ़ाइल"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon datoteka za bušenje"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon fúrófájl"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon անցքի ֆայլ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon file bor"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon boraskrá"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File Excellon per esercitazione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ドリルファイル"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon საბურღი ფაილი"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon бұрғылау файлы"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ឯកសារខួង Excellon"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ಡ್ರಿಲ್ ಫೈಲ್"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon 드릴 파일"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon бургулоо файлы"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ໄຟລ໌ເຈາະ Excellon"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon gręžimo failas"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon urbšanas vīle"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon датотека за бушење"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ഡ്രിൽ ഫയൽ"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon өрмийн файл"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ड्रिल फाईल"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fail gerudi Excellon"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fajl tat-tħaffir Excellon"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon တူးဖိုင်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon borfil"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ड्रिल फाइल"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon boorbestand"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ଡ୍ରିଲ୍ ଫାଇଲ୍"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ਡ੍ਰਿਲ ਫਾਈਲ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon plik wiertła"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ficheiro de broca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arquivo de perfuração Excellon"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fișier foraj Excellon"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon файл сверла"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon සරඹ ගොනුව"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon súbor fréz"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon datoteka s svedri"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skedar stërvitjeje Excellon"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon бушилица"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon borrfil"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faili ya kuchimba Excellon"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon துளையிடும் கோப்பு"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon డ్రిల్ ఫైల్"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไฟล์เจาะ Excellon"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon delme dosyası"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon файл свердління"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon ڈرل فائل"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tệp khoan Excellon"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon 钻头文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellon 鑽頭檔案"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ifayela lokubhoboza le Excellon"
+          }
+        }
+      }
     },
     "Gerber fabrication layer" : {
-      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a single Gerber layer file. Gerber is the file format; keep it as written."
+      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a single Gerber layer file. Gerber is the file format; keep it as written.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber vervaardigingslaag"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ማምረቻ ንብርብር"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "طبقة تصنيع Gerber"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber istehsal təbəqəsi"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слой вырабу Gerber"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber производствен слой"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ফ্যাব্রিকেশন স্তর"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capa de fabricació Gerber"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber výrobní vrstva"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haen ffabrigo Gerber"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber fabrikationslag"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber Fertigungsschicht"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber Fertigungsschicht"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber Fertigungsschicht"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber στρώμα κατασκευής"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber fabrication layer"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber fabrication layer"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber fabrication layer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber capa de fabricación"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber capa de fabricación"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capa de fabricación Gerber"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber valmistamiskihi"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber fabrikazio geruza"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لایه ساخت Gerber"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber valmistuskerros"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Patong ng paggawa Gerber"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber couche de fabrication"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "couche de fabrication Gerber"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ciseal déantúsaíochta Gerber"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capa de fabricación Gerber"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ફેબ્રિકેશન લેયર"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שכבת ייצור Gerber"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber निर्माण परत"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber sloj za izradu"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber gyártási réteg"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber արտադրական շերտ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber lapisan fabrikasi"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber framleiðslulag"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber strato di fabbricazione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber 製造層"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ფაბრიკაციის ფენა"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber өндіріс қабаты"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ស្រទាប់​ផលិត Gerber"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ಫ್ಯಾಬ್ರಿಕೇಶನ್ ಪದರ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber 제조층"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber жасалма катмары"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຊັ້ນການຜະລິດ Gerber"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber formavimo sluoksnis"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber izgatavošanas slānis"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber слој за изработка"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ഫാബ്രിക്കേഷൻ ലെയർ"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber үйлдвэрлэлийн давхарга"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber फॅब्रिकेशन लेयर"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lapisan fabrikasi Gerber"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saff tal-fabbrikazzjoni Gerber"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ထုတ်လုပ်မှုအလွှာ"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber fabrikasjonslag"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber निर्माण तह"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber fabricagelaag"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ନିର୍ମାଣ ସ୍ତର"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ਨਿਰਮਾਣ ਪਰਤ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber warstwa produkcyjna"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber camada de fabrico"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber camada de fabricação"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber strat de fabricație"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber слой производства"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber නිෂ්පාදන ස්ථරය"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber výrobná vrstva"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber proizvodni sloj"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shtresa e fabrikimit Gerber"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber слој израде"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber tillverkningsskikt"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safu ya utengenezaji wa Gerber"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber உற்பத்தி அடுக்கு"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber ఫ్యాబ్రికేషన్ లేయర్"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ชั้นการผลิต Gerber"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber üretim katmanı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber шар виробництва"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber فیبریکیشن پرت"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lớp chế tạo Gerber"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber 制造层"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerber 製造層"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isendlalelo sokwenziwa kwe Gerber"
+          }
+        }
+      }
     },
     "NSHumanReadableCopyright" : {
       "comment" : "Copyright line shown in the About window. Keep the name 'Patrick Tudor' and 'MIT' as written; render 'Copyright' and 'License' as is customary in your language.",
@@ -15,11 +1015,1009 @@
             "state" : "translated",
             "value" : "Copyright © 2026 Patrick Tudor. MIT License."
           }
+        },
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiereg © 2026 Patrick Tudor. MIT-lisensie."
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "የቅጂ መብት © 2026 ፓትሪክ ቱዶር. MIT ፈቃድ"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حقوق النشر © 2026 باتريك تيودور. رخصة MIT."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT Lisenziyası."
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аўтарскае права © 2026 Патрык Цюдар. Ліцэнзія MIT."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Авторски права © 2026 Патрик Тюдор. MIT License."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "কপিরাইট © 2026 প্যাট্রিক টিউডর। MIT লাইসেন্স।"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Llicència MIT."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorská práva © 2026 Patrick Tudor. Licence MIT."
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hawlfraint © 2026 Patrick Tudor. Trwydded MIT."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT-licensen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT-Lizenz."
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT-Lizenz"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT-Lizenz."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πνευματικά δικαιώματα © 2026 Πάτρικ Τιούντορ. Άδεια MIT."
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT License."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT License."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT License."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Licencia MIT."
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Derechos de autor © 2026 Patrick Tudor. Licencia MIT."
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Licencia MIT."
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriõigus © 2026 Patrick Tudor. MIT-litsents."
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT Lizentzia."
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حق چاپ © 2026 پاتریک تودور. مجوز MIT."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekijänoikeus © 2026 Patrick Tudor. MIT-lisenssi"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Lisensya ng MIT."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Licence MIT"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Licence MIT."
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cóipcheart © 2026 Pádraig Tudor. Ceadúnas MIT."
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Licenza MIT."
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "કૉપિરાઇટ © 2026 પેટ્રિક ટ્યુડર. MIT લાઇસન્સ."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "זכויות יוצרים © 2026 פטריק טיודור. רישיון MIT."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कॉपीराइट © 2026 पैट्रिक ट्यूडर। MIT लाइसेंस।"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorska prava © 2026 Patrick Tudor. MIT licenca."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szerzői jog © 2026 Patrick Tudor. MIT licence."
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Հեղինակային իրավունք © 2026 Փաթրիք Թյուդոր: MIT լիցենզիա."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hak Cipta © 2026 Patrick Tudor. Lisensi MIT."
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höfundarréttur © 2026 Patrick Tudor. MIT leyfi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Licenza MIT."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 パトリック・テューダー. MITライセンス。"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "საავტორო უფლება © 2026 პატრიკ ტიუდორი. MIT ლიცენზია."
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Авторлық құқық © 2026 Патрик Тюдор. MIT лицензиясы."
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "រក្សាសិទ្ធិ © 2026 ប៉ាទ្រីក ទុយដ័រ ។ អាជ្ញាប័ណ្ណ MIT ។"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಕೃತಿಸ್ವಾಮ್ಯ © 2026 ಪ್ಯಾಟ್ರಿಕ್ ಟ್ಯೂಡರ್. MIT ಪರವಾನಗಿ."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저작권 © 2026 패트릭 튜더. MIT 라이선스."
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Патрик Тюдор. MIT лицензиясы."
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ສະຫງວນລິຂະສິດ © 2026 ແພດທຣິກ ທິວດໍ. ໃບອະນຸຍາດ MIT."
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorinės teisės © 2026 Patrick Tudor. MIT License."
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autortiesības © 2026 Patrick Tudor. MIT licence."
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Авторски права © 2026 Патрик Тјудор. МИТ лиценца."
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "പകർപ്പവകാശം © 2026 പാട്രിക് ട്യൂഡർ. MIT ലൈസൻസ്"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зохиогчийн эрх © 2026 Патрик Тюдор. MIT лиценз."
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कॉपीराइट © 2026 पॅट्रिक ट्यूडर. MIT License."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hak Cipta © 2026 Patrick Tudor. Lesen MIT."
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Liċenzja MIT"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "မူပိုင်ခွင့် © 2026 ပက်ထရစ် တူဒါ။ MIT လိုင်စင်။"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opphavsrett © 2026 Patrick Tudor. MIT-lisensen."
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्रतिलिपि अधिकार © 2026 प्याट्रिक ट्युडर। MIT License।"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. MIT-licentie."
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "କପିରାଇଟ୍ © 2026 ପାଟ୍ରିକ୍ ଟ୍ୟୁଡର୍। MIT ଲାଇସେନ୍ସ।"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਕਾਪੀਰਾਈਟ © 2026 ਪੈਟ੍ਰਿਕ ਟਿਊਡਰ। MIT ਲਾਈਸੰਸ।"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prawa autorskie © 2026 Patrick Tudor. Licencja MIT."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direitos de autor © 2026 Patrick Tudor. Licença MIT."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direitos autorais © 2026 Patrick Tudor. Licença MIT."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drepturi de autor © 2026 Patrick Tudor. Licență MIT."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Авторские права © 2026 Патрик Тюдор. Лицензия MIT."
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ප්‍රකාශන හිමිකම © 2026 පැට්‍රික් ටියුඩර්. MIT බලපත්‍රය."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorské práva © 2026 Patrick Tudor. Licencia MIT."
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avtorske pravice © 2026 Patrick Tudor. Licenca MIT."
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E drejta e autorit © 2026 Patrick Tudor. Licenca MIT."
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ауторско право © 2026 Патрик Тјудор. MIT лиценца."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upphovsrätt © 2026 Patrick Tudor. MIT-licens."
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hakimiliki © 2026 Patrick Tudor. Leseni ya MIT."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "பதிப்புரிமை © 2026 பாட்ரிக் டியூடர். MIT உரிமம்."
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "కాపీరైట్ © 2026 ప్యాట్రిక్ ట్యూడర్. MIT లైసెన్స్."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ลิขสิทธิ์ © 2026 แพทริก ทิวดอร์ ใบอนุญาต MIT"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telif Hakkı © 2026 Patrick Tudor. MIT Lisansı."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Авторські права © 2026 Патрік Тюдор. Ліцензія MIT."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "کاپی رائٹ © 2026 پیٹرک ٹیوڈر۔ ایم آئی ٹی لائسنس۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bản quyền © 2026 Patrick Tudor. Giấy phép MIT."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版权所有 © 2026 帕特里克·都铎。MIT 许可协议。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版權所有 © 2026 帕特里克·都鐸。MIT 授權。"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright © 2026 Patrick Tudor. Ilayisensi ye-MIT."
+          }
         }
       }
     },
     "ZIP fabrication package" : {
-      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a ZIP archive of board files that the app can open."
+      "comment" : "Document type name the system shows (in Finder, Files, and Open dialogs) for a ZIP archive of board files that the app can open.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-vervaardigingspakket"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "የዚፕ ማምረቻ ጥቅል"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حزمة تصنيع ZIP"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP istehsal paketi"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-пакет вырабу"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP пакет за изработка"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "জিপ ফ্যাব্রিকেশন প্যাকেজ"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquet de fabricació ZIP"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balíček fabrikace ZIP"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pecyn gwneuthuriad ZIP"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-fremstillingspakke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-Fertigungspaket"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-Fertigungspaket"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-Fertigungspaket"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πακέτο κατασκευής ZIP"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP fabrication package"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP fabrication package"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP fabrication package"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquete de fabricación ZIP"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquete de fabricación ZIP"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquete de fabricación ZIP"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-valmistamispakett"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP fabrikazio paketea"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بسته ساخت ZIP"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-valmistuspaketti"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakete ng paggawa ng ZIP"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pack de fabrication ZIP"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquet de fabrication ZIP"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacáiste déantúsaíochta ZIP"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquete de fabricación ZIP"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ઝીપ ફેબ્રિકેશન પેકેજ"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "חבילת ייצור ZIP"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ज़िप निर्माण पैकेज"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP paket za izradu"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP gyártási csomag"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP արտադրության փաթեթ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paket fabrikasi ZIP"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP framleiðslupakki"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacchetto di produzione ZIP"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP 製造パッケージ"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP დამზადების პაკეტი"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP өндірістік пакеті"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "កញ្ចប់ផលិត ZIP"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP ಫ್ಯಾಬ್ರಿಕೇಶನ್ ಪ್ಯಾಕೇಜ್"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP 제조 패키지"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP өндүрүштүк пакети"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຊຸດຜະລິດ ZIP"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP gamybos paketas"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP izgatavošanas pakete"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP пакет за изработка"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP നിർമ്മാണ പാക്കേജ്"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP үйлдвэрлэлийн багц"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "झिप फॅब्रिकेशन पॅकेज"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakej fabrikasi ZIP"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakkett ta' fabbrikazzjoni ZIP"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP ထုတ်လုပ်ရေးအထုပ်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-produksjonspakke"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जिप निर्माण प्याकेज"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-fabricagepakket"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ଜିପ୍ ନିର୍ମାଣ ପ୍ୟାକେଜ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਜ਼ਿਪ ਫੈਬਰੀਕੇਸ਼ਨ ਪੈਕੇਜ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakiet produkcyjny ZIP"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacote de fabrico ZIP"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacote de fabricação ZIP"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pachetul de fabricație ZIP"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP пакет производства"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP නිෂ්පාදන පැකේජය"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balík na výrobu s formátom ZIP"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paket za izdelavo v formatu ZIP"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paketa e fabrikimit ZIP"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ЗИП пакет за израду"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP-paket för tillverkning"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kifurushi cha utengenezaji wa ZIP"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ஜிப் தயாரிப்பு தொகுப்பு"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "జిప్ ఫ్యాబ్రికేషన్ ప్యాకేజీ"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แพ็คเกจการผลิต ZIP"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP üretim paketi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пакет виробництва ZIP"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "زپ فیبریکیشن پیکج"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gói chế tạo ZIP"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP 制造包"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP 製造套件"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iphakheji yokwenziwa kwe-ZIP"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

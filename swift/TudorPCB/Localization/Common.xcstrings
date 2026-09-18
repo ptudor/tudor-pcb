@@ -9,35 +9,5033 @@
             "state" : "translated",
             "value" : "%1$@ × %2$@ mm"
           }
+        },
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ ሚሜ"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ مم"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ মিমি"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ میلی‌متر"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ મીમી"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ מ\"מ"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ मिमी"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ մմ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ მმ"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ ម.ម"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ ಮಿಮೀ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ ມມ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ മിമി"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ मिमी"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ မီလီမီတာ"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ मिमी"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ ମିମି"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ ਮਿਮੀ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ මි.මී."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ மிமீ"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ มม."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ мм"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ ملی میٹر"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ × %2$@ mm"
+          }
         }
       }
     },
     "Cancel" : {
-      "comment" : "Button that closes a sheet or dialog without applying anything."
+      "comment" : "Button that closes a sheet or dialog without applying anything.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanselleer"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ይቅር"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إلغاء"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ləğv et"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адмена"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмяна"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "বাতিল করুন"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel·la"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušit"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diddymu"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuller"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ακύρωση"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tühista"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utzi"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لغو"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peruuta"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanselahin"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "annuler"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cealaigh"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "રદ કરો"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "לְבַטֵל"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रद्द करना"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otkazati"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mégse"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Չեղարկել"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batalkan"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hætta við"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンセル"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "გაუქმება"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бас тарту"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "បោះបង់"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ರದ್ದುಮಾಡಿ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "취소"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жокко чыгаруу"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຍົກເລີກ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atšaukti"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atcelt"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откажи"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "റദ്ദാക്കുക"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цуцлах"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रद्द करा"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batal"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikkanċella"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ပယ်ဖျက်ရန်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avbryt"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रद्द गर्नुहोस्"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuleren"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ବାତିଲ କରନ୍ତୁ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਰੱਦ ਕਰੋ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anuluj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anulează"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "අවලංගු කරන්න"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušiť"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prekliči"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anulo"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отказ"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avbryt"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ghairi"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ரத்துசெய்க"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "రద్దు చేయండి"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ยกเลิก"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İptal et"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скасувати"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "منسوخ کریں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hủy bỏ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Khansela"
+          }
+        }
+      }
     },
     "Done" : {
-      "comment" : "Button that closes a sheet when the user has finished with it."
+      "comment" : "Button that closes a sheet when the user has finished with it.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klaar"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ተጠናቅቋል"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hazırdır"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Гатова"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "সম্পন্ন করুন"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fet"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotovo"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wedi'i wneud"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Færdig"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erledigt"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erledigt"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ολοκληρώθηκε"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valmis"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eginda"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "انجام شده"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valmis"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapos na"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminé"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminé"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déanta"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feito"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "પૂર્ણ થયું"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "סיום"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हो गया"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotovo"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kész"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Կատարված է"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selesai"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokið"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fatto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "დასრულებულია"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дайын"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "រួចរាល់"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಸಂಪೂರ್ಣ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бүттү"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ສຳເລັດແລ້ວ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atlikta"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gatavs"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ചെയ്തുകഴിഞ്ഞു"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дууссан"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पूर्ण झाले"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selesai"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magħmul"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ပြီးပါပြီ"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ferdig"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सम्पन्न"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klaar"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ସମାପ୍ତ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਹੋ ਗਿਆ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotowe"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concluído"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concluído"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gata"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "හරි"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotovo"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opravljeno"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "U krye"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klart"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imekamilika"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "முடிந்தது"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "సరి"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เสร็จแล้ว"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamam"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ہو گیا"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xong"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuqediwe"
+          }
+        }
+      }
     },
     "Down" : {
-      "comment" : "Button in the Pan menu that moves the view one step down."
+      "comment" : "Button in the Pan menu that moves the view one step down.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Af"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ወደ ታች"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحت"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aşağı"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вниз"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Надолу"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নিচে"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avall"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dolů"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I lawr"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ned"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach unten"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinunter"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unten"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Κάτω"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Down"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Down"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Down"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abajo"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abajo"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abajo"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alla"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behera"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "پایین"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alas"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pababa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bas"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bas"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Síos"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abaixo"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "નીચે"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "לְמַטָה"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नीचे"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dolje"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lefelé"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ներքև"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turun"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niður"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giù"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下へ"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ქვემოთ"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Төмен"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ចុះក្រោម"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಕೆಳಗೆ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아래로"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Төмөн"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ລົງ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žemyn"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lejup"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Долу"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "താഴേക്ക്"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доош"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खाली"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turun"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'L isfel"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "အောက်သို့"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ned"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "तल"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omlaag"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ତଳକୁ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਹੇਠਾਂ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W dół"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para baixo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para baixo"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "În jos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вниз"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "පහළට"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dole"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dol"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poshtë"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доле"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ned"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chini"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "கீழே"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "క్రిందికి"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ลง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aşağı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вниз"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نیچے"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xuống"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向下"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向下"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phansi"
+          }
+        }
+      }
     },
     "Left" : {
-      "comment" : "Button in the Pan menu that moves the view one step to the left."
+      "comment" : "Button in the Pan menu that moves the view one step to the left.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ግራ"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يسار"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sol"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Налева"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Наляво"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "বাম"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquerra"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vlevo"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'r Chwith"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venstre"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αριστερά"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Izquierda"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Izquierda"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Izquierda"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vasak"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ezkerra"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "چپ"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vasen"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaliwa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À gauche"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gauche"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ar chlé"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquerda"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ડાબે"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שְׁמֹאל"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बाएं"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lijevo"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balra"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ձախ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiri"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinstri"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sinistra"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "მარცხნივ"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Солға"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ឆ្វេង"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಎಡಕ್ಕೆ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "왼쪽"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сол"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຊ້າຍ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kairėn"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pa kreisi"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лево"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ഇടത്"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зүүн"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "डावीकडे"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiri"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xellug"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ဘယ်ဘက်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venstre"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बायाँ"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ବାମ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਖੱਬੇ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W lewo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquerda"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquerda"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stânga"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Влево"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "වම"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vľavo"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Levo"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Majtas"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лево"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vänster"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kushoto"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடது"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ఎడమవైపు"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ซ้าย"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sol"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ліворуч"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بائیں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bên trái"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向左"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kwesobunxele"
+          }
+        }
+      }
     },
     "Pan" : {
-      "comment" : "Menu holding the four buttons that move a magnified 2D view or proof image a fixed step in one direction."
+      "comment" : "Menu holding the four buttons that move a magnified 2D view or proof image a fixed step in one direction.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skuif"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ፓን"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تمرير"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sürüşdürmə"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рух"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панорамиране"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "প্যান"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mou"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posun"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tremio"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panorering"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschieben"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschieben"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschieben"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Μετακίνηση"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desplazar"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desplazar"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desplazamiento"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nihuta"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mugitu"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "پان"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panorointi"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panoramique"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panoramique"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bog"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "પૅન"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הסט"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पैन"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomicanje"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mozgatás"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Տեղաշարժել"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geser"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flytja"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panoramica"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パン操作"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "გადაადგილება"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жылжыту"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "រំកិល"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಪ್ಯಾನ್"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "팬 이동"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жылдыруу"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ແພນ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slinkti"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bīdīt"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панување"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "പാൻ"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зөөх"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पॅन"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorot"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "မြင်ကွင်းရွှေ့ရန်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्यान"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ପ୍ୟାନ୍"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਪੈਨ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przesuwanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deslocar"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pan"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панорамирование"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "පෑන්"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posun"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomik"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zhvendosje"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панирање"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sogeza"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "நகர்த்து"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "పాన్"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เลื่อนดู"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydır"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панорамування"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "پین"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kéo/Di chuyển"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平移"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平移"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hambisa"
+          }
+        }
+      }
     },
     "Right" : {
-      "comment" : "Button in the Pan menu that moves the view one step to the right."
+      "comment" : "Button in the Pan menu that moves the view one step to the right.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regs"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ቀኝ"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يمين"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağ"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Направа"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Надясно"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ডান"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dreta"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vpravo"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'r Dde"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Højre"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach rechts"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechts"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechts"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Δεξιά"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Derecha"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Derecha"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Derecha"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paremale"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eskuinera"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "راست"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oikea"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À droite"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Droite"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ar dheis"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dereita"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "જમણે"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "יָמִינָה"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दाएं"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desno"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jobbra"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Աջ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanan"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hægri"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destra"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "მარჯვნივ"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оңға"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ស្តាំ"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಬಲಕ್ಕೆ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "오른쪽"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оң"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຂວາ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dešinėn"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pa labi"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Десно"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "വലത്തേക്ക്"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Баруун"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उजवीकडे"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanan"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lemin"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ညာဘက်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Høyre"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दायाँ"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechts"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ଡାହାଣକୁ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਸੱਜਾ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W prawo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direita"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direita"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dreapta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вправо"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "දකුණට"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vpravo"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desno"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Djathtas"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удесно"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höger"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kulia"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "வலது"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "కుడివైపు"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ขวา"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağ"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Праворуч"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "دائیں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phải"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向右"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kwesokudla"
+          }
+        }
+      }
     },
     "Up" : {
-      "comment" : "Button in the Pan menu that moves the view one step up."
+      "comment" : "Button in the Pan menu that moves the view one step up.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Op"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ወደ ላይ"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أعلى"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yuxarı"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уверх"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нагоре"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "উপরে"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amunt"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nahoru"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I fyny"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Op"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach oben"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinauf"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oben"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πάνω"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arriba"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arriba"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arriba"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Üles"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gora"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بالا"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ylös"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pataas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haut"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En haut"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arriba"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ઉપર"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "לְמַעלָה"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ऊपर"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gore"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fel"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Վերև"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atas"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upp"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上へ"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ზემოთ"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жоғары"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ឡើងលើ"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಮೇಲಕ್ಕೆ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "위로"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жогору"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຂຶ້ນ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aukštyn"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uz augšu"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Горе"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "മുകളിലേക്ക്"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дээш"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वर"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naik"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'Il fuq"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "အပေါ်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opp"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "माथि"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omhoog"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ଉପରକୁ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਉੱਪਰ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W górę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para cima"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para cima"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вверх"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ඉහළට"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hore"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navzgor"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lart"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Горе"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upp"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juu"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "மேலே"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "పైకి"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ขึ้น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yukarı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вгору"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اوپر"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hướng lên"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向上"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向上"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phezulu"
+          }
+        }
+      }
     },
     "Zoom In" : {
-      "comment" : "Button that magnifies the 3D board, a 2D layer view, or a proof image."
+      "comment" : "Button that magnifies the 3D board, a 2D layer view, or a proof image.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inzoem"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "አጉላ"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تكبير الصورة"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yaxınlaşdır"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Павялічыць"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Увеличи"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "জুম ইন"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ampliar zoom"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přiblížit"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chwyddo i Mewn"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom ind"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergrößern"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergrößern"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergrößern"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Μεγέθυνση"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom In"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom In"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom In"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acercar"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acercar"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acercar"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suurenda"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handiagotu"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بزرگنمایی"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lähennä"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mag-zoom In"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agrandir"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoomer"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zúmáil Isteach"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achegar"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ઝૂમ ઇન કરો"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הִגְדַּל"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ज़ूम इन"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uvećaj"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nagyítás"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Մեծացնել"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perbesar"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stækka"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingrandisci"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拡大"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "გადიდება"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Үлкейту"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ពង្រីក"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಜೂಮ್ ಇನ್ ಮಾಡಿ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "확대하기"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жакындатуу"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຊູມເຂົ້າ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Padidinti"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palielināt"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зголеми"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "സൂം ഇൻ ചെയ്യുക"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Томруулах"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "झूम इन"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Masuk"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Żum 'il ġewwa"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ချဲ့ကြည့်ရန်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom inn"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जुम इन गर्नुहोस्"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inzoomen"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ଜୁମ୍ ବଢ଼ାନ୍ତୁ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਜ਼ੂਮ ਇਨ ਕਰੋ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiększ"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ampliar"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ampliar"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mărire"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Увеличить"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "විශාලනය කරන්න"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zväčšiť"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Povečaj"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmadho"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зумирај"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zooma in"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuza"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "பெரிதாக்கு"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "జూమ్ ఇన్"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ซูมเข้า"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yakınlaştır"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Збільшити"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "زوم ان"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phóng to"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sondeza isithombe"
+          }
+        }
+      }
     },
     "Zoom Out" : {
-      "comment" : "Button that shrinks the 3D board, a 2D layer view, or a proof image."
+      "comment" : "Button that shrinks the 3D board, a 2D layer view, or a proof image.",
+      "localizations" : {
+        "af" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitzoem"
+          }
+        },
+        "am" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "አሳንስ"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تصغير الصورة"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzaqlaşdır"
+          }
+        },
+        "be" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Паменшыць маштаб"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Намали мащаба"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "জুম আউট"
+          }
+        },
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allunyar"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmenšit zobrazení"
+          }
+        },
+        "cy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chwyddo Allan"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom ud"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verkleinern"
+          }
+        },
+        "de-AT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herauszoomen"
+          }
+        },
+        "de-CH" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herauszoomen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Σμίκρυνση"
+          }
+        },
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom Out"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom Out"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom Out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alejar la imagen"
+          }
+        },
+        "es-AR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alejar"
+          }
+        },
+        "es-MX" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alejar"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vähenda"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Txikiagotu"
+          }
+        },
+        "fa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "کوچک‌نمایی"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pienennä"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mag-zoom Out"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom arrière"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réduire"
+          }
+        },
+        "ga" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zúmáil Amach"
+          }
+        },
+        "gl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afastar"
+          }
+        },
+        "gu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ઝૂમ આઉટ કરો"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הִקְטַן"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ज़ूम आउट"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smanji"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kicsinyítés"
+          }
+        },
+        "hy" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Փոքրացնել"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perkecil"
+          }
+        },
+        "is" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minnka"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riduci"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ズームアウト"
+          }
+        },
+        "ka" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "შემცირება"
+          }
+        },
+        "kk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кішірейту"
+          }
+        },
+        "km" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "បង្រួម"
+          }
+        },
+        "kn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ಜೂಮ್ ಔಟ್ ಮಾಡಿ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "축소"
+          }
+        },
+        "ky" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кичирейтүү"
+          }
+        },
+        "lo" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ຊູມອອກ"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sumažinti"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samazināt"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Намали"
+          }
+        },
+        "ml" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "സൂം ഔട്ട് ചെയ്യുക"
+          }
+        },
+        "mn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жижигрүүлэх"
+          }
+        },
+        "mr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "झूम आउट"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Keluar"
+          }
+        },
+        "mt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Żum 'il barra"
+          }
+        },
+        "my" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ချုံ့ကြည့်ရန်"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom ut"
+          }
+        },
+        "ne" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जुम आउट गर्नुहोस्"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitzoomen"
+          }
+        },
+        "or" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ଜୁମ୍ କମାନ୍ତୁ"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਜ਼ੂਮ ਆਉਟ ਕਰੋ"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomniejsz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduzir"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduzir zoom"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Micșorare"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уменьшить масштаб"
+          }
+        },
+        "si" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "විශාලනය අඩු කරන්න"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmenšiť"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomanjšaj"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvogëlo"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зумирај уназад"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zooma ut"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kupunguza"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "சிறிதாக்கு"
+          }
+        },
+        "te" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "జూమ్ అవుట్"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ซูมออก"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzaklaştır"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зменшити масштаб"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "زوم آؤٹ"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thu nhỏ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缩小"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小"
+          }
+        },
+        "zu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hlehlisa isithombe"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
