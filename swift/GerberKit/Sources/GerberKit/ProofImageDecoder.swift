@@ -66,6 +66,10 @@ public enum ProofImageDecoder {
     /// Call from an owned background task. Coordination and security scope cover
     /// the complete provider read and decode, including every failure exit.
     public static func read(_ url: URL, side: GerberSide, limits: ImportLimits = .init()) async throws -> BoardSidePreview {
+        // A caller that is already cancelled must not start the detached read:
+        // the cancellation handler below runs at once, but the detached task can
+        // finish a small file before its cancellation flag is set.
+        try Task.checkCancellation()
         let coordination = ProofReadCoordination()
         let task = Task.detached(priority: .userInitiated) {
             try readCoordinated(url, side: side, limits: limits, coordinator: coordination.coordinator)
