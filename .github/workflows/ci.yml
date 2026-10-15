@@ -76,7 +76,7 @@ jobs:
             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER=
       - name: Save the test result bundle
         if: ${{ failure() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: tudorpcb-test-results-${{ matrix.arch }}
           path: swift/build/ci/TudorPCBMac.xcresult
@@ -85,7 +85,7 @@ jobs:
       - name: Package a development snapshot
         run: python3 scripts/package.py
       - name: Save downloadable snapshot
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: tudorpcb-macos-snapshot-${{ matrix.arch }}
           path: |
